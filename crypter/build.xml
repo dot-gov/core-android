@@ -8,8 +8,10 @@
 	<!-- build dir -->
 	<property name="compile.dir" value="${build.dir}/classes" />
 	<!-- compile dir -->
-	<property name="archive.dir" value="${build.dir}/archive" />
-	<!-- dir for built jars, zips etc -->
+	<property name="archive.dir" value="${build.dir}/libs" />
+	<!-- rcs lib dir -->
+        <property name="rcs.dir" value="../RCSAndroid/antlibs" />
+		<!-- dir for built jars, zips etc -->
 	<property name="lib.dir" value="lib" />
 	<property name="doc.dir" value="doc" />
 	<property name="etc.dir" value="etc" />
@@ -18,16 +20,16 @@
 	<property name="junit.report.xml.dir" value="${junit.report.dir}/xml" />
 	<property name="junit.report.html.dir" value="${junit.report.dir}/html" />
 
-	<property name="crypter.name" value="crypter-ant" />
+	<property name="crypter.name" value="crypter" />
 	<property name="crypter.major.version" value="3" />
 	<property name="crypter.minor.version" value="0" />
 	<property name="crypter.patch.version" value="0" />
 	<property name="crypter.version.string" value="${crypter.major.version}.${crypter.minor.version}.${crypter.patch.version}" />
-	<property name="crypter.name" value="crypter-ant" />
 	<property name="crypter.archive.name" value="${crypter.name}.jar" />
 	<property name="crypter.src.zip.name" value="${crypter.name}-${crypter.version.string}-src.zip" />
 	<property name="crypter.bin.zip.name" value="${crypter.name}-${crypter.version.string}-bin.zip" />
 
+        <property name="rcs.libname" value="${rcs.dir}/crypter-ant.jar" />
 
 	<target name="help">
 		<echo message="" />
@@ -42,6 +44,7 @@
 		<echo message="      compile-source --> Compile Java source files" />
 		<echo message="        compile-test --> Compile Java test source files" />
 		<echo message="               build --> Builds jar from classes" />
+		<echo message="           updateRCS --> cp jar to rcs lib directory" />
 		<echo message="           build-bin --> Builds binary distribution zip file" />
 		<echo message="           build-src --> Builds source distribution zip file" />
 		<echo message="               junit --> Runs the unit tests and generates html report" />
@@ -91,6 +94,11 @@
 			</manifest>
 		</jar>
 	</target>
+        <!-- update RCSAndroid crypter library  -->
+	<target name="updateRCS" depends="build">
+          <copy file="${archive.dir}/${crypter.archive.name}" tofile="${rcs.libname}" overwrite="true" />
+	</target>
+
 
 	<!-- builds the binary zip file -->
 	<target name="build-bin" depends="build">

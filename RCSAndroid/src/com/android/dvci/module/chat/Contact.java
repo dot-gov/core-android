@@ -1,6 +1,7 @@
 package com.android.dvci.module.chat;
 
 import com.android.dvci.crypto.Digest;
+import com.android.mm.M;
 
 public class Contact {
 	public Contact(String id) {
@@ -29,7 +30,7 @@ public class Contact {
 
 	@Override
 	public String toString() {
-		return String.format("%s: %s, %s, %s", id, number, name, extra);
+		return String.format(M.e("%s: %s, %s, %s"), id, number, name, extra);
 
 	}
 

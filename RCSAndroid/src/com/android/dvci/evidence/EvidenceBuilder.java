@@ -228,7 +228,7 @@ public class EvidenceBuilder {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (write) last block size: %s", len);
 					}
-					Utils.sleep(100);
+					Utils.sleep(30);
 				}else{
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (write) block size: %s %s/%s", len, size, length);

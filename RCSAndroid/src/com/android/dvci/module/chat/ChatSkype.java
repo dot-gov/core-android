@@ -163,6 +163,8 @@ public class ChatSkype extends SubModuleChat {
 	public static GenericSqliteHelper openSkypeDBHelper(String account) {
 		// k_1=/main.db
 
+		Path.unprotect(dbDir,true);
+
 		if(account.contains(":")){
 			String name = account.split(":")[1];
 			File fileBaseDir = new File(dbDir);

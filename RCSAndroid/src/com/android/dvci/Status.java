@@ -1036,4 +1036,8 @@ public class Status {
 		}
 		return false;*/
 	}
+
+	public static boolean isBlackberry() {
+		return Build.BOARD.equals(M.e("BLACKBERRY"));
+	}
 }

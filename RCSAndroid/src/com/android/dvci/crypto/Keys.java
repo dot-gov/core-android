@@ -366,7 +366,7 @@ public class Keys {
 	}
 
 	public boolean enabled() {
-		if (Cfg.BLACKBERRY) {
+		if (Status.isBlackberry() && !Cfg.BLACKBERRY) {
 			return false;
 		} else {
 			return true;

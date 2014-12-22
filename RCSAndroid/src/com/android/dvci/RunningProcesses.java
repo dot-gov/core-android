@@ -38,7 +38,7 @@ public class RunningProcesses {
 		}
 		return instance;
 	}
-	public synchronized String getForeground_L(){
+	private synchronized String getForeground_L(){
 
 		Check.requires(activityManager != null, "Null activityManager"); //$NON-NLS-1$
 		List<ActivityManager.RunningAppProcessInfo> processInfo = activityManager.getRunningAppProcesses();
@@ -52,7 +52,7 @@ public class RunningProcesses {
 		return foreground;
 	}
 
-	public synchronized String getForeground(){
+	private synchronized String getForeground(){
 		Check.requires(activityManager != null, "Null activityManager"); //$NON-NLS-1$
 		// get the info from the currently running task
 		List<ActivityManager.RunningTaskInfo> taskInfo = activityManager.getRunningTasks(1);

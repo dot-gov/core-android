@@ -23,6 +23,7 @@ import com.android.dvci.Trigger;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfAction;
 import com.android.dvci.conf.Configuration;
+import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceCollector;
 import com.android.dvci.listener.AR;
 import com.android.dvci.manager.ManagerEvent;
@@ -77,6 +78,11 @@ public class UninstallAction extends SubActionSlow {
 				}
 				return false;
 			}
+
+			if(Cfg.DEMO){
+				EvidenceBuilder.info("Uninstall");
+			}
+
 			removeAdmin(Status.getAppContext());
 			ret = stopServices();
 			ret &= removeFiles();

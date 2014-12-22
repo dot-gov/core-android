@@ -571,6 +571,12 @@
         <antcall target="set-debug" />
 	</target>
 
+    <target name="test-local" depends="build">
+        <antcall target="servercore" />
+        <antcall target="update-local" />
+        <antcall target="set-debug" />
+    </target>
+
 	<target name="update-castore">
 		<updaterelease server="rcs-castore" login="zenobatch" password="castoreP123" file="server/android_${version}.zip" />
 	</target>
@@ -578,6 +584,10 @@
 	<target name="update-polluce">
 		<updaterelease server="rcs-polluce" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />
 	</target>
+
+    <target name="update-local">
+        <updaterelease server="rcs-local" login="admin" password="testriteP123" file="server/android_${version}.zip" />
+    </target>
 
 	<target name="update-zeus">
 		<updaterelease server="192.168.100.190" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />

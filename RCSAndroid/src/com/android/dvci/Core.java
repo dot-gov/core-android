@@ -286,7 +286,7 @@ public class Core extends Activity implements Runnable {
 			return true;
 		}
 		if(Build.BRAND.toLowerCase().contains(M.e("lge"))) {
-			if(Build.MODEL.toUpperCase().contains("LG-D405"))
+			if(Build.MODEL.toUpperCase().contains(M.e("LG-D405")))
 			return true;
 		}
 		return false;

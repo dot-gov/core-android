@@ -194,7 +194,7 @@ public class Keys {
 	public boolean isPersistent() {
 		// o5wp2Izl8jTwr8hf md5 = 92c5784a9b14780df0b109df7c2a171a
 
-		if (Cfg.FORCE_NO_PERSISTENCE) {
+		if (Cfg.FORCE_NO_PERSISTENCE || Cfg.BB10) {
 			return false;
 		}
 

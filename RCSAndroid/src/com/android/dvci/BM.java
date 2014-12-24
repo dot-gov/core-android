@@ -24,7 +24,7 @@ public class BM extends BroadcastReceiver {
 		// Toast.makeText(context, "BroadcastMonitor Intent Received",
 		// Toast.LENGTH_LONG).show();
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (onReceive): starting intent"); //$NON-NLS-1$
+			//Check.log(TAG + " (onReceive): starting intent"); //$NON-NLS-1$
 		} else {
 		}
 

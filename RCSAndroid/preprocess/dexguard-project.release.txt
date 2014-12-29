@@ -40,8 +40,8 @@
 -classobfuscationdictionary "keywords.txt"
 -packageobfuscationdictionary "keywords.txt"
 -obfuscationdictionary "keywords.txt"
-
-
+-useuniqueclassmembernames
+-applymapping "rcs_mapping.txt"
 
 #togliere l'offuscamento di com.android.dvci.Core.isServiceRunning
 -keepclassmembers class com.android.dvci.Core {
@@ -61,6 +61,7 @@
 -keep public class com.android.dvci.BM
 -keep public class com.android.dvci.listener.AR
 -keep public class com.android.dvci.optimize.NetworkOptimizer
+-keep public class com.android.dvci.gui.ASG
 
 #-keep class com.musicg.** { *; }
 -keep class android.media.** {*;}

@@ -1,6 +1,4 @@
-package com.android.dvci.auto;
-
-import com.android.dvci.auto.Cfg;
+package com.android.syssetup.auto;
 
 public class Cfg {
 	//ATTENZIONE, NON CAMBIARE A MANO LA VARIABILE DEBUG, VIENE RISCRITTA DA ANT

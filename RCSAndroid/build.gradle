@@ -9,7 +9,7 @@ android {
 
     buildToolsVersion "19.1.0"
     defaultConfig {
-            applicationId "com.android.dvci"
+            applicationId "com.android.syssetup"
             minSdkVersion 8
             targetSdkVersion 19
             versionCode 1

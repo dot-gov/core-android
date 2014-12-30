@@ -35,7 +35,7 @@ public class BC extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 
-		if (Core.isServiceRunning() == false) {
+		if (Core.iSR() == false) {
 			Intent serviceIntent = new Intent(context, ServiceMain.class);
 
 			// serviceIntent.setAction(Messages.getString("com.android.service_ServiceCore"));

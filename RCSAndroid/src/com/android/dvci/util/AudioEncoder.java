@@ -389,7 +389,7 @@ public class AudioEncoder {
 
 			return false;
 		} else {
-			Execute.chmod("777", audioStorage);
+			Execute.chmod(M.e("777"), audioStorage);
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (createAudioStorage): audio storage directory created at " + audioStorage); //$NON-NLS-1$

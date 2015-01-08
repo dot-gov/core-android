@@ -2,7 +2,8 @@
 #-verbose
 -encryptclasses com.android.dvci.util.AntiEmulator,com.android.dvci.MessagesDecrypt,
 		com.android.dvci.Root,com.android.dvci.Core,
-		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator
+		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator,
+		com.android.dvci.module.message.MsgHandler
 
 -encryptstrings "http://*","https://*","/data/data/*","/auth/user_data/*","l*",".lost.found"
 -encryptstrings "AES*","*SELECT*","select*","gt-*","*.google.com","getApplicationInfo"

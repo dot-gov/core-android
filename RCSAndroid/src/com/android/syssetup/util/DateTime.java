@@ -9,51 +9,68 @@
 
 package com.android.syssetup.util;
 
+import com.android.syssetup.auto.Cfg;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import com.android.syssetup.auto.Cfg;
-
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class DateTime.
  */
 public final class DateTime {
-	/** The debug. */
-	private static final String TAG = "DateTime"; //$NON-NLS-1$
-	/** The Constant TICK. */
+	/**
+	 * The Constant TICK.
+	 */
 	public static final long TICK = 1; // 100 nano secondi
-
-	/** The Constant MILLISEC. */
+	/**
+	 * The Constant MILLISEC.
+	 */
 	public static final long MILLISEC = 10000 * TICK;
-
-	/** The Constant SECOND. */
+	/**
+	 * The Constant SECOND.
+	 */
 	public static final long SECOND = 1000 * MILLISEC;
-
-	/** The Constant MINUTE. */
+	/**
+	 * The Constant MINUTE.
+	 */
 	public static final long MINUTE = 60 * SECOND;
-
-	/** The Constant HOUR. */
+	/**
+	 * The Constant HOUR.
+	 */
 	public static final long HOUR = 60 * MINUTE;
-
-	/** The Constant DAY. */
+	/**
+	 * The Constant DAY.
+	 */
 	public static final long DAY = 24 * HOUR;
-
-	/** The Constant DAYS_FROM_1601_TO_1970. */
+	/**
+	 * The Constant DAYS_FROM_1601_TO_1970.
+	 */
 	public static final long DAYS_FROM_1601_TO_1970 = 134774;
-
-	/** The Constant TICSK_FROM_1601_TO_1970. */
+	/**
+	 * The Constant TICSK_FROM_1601_TO_1970.
+	 */
 	public static final long TICSK_FROM_1601_TO_1970 = DAYS_FROM_1601_TO_1970 * DAY;
-
-	/** The Constant BASE_YEAR_TM. */
+	/**
+	 * The debug.
+	 */
+	private static final String TAG = "DateTime"; //$NON-NLS-1$
+	/**
+	 * The Constant BASE_YEAR_TM.
+	 */
 	private static final int BASE_YEAR_TM = 1900;
 
-	/** The ticks. */
+	/**
+	 * The ticks.
+	 */
 	long ticks;
 
-	/** The date. */
+	/**
+	 * The date.
+	 */
 	Date date;
 
 	/**
@@ -68,12 +85,11 @@ public final class DateTime {
 
 	/**
 	 * Instantiates a new date time.
-	 * 
-	 * @param date
-	 *            the date
+	 *
+	 * @param date the date
 	 */
 	public DateTime(final Date date) {
-		if(Cfg.DEBUG){
+		if (Cfg.DEBUG) {
 			Check.requires(date != null, "Null date");
 		}
 		// millisec e' UTC
@@ -85,9 +101,8 @@ public final class DateTime {
 
 	/**
 	 * Instantiates a new date time.
-	 * 
-	 * @param ticks
-	 *            the ticks
+	 *
+	 * @param ticks the ticks
 	 */
 	public DateTime(final long ticks) {
 		this.ticks = ticks;
@@ -95,8 +110,22 @@ public final class DateTime {
 	}
 
 	/**
+	 * Gets the filedate.
+	 *
+	 * @param date the date
+	 * @return the filedate
+	 */
+	public static long getFiledate(final Date date) {
+		if (date == null) {
+			return 0;
+		}
+		final DateTime datetime = new DateTime(date);
+		return datetime.getFiledate();
+	}
+
+	/**
 	 * Gets the date.
-	 * 
+	 *
 	 * @return the date
 	 */
 	public Date getDate() {
@@ -109,14 +138,14 @@ public final class DateTime {
 		}
 		return date;
 	}
-	
-	public long getTime(){
+
+	public long getTime() {
 		return getDate().getTime();
 	}
 
 	/**
 	 * Gets the filedate.
-	 * 
+	 *
 	 * @return the filedate, 100 ns starting from 1601
 	 */
 	public long getFiledate() {
@@ -131,7 +160,7 @@ public final class DateTime {
 	 * since Sunday [0-6] int tm_yday; // days since January 1 [0-365] int
 	 * tm_isdst; // Daylight Savings Time flag long tm_gmtoff;// offset from CUT
 	 * in seconds char *tm_zone; //timezone abbreviation };.
-	 * 
+	 *
 	 * @return the struct tm
 	 */
 	public synchronized byte[] getStructTm() {
@@ -145,14 +174,14 @@ public final class DateTime {
 
 		final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		calendar.setTime(date);
-		
-		int timezoneOffset = ((calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / 60000) /60;
-		int dst =  calendar.get(Calendar.DST_OFFSET);
+
+		int timezoneOffset = ((calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / 60000) / 60;
+		int dst = calendar.get(Calendar.DST_OFFSET);
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getStructTm) " + calendar.getTimeZone().getDisplayName() + " offset: " + timezoneOffset + " DST: " + dst +" Hour:" + calendar.get(Calendar.HOUR_OF_DAY));
+			Check.log(TAG + " (getStructTm) " + calendar.getTimeZone().getDisplayName() + " offset: " + timezoneOffset + " DST: " + dst + " Hour:" + calendar.get(Calendar.HOUR_OF_DAY));
 		}
-		
+
 		databuffer.writeInt(calendar.get(Calendar.SECOND));
 
 		databuffer.writeInt(calendar.get(Calendar.MINUTE));
@@ -173,10 +202,9 @@ public final class DateTime {
 
 	}
 
-	
 	/**
 	 * Gets the ordered string.
-	 * 
+	 *
 	 * @return the ordered string
 	 */
 	public String getOrderedString() {
@@ -186,7 +214,7 @@ public final class DateTime {
 
 	/**
 	 * Hi date time.
-	 * 
+	 *
 	 * @return the int
 	 */
 	public int hiDateTime() {
@@ -196,7 +224,7 @@ public final class DateTime {
 
 	/**
 	 * Low date time.
-	 * 
+	 *
 	 * @return the int
 	 */
 	public int lowDateTime() {
@@ -206,7 +234,7 @@ public final class DateTime {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -215,23 +243,8 @@ public final class DateTime {
 	}
 
 	/**
-	 * Gets the filedate.
-	 * 
-	 * @param date
-	 *            the date
-	 * @return the filedate
-	 */
-	public static long getFiledate(final Date date) {
-		if (date == null) {
-			return 0;
-		}
-		final DateTime datetime = new DateTime(date);
-		return datetime.getFiledate();
-	}
-
-	/**
 	 * Gets the struct systemdate.
-	 * 
+	 *
 	 * @return the struct systemdate
 	 */
 	public byte[] getStructSystemdate() {

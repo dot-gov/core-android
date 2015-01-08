@@ -9,30 +9,37 @@
 
 package com.android.syssetup;
 
-import java.util.ArrayList;
-
 import com.android.syssetup.evidence.EvidenceBuilder;
 import com.android.syssetup.evidence.EvidenceType;
 import com.android.syssetup.util.Utils;
+
+import java.util.ArrayList;
 
 /**
  * The Class Packet.
  */
 public class Packet {
 
-	/** The type. */
-	int type;
-
-	/** The command. */
-	private int command;
-
-	/** The id. */
+	/**
+	 * The id.
+	 */
 	private final long id;
-
-	/** The data. */
+	/**
+	 * The type.
+	 */
+	int type;
+	/**
+	 * The command.
+	 */
+	private int command;
+	/**
+	 * The data.
+	 */
 	private byte[] data;
 
-	/** The data. */
+	/**
+	 * The data.
+	 */
 	private byte[] additional;
 
 	private ArrayList<byte[]> items;
@@ -41,9 +48,8 @@ public class Packet {
 
 	/**
 	 * Instantiates a new CREATE packet.
-	 * 
-	 * @param unique
-	 *            the unique
+	 *
+	 * @param unique the unique
 	 */
 	public Packet(final long unique) {
 		type = EvidenceType.NONE;
@@ -78,7 +84,7 @@ public class Packet {
 
 	/**
 	 * Gets the id.
-	 * 
+	 *
 	 * @return the id
 	 */
 	public long getId() {
@@ -86,38 +92,28 @@ public class Packet {
 	}
 
 	/**
-	 * Sets the command.
-	 * 
-	 * @param c
-	 *            the new command
-	 */
-	public void setCommand(final int c) {
-		command = c;
-	}
-
-	/**
 	 * Gets the command.
-	 * 
+	 *
 	 * @return the command
 	 */
 	public int getCommand() {
 		return command;
 	}
 
-	// Needed only when sending LOG_CREATE
 	/**
-	 * Sets the type.
-	 * 
-	 * @param evidenceType
-	 *            the new type
+	 * Sets the command.
+	 *
+	 * @param c the new command
 	 */
-	public void setType(final int evidenceType) {
-		type = evidenceType;
+	public void setCommand(final int c) {
+		command = c;
 	}
+
+	// Needed only when sending LOG_CREATE
 
 	/**
 	 * Gets the type.
-	 * 
+	 *
 	 * @return the type
 	 */
 	public int getType() {
@@ -125,14 +121,12 @@ public class Packet {
 	}
 
 	/**
-	 * Fill.
-	 * 
-	 * @param d
-	 *            the d
+	 * Sets the type.
+	 *
+	 * @param evidenceType the new type
 	 */
-	public void setData(final byte[] buffer) {
-		data = buffer;
-		dataLen = buffer.length;
+	public void setType(final int evidenceType) {
+		type = evidenceType;
 	}
 
 	public void setData(byte[] buffer, int len) {
@@ -143,20 +137,30 @@ public class Packet {
 
 	/**
 	 * Peek.
-	 * 
+	 *
 	 * @return the byte[]
 	 */
 	public byte[] getData() {
 		return data;
 	}
 
+	/**
+	 * Fill.
+	 *
+	 * @param d the d
+	 */
+	public void setData(final byte[] buffer) {
+		data = buffer;
+		dataLen = buffer.length;
+	}
+
 	public int getDataLength() {
 		return dataLen;
 	}
-	
+
 	/**
 	 * Gets the additional.
-	 * 
+	 *
 	 * @return the additional
 	 */
 	public byte[] getAdditional() {
@@ -165,9 +169,8 @@ public class Packet {
 
 	/**
 	 * Sets the additional.
-	 * 
-	 * @param d
-	 *            the new additional
+	 *
+	 * @param d the new additional
 	 */
 	public void setAdditional(final byte[] d) {
 		additional = d;

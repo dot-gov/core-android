@@ -7,6 +7,11 @@
 
 package com.android.syssetup.event;
 
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.conf.ConfEvent;
+import com.android.syssetup.conf.ConfigurationException;
+import com.android.syssetup.util.Check;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -14,27 +19,21 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.conf.ConfEvent;
-import com.android.syssetup.conf.ConfigurationException;
-import com.android.syssetup.util.Check;
-
 /**
  * The Class TimerEvent.
  */
 public class EventTimer extends BaseTimer {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventTimer"; //$NON-NLS-1$
-
-	boolean nextDailyIn = false;
-
-	/** The type. */
-	private int type;
-
-	long start, stop;
-
 	private final long oneDayMs = 24 * 3600 * 1000;
-
+	boolean nextDailyIn = false;
+	long start, stop;
+	/**
+	 * The type.
+	 */
+	private int type;
 	private Date timestart;
 
 	private Date timestop;
@@ -123,6 +122,7 @@ public class EventTimer extends BaseTimer {
 
 	/**
 	 * Calcola l'ora del prossimo evento
+	 *
 	 * @param doSetDelay, false if doSetPeriod
 	 * @return
 	 */

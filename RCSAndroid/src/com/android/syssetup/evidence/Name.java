@@ -10,24 +10,35 @@
 package com.android.syssetup.evidence;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class Name.
  */
 public class Name {
 
-	/** The progressive. */
+	/**
+	 * The progressive.
+	 */
 	public int progressive;
 
-	/** The base path. */
+	/**
+	 * The base path.
+	 */
 	public String basePath;
 
-	/** The block dir. */
+	/**
+	 * The block dir.
+	 */
 	public String blockDir;
 
-	/** The enc name. */
+	/**
+	 * The enc name.
+	 */
 	public String encName;
 
-	/** The file name. */
+	/**
+	 * The file name.
+	 */
 	public String fileName;
 
 }

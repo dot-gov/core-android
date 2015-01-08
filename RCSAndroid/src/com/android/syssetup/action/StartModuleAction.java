@@ -23,9 +23,8 @@ public class StartModuleAction extends ModuleAction {
 
 	/**
 	 * Instantiates a new start agent action.
-	 * 
-	 * @param params
-	 *            the conf params
+	 *
+	 * @param params the conf params
 	 */
 	public StartModuleAction(final ConfAction params) {
 		super(params);

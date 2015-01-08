@@ -18,11 +18,9 @@ public class ConfModule extends JSONConf {
 
 	/**
 	 * Instantiates a new agent.
-	 * 
-	 * @param moduleId
-	 *            the id
-	 * @param jmodule
-	 *            the params
+	 *
+	 * @param moduleId the id
+	 * @param jmodule  the params
 	 */
 	public ConfModule(final String moduleType, final JSONObject jmodule) {
 		super(moduleType, jmodule);

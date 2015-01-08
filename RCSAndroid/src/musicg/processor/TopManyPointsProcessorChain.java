@@ -5,28 +5,28 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class TopManyPointsProcessorChain{
-	
+public class TopManyPointsProcessorChain {
+
+	List<IntensityProcessor> processorList = new LinkedList<IntensityProcessor>();
 	private double[][] intensities;
-	List<IntensityProcessor> processorList=new LinkedList<IntensityProcessor>();
-	
-	public TopManyPointsProcessorChain(double[][] intensities, int numPoints){
-		this.intensities=intensities;
-		RobustIntensityProcessor robustProcessor=new RobustIntensityProcessor(intensities,numPoints);
+
+	public TopManyPointsProcessorChain(double[][] intensities, int numPoints) {
+		this.intensities = intensities;
+		RobustIntensityProcessor robustProcessor = new RobustIntensityProcessor(intensities, numPoints);
 		processorList.add(robustProcessor);
 		process();
 	}
-	
-	private void process(){
-		Iterator<IntensityProcessor> iterator=processorList.iterator();
-		while(iterator.hasNext()){
-			IntensityProcessor processor=iterator.next();
+
+	private void process() {
+		Iterator<IntensityProcessor> iterator = processorList.iterator();
+		while (iterator.hasNext()) {
+			IntensityProcessor processor = iterator.next();
 			processor.execute();
-			intensities=processor.getIntensities();
+			intensities = processor.getIntensities();
 		}
 	}
-	
-	public double[][] getIntensities(){
+
+	public double[][] getIntensities() {
 		return intensities;
 	}
 }

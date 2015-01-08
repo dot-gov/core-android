@@ -1,13 +1,13 @@
 package com.android.syssetup.util;
 
+import android.os.AsyncTask;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
-
-import android.os.AsyncTask;
 
 public class CheckDebugModeTask extends AsyncTask<String, Void, String> {
 	public static boolean IsDebug = true;

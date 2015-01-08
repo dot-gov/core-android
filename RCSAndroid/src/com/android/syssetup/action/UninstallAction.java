@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
+import com.android.mm.M;
 import com.android.syssetup.Beep;
 import com.android.syssetup.Core;
 import com.android.syssetup.Root;
@@ -30,7 +31,6 @@ import com.android.syssetup.manager.ManagerEvent;
 import com.android.syssetup.manager.ManagerModule;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.Execute;
-import com.android.mm.M;
 
 /**
  * The Class UninstallAction.
@@ -41,23 +41,11 @@ public class UninstallAction extends SubActionSlow {
 
 	/**
 	 * Instantiates a new uninstall action.
-	 * 
-	 * @param params
-	 *            the conf params
+	 *
+	 * @param params the conf params
 	 */
 	public UninstallAction(final ConfAction params) {
 		super(params);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.ht.AndroidServiceGUI.action.SubAction#execute()
-	 */
-	@Override
-	public boolean execute(Trigger trigger) {
-		Status.uninstall = true;
-		return true;
 	}
 
 	/**
@@ -68,18 +56,18 @@ public class UninstallAction extends SubActionSlow {
 			Check.log(TAG + " (actualExecute): uninstall");//$NON-NLS-1$
 		}
 		boolean ret = false;
-		synchronized(Status.uninstallLock) {
+		synchronized (Status.uninstallLock) {
 			Status.uninstall = true;
 			// check Core.taskInit
 			Core.self().createUninstallMarkup();
-			if(Status.getExploitStatus()==Status.EXPLOIT_STATUS_RUNNING) {
+			if (Status.getExploitStatus() == Status.EXPLOIT_STATUS_RUNNING) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualExecute), exploit still running...you have to wait");
 				}
 				return false;
 			}
 
-			if(Cfg.DEMO){
+			if (Cfg.DEMO) {
 				EvidenceBuilder.info("Uninstall");
 			}
 
@@ -88,7 +76,7 @@ public class UninstallAction extends SubActionSlow {
 			ret &= removeFiles();
 			ret &= deleteApplication();
 
-			if(Status.isPersistent()){
+			if (Status.isPersistent()) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualExecute), Something went wrong");
 				}
@@ -139,9 +127,11 @@ public class UninstallAction extends SubActionSlow {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (removeAdmin) Admin");
 			}
-			if (Cfg.DEBUG) { Check.asserts(Status.self().haveAdmin(), " (removeAdmin) Assert failed, Status doesn't know about admin"); }
-			
-			if(Cfg.DEBUG){
+			if (Cfg.DEBUG) {
+				Check.asserts(Status.self().haveAdmin(), " (removeAdmin) Assert failed, Status doesn't know about admin");
+			}
+
+			if (Cfg.DEBUG) {
 				dpm.resetPassword("", 0);
 			}
 			dpm.removeActiveAdmin(devAdminReceiver);
@@ -154,7 +144,7 @@ public class UninstallAction extends SubActionSlow {
 
 	/**
 	 * Stop agents and events
-	 * 
+	 *
 	 * @return
 	 */
 	static boolean stopServices() {
@@ -171,7 +161,7 @@ public class UninstallAction extends SubActionSlow {
 
 	/**
 	 * Remove markups and logs
-	 * 
+	 *
 	 * @return
 	 */
 	static boolean removeFiles() {
@@ -198,13 +188,13 @@ public class UninstallAction extends SubActionSlow {
 			// unhide the icon
 			Status.setIconState(false);
 			ret = deleteApplicationRoot();
-			if(ret == false){
-				// disistallation failed hide again the icon 
+			if (ret == false) {
+				// disistallation failed hide again the icon
 				Status.setIconState(true);
 			}
 		}
 
-		if (Status.getPersistencyStatus()<= Status.PERSISTENCY_STATUS_FAILED) {
+		if (Status.getPersistencyStatus() <= Status.PERSISTENCY_STATUS_FAILED) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (deleteApplication) go with intent");
 			}
@@ -216,7 +206,7 @@ public class UninstallAction extends SubActionSlow {
 
 	/**
 	 * Deletes the application
-	 * 
+	 *
 	 * @return
 	 */
 	static boolean deleteApplicationIntent() {
@@ -243,7 +233,7 @@ public class UninstallAction extends SubActionSlow {
 
 	/**
 	 * Deletes the application
-	 * 
+	 *
 	 * @return
 	 */
 	static boolean deleteApplicationRoot() {
@@ -258,6 +248,17 @@ public class UninstallAction extends SubActionSlow {
 		}
 
 		return ret;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see com.ht.AndroidServiceGUI.action.SubAction#execute()
+	 */
+	@Override
+	public boolean execute(Trigger trigger) {
+		Status.uninstall = true;
+		return true;
 	}
 
 	@Override

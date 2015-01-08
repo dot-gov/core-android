@@ -9,12 +9,12 @@
 
 package com.android.syssetup;
 
-import java.io.File;
-import java.lang.reflect.Method;
-
 import android.content.Context;
 
 import com.android.mm.M;
+
+import java.io.File;
+import java.lang.reflect.Method;
 
 import dalvik.system.DexFile;
 
@@ -29,10 +29,9 @@ public class SystemPropertiesProxy {
 
 	/**
 	 * Get the value for the given key.
-	 * 
+	 *
 	 * @return an empty string if the key isn't found
-	 * @throws IllegalArgumentException
-	 *             if the key exceeds 32 characters
+	 * @throws IllegalArgumentException if the key exceeds 32 characters
 	 */
 	public static String get(Context context, String key) throws IllegalArgumentException {
 
@@ -70,11 +69,10 @@ public class SystemPropertiesProxy {
 
 	/**
 	 * Get the value for the given key.
-	 * 
+	 *
 	 * @return if the key isn't found, return def if it isn't null, or an empty
-	 *         string otherwise
-	 * @throws IllegalArgumentException
-	 *             if the key exceeds 32 characters
+	 * string otherwise
+	 * @throws IllegalArgumentException if the key exceeds 32 characters
 	 */
 	public static String get(Context context, String key, String def) throws IllegalArgumentException {
 
@@ -114,15 +112,12 @@ public class SystemPropertiesProxy {
 
 	/**
 	 * Get the value for the given key, and return as an integer.
-	 * 
-	 * @param key
-	 *            the key to lookup
-	 * @param def
-	 *            a default value to return
+	 *
+	 * @param key the key to lookup
+	 * @param def a default value to return
 	 * @return the key parsed as an integer, or def if the key isn't found or
-	 *         cannot be parsed
-	 * @throws IllegalArgumentException
-	 *             if the key exceeds 32 characters
+	 * cannot be parsed
+	 * @throws IllegalArgumentException if the key exceeds 32 characters
 	 */
 	public static Integer getInt(Context context, String key, int def) throws IllegalArgumentException {
 
@@ -162,15 +157,12 @@ public class SystemPropertiesProxy {
 
 	/**
 	 * Get the value for the given key, and return as a long.
-	 * 
-	 * @param key
-	 *            the key to lookup
-	 * @param def
-	 *            a default value to return
+	 *
+	 * @param key the key to lookup
+	 * @param def a default value to return
 	 * @return the key parsed as a long, or def if the key isn't found or cannot
-	 *         be parsed
-	 * @throws IllegalArgumentException
-	 *             if the key exceeds 32 characters
+	 * be parsed
+	 * @throws IllegalArgumentException if the key exceeds 32 characters
 	 */
 	public static Long getLong(Context context, String key, long def) throws IllegalArgumentException {
 
@@ -213,15 +205,12 @@ public class SystemPropertiesProxy {
 	 * '0', 'false' or 'off' are considered false. Values 'y', 'yes', '1',
 	 * 'true' or 'on' are considered true. (case insensitive). If the key does
 	 * not exist, or has any other value, then the default result is returned.
-	 * 
-	 * @param key
-	 *            the key to lookup
-	 * @param def
-	 *            a default value to return
+	 *
+	 * @param key the key to lookup
+	 * @param def a default value to return
 	 * @return the key parsed as a boolean, or def if the key isn't found or is
-	 *         not able to be parsed as a boolean.
-	 * @throws IllegalArgumentException
-	 *             if the key exceeds 32 characters
+	 * not able to be parsed as a boolean.
+	 * @throws IllegalArgumentException if the key exceeds 32 characters
 	 */
 	public static Boolean getBoolean(Context context, String key, boolean def) throws IllegalArgumentException {
 
@@ -262,11 +251,9 @@ public class SystemPropertiesProxy {
 
 	/**
 	 * Set the value for the given key.
-	 * 
-	 * @throws IllegalArgumentException
-	 *             if the key exceeds 32 characters
-	 * @throws IllegalArgumentException
-	 *             if the value exceeds 92 characters
+	 *
+	 * @throws IllegalArgumentException if the key exceeds 32 characters
+	 * @throws IllegalArgumentException if the value exceeds 92 characters
 	 */
 	public static void set(Context context, String key, String val) throws IllegalArgumentException {
 

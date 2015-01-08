@@ -1,24 +1,21 @@
 package com.android.syssetup.event;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
-
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfEvent;
 import com.android.syssetup.conf.ConfigurationException;
 import com.android.syssetup.util.Check;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+
 public class EventDate extends BaseTimer {
 	private static final String TAG = "EventDate";
-
-	private Date dateFrom;
-	private Date dateTo;
-
 	Calendar start;
 	Calendar stop;
-
+	private Date dateFrom;
+	private Date dateTo;
 	private boolean nextDailyIn = false;
 	private boolean needExitOnStop = false;
 

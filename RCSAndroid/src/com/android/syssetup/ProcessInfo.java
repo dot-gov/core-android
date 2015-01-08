@@ -17,16 +17,18 @@ public class ProcessInfo {
 	public ProcessStatus status;
 
 	public ProcessInfo(String currentForeground, ProcessStatus status) {
-		if (Cfg.DEBUG) { Check.asserts(currentForeground != null, " (ProcessInfo) Assert failed, currentForeground = null"); }
+		if (Cfg.DEBUG) {
+			Check.asserts(currentForeground != null, " (ProcessInfo) Assert failed, currentForeground = null");
+		}
 		this.processInfo = currentForeground;
 		this.status = status;
 	}
-	
+
 	@Override
-	public String toString(){
-		if(Cfg.DEBUG){
+	public String toString() {
+		if (Cfg.DEBUG) {
 			return processInfo + " : " + status;
-		}else{
+		} else {
 			return super.toString();
 		}
 	}

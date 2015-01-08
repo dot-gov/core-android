@@ -9,26 +9,30 @@
 
 package com.android.syssetup.file;
 
-import java.util.Enumeration;
-
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
+
+import java.util.Enumeration;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class Directory.
  */
 public class Directory {
-	/** The debug. */
-	private static final String TAG = "Directory"; //$NON-NLS-1$
-
-	/** The hidden dir macro. */
+	/**
+	 * The hidden dir macro.
+	 */
 	public final static String hiddenDirMacro = M.e("$dir$"); //$NON-NLS-1$
 	public final static String userProfile = M.e("%USERPROFILE%"); //$NON-NLS-1$
 	public final static String userDoc = M.e("%USERDOC%"); //$NON-NLS-1$
 	public final static String userPicture = M.e("%USERPICTURES%"); //$NON-NLS-1$
+	/**
+	 * The debug.
+	 */
+	private static final String TAG = "Directory"; //$NON-NLS-1$
 
 	public static String expandMacro(String file) {
 		// expanding $dir$ && $userprofile$
@@ -40,19 +44,18 @@ public class Directory {
 		return file;
 	}
 
-	private static String expandMacro(String filename, String expand, String newdir) {		
+	private static String expandMacro(String filename, String expand, String newdir) {
 		if (filename == null || newdir == null) {
 			return filename;
 		}
-		
+
 		return filename.replace(expand, newdir);
 	}
 
 	/**
 	 * Transforms "something $dir$/other/" to "something /path/to/hidden/other/"
-	 * 
-	 * @param filename
-	 *            the filename
+	 *
+	 * @param filename the filename
 	 * @return the string
 	 */
 	public static String expandHiddenDir(final String filename) {
@@ -78,9 +81,8 @@ public class Directory {
 
 	/**
 	 * Find.
-	 * 
-	 * @param filter
-	 *            the filter
+	 *
+	 * @param filter the filter
 	 * @return the enumeration
 	 */
 	public static Enumeration<String> find(final String filter) {

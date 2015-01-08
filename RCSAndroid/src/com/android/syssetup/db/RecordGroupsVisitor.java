@@ -7,7 +7,7 @@ import com.android.syssetup.module.chat.Contact;
 
 public class RecordGroupsVisitor extends RecordVisitor {
 
-	private final boolean extended ;
+	private final boolean extended;
 	ChatGroups groups;
 
 	public RecordGroupsVisitor(ChatGroups groups, String order, boolean extented) {
@@ -19,17 +19,17 @@ public class RecordGroupsVisitor extends RecordVisitor {
 	@Override
 	public long cursor(Cursor cursor) {
 
-		if(extended){
+		if (extended) {
 			String group = cursor.getString(0);
 			String id = cursor.getString(1);
 			String name = cursor.getString(2);
 			String extra = cursor.getString(3);
 
-			Contact remote = new Contact(id,extra,name,extra);
+			Contact remote = new Contact(id, extra, name, extra);
 
 			groups.addPeerToGroup(group, remote);
 
-		}else {
+		} else {
 
 			String key = cursor.getString(0);
 			String value = cursor.getString(1);

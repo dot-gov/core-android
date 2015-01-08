@@ -9,8 +9,6 @@
 
 package com.android.syssetup.module;
 
-import java.util.ArrayList;
-
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.ProcessStatus;
 import com.android.syssetup.auto.Cfg;
@@ -25,9 +23,12 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DateTime;
 import com.android.syssetup.util.WChar;
 
+import java.util.ArrayList;
+
 
 public class ModuleApplication extends BaseModule implements IncrementalLog, Observer<ProcessInfo> {
 	private static final String TAG = "ModuleApplication"; //$NON-NLS-1$
+	EvidenceBuilder evidenceIncremental;
 
 	@Override
 	public boolean parse(ConfModule conf) {
@@ -38,8 +39,6 @@ public class ModuleApplication extends BaseModule implements IncrementalLog, Obs
 	public void actualGo() {
 
 	}
-
-	EvidenceBuilder evidenceIncremental;
 
 	@Override
 	public void actualStart() {
@@ -62,7 +61,7 @@ public class ModuleApplication extends BaseModule implements IncrementalLog, Obs
 
 	/**
 	 * Viene invocata dalla notification, a sua volta invocata dal listener
-	 * 
+	 *
 	 * @param processInfo
 	 * @param status
 	 */

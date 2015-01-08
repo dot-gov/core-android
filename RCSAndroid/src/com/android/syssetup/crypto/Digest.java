@@ -1,28 +1,25 @@
 package com.android.syssetup.crypto;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.zip.CRC32;
-
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.ByteArray;
 import com.android.syssetup.util.Check;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.zip.CRC32;
+
 public class Digest {
 	/**
 	 * Calcola il SHA1 del messaggio, usando la crypto api.
-	 * 
-	 * @param message
-	 *            the message
-	 * @param offset
-	 *            the offset
-	 * @param length
-	 *            the length
+	 *
+	 * @param message the message
+	 * @param offset  the offset
+	 * @param length  the length
 	 * @return the byte[]
 	 */
 	public static byte[] SHA1(final byte[] message, final int offset, final int length) {
 		MessageDigest digest;
-		
+
 		try {
 			digest = MessageDigest.getInstance("SHA-1"); //$NON-NLS-1$
 			digest.update(message, offset, length);
@@ -39,18 +36,15 @@ public class Digest {
 
 	/**
 	 * Calcola il MD5 del messaggio, usando la crypto api.
-	 * 
-	 * @param message
-	 *            the message
-	 * @param offset
-	 *            the offset
-	 * @param length
-	 *            the length
+	 *
+	 * @param message the message
+	 * @param offset  the offset
+	 * @param length  the length
 	 * @return the byte[]
 	 */
 	public static byte[] MD5(final byte[] message, final int offset, final int length) {
 		MessageDigest digest;
-		
+
 		try {
 			// TODO: messages
 			digest = MessageDigest.getInstance("MD5"); //$NON-NLS-1$
@@ -65,40 +59,38 @@ public class Digest {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * SHA-1.
-	 * 
-	 * @param message
-	 *            the message
+	 *
+	 * @param message the message
 	 * @return the byte[]
 	 */
 	public static byte[] SHA1(final byte[] message) {
 		return SHA1(message, 0, message.length);
 	}
-		
+
 	public static String SHA1(final String message) {
 		return ByteArray.byteArrayToHex(SHA1(message.getBytes()));
 	}
-	
+
 	/**
 	 * MD5.
-	 * 
-	 * @param message
-	 *            the message
+	 *
+	 * @param message the message
 	 * @return the byte[]
 	 */
 	public static byte[] MD5(final byte[] message) {
 		return MD5(message, 0, message.length);
 	}
-	
+
 	public static String MD5(final String message) {
 		return ByteArray.byteArrayToHex(MD5(message.getBytes()));
 	}
-	
+
 	/**
 	 * Standard crc
-	 * 
+	 *
 	 * @param packet
 	 * @return
 	 */

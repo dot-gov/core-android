@@ -1,11 +1,11 @@
 package com.android.syssetup.module.call;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.GenericSqliteHelper;
 import com.android.syssetup.module.chat.ChatSkype;
 import com.android.syssetup.module.chat.ChatViber;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 import java.util.Date;
 
@@ -23,9 +23,9 @@ public class CallInfo {
 	public Date timestamp;
 	public boolean delay;
 	public boolean realRate;
-	private long[] streamId = new long[2];
 	public Date begin;
 	public Date end;
+	private long[] streamId = new long[2];
 
 	public String getCaller() {
 		if (!incoming) {
@@ -93,7 +93,7 @@ public class CallInfo {
 		}
 
 		if (Cfg.DEBUG) {
-			Check.asserts(this.programId!=0, "ProgramId should never be zero");
+			Check.asserts(this.programId != 0, "ProgramId should never be zero");
 			Check.log(TAG + " (update), programId: " + this.programId);
 		}
 
@@ -116,7 +116,7 @@ public class CallInfo {
 			this.delay = false;
 			this.realRate = false;
 
-			if(account == null){
+			if (account == null) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (update) ERROR, cannot read Skype account ");
 					return false;

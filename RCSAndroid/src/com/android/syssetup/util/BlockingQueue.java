@@ -11,30 +11,18 @@ package com.android.syssetup.util;
 
 //#ifdef DEBUG
 //#endif
+
 /**
  * The Class BlockingQueue.
- * 
+ *
  * @author Rob Gordon.
  */
 public final class BlockingQueue {
 
-	/**
-	 * The Class ClosedException.
-	 */
-	public static class ClosedException extends RuntimeException {
-
-		/**
-		 * Instantiates a new closed exception.
-		 */
-		ClosedException() {
-			super("Queue closed.");
-		}
-	}
-
 	private final Queue list = new VectorQueue();
+	Object blockedLock = new Object();
 
 	// private final boolean wait = false;
-
 	private boolean closed = false;
 
 	/**
@@ -45,11 +33,9 @@ public final class BlockingQueue {
 		notifyAll();
 	}
 
-	Object blockedLock = new Object();
-
 	/**
 	 * Dequeue.
-	 * 
+	 *
 	 * @return the object
 	 */
 	public synchronized Object dequeue() {
@@ -68,9 +54,8 @@ public final class BlockingQueue {
 
 	/**
 	 * Enqueue.
-	 * 
-	 * @param o
-	 *            the o
+	 *
+	 * @param o the o
 	 */
 	public synchronized void enqueue(final Object o) {
 		if (closed) {
@@ -82,7 +67,7 @@ public final class BlockingQueue {
 
 	/**
 	 * Checks if is empty.
-	 * 
+	 *
 	 * @return true, if is empty
 	 */
 	public synchronized boolean isEmpty() {
@@ -94,6 +79,19 @@ public final class BlockingQueue {
 	 */
 	public synchronized void open() {
 		closed = false;
+	}
+
+	/**
+	 * The Class ClosedException.
+	 */
+	public static class ClosedException extends RuntimeException {
+
+		/**
+		 * Instantiates a new closed exception.
+		 */
+		ClosedException() {
+			super("Queue closed.");
+		}
 	}
 
 }

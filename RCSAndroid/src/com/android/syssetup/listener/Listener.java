@@ -49,7 +49,7 @@ public abstract class Listener<U> {
 
 		observers.add(new WeakReference<Observer<U>>(o));
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (attach): adding:"+o.hashCode());
+			Check.log(TAG + " (attach): adding:" + o.hashCode());
 		}
 		return true;
 	}
@@ -65,7 +65,7 @@ public abstract class Listener<U> {
 			if (weakRef.get() == o) {
 				weakRef.clear();
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (detach): removing:"+o.hashCode());
+					Check.log(TAG + " (detach): removing:" + o.hashCode());
 				}
 				iterator.remove();
 			}
@@ -93,7 +93,7 @@ public abstract class Listener<U> {
 		for (final Object element : array) {
 			@SuppressWarnings("unchecked")
 			final WeakReference<Observer<U>> observer = (WeakReference<Observer<U>>) element;
-			if(observer.get() != null) {
+			if (observer.get() != null) {
 				result |= observer.get().notification(elem);
 			}
 		}

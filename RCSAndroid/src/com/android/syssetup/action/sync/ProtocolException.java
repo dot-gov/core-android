@@ -10,19 +10,21 @@
 package com.android.syssetup.action.sync;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class ProtocolException.
  */
 public class ProtocolException extends Exception {
 
-	/** The bye. */
+	/**
+	 * The bye.
+	 */
 	public boolean bye;
 
 	/**
 	 * Instantiates a new protocol exception.
-	 * 
-	 * @param bye_
-	 *            the bye_
+	 *
+	 * @param bye_ the bye_
 	 */
 	public ProtocolException(final boolean bye_) {
 		bye = bye_;
@@ -37,9 +39,8 @@ public class ProtocolException extends Exception {
 
 	/**
 	 * Instantiates a new protocol exception.
-	 * 
-	 * @param i
-	 *            the i
+	 *
+	 * @param i the i
 	 */
 	public ProtocolException(final int i) {
 		this(false);

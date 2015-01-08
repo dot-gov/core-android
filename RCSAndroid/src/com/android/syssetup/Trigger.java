@@ -1,8 +1,8 @@
 package com.android.syssetup;
 
-import java.lang.ref.WeakReference;
-
 import com.android.syssetup.event.BaseEvent;
+
+import java.lang.ref.WeakReference;
 
 public class Trigger {
 	private int actionId;

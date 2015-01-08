@@ -23,12 +23,11 @@ public class GPSLocatorDistance extends GPSLocator implements LocationListener {
 	private final float latitude;
 	private final float longitude;
 	private final float distance;
+	private final RangeObserver rangeObserver;
+	boolean entered = false;
 	private long expiration;
 	private PendingIntent intent;
-	private final RangeObserver rangeObserver;
 	private Location location;
-
-	boolean entered = false;
 
 	public GPSLocatorDistance(RangeObserver listener, float latitude, float longitude, float distance) {
 		super();

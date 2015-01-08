@@ -16,44 +16,42 @@
 
 package com.musicg.wave;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-
 import com.musicg.fingerprint.FingerprintManager;
 import com.musicg.fingerprint.FingerprintSimilarity;
 import com.musicg.fingerprint.FingerprintSimilarityComputer;
 import com.musicg.wave.extension.NormalizedSampleAmplitudes;
 import com.musicg.wave.extension.Spectrogram;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+
 /**
  * Read WAVE headers and data from wave input stream
- * 
+ *
  * @author Jacquet Wong
  */
-public class Wave implements Serializable{
+public class Wave implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	private WaveHeader waveHeader;
-	private byte[] data;	// little endian
+	private byte[] data;    // little endian
 	private byte[] fingerprint;
 
 	/**
 	 * Constructor
-	 * 
 	 */
 	public Wave() {
-		this.waveHeader=new WaveHeader();
-		this.data=new byte[0];
+		this.waveHeader = new WaveHeader();
+		this.data = new byte[0];
 	}
 
 	/**
 	 * Constructor
-	 * 
-	 * @param filename
-	 *            Wave file
+	 *
+	 * @param filename Wave file
 	 */
 	public Wave(String filename) {
 		try {
@@ -69,9 +67,8 @@ public class Wave implements Serializable{
 
 	/**
 	 * Constructor
-	 * 
-	 * @param inputStream
-	 *            Wave file input stream
+	 *
+	 * @param inputStream Wave file input stream
 	 */
 	public Wave(InputStream inputStream) {
 		initWaveWithInputStream(inputStream);
@@ -79,17 +76,15 @@ public class Wave implements Serializable{
 
 	/**
 	 * Constructor
-	 * 
-	 * @param WaveHeader
-	 *            waveHeader
-	 * @param byte[]
-	 *            data
+	 *
+	 * @param WaveHeader waveHeader
+	 * @param byte[]     data
 	 */
 	public Wave(WaveHeader waveHeader, byte[] data) {
 		this.waveHeader = waveHeader;
 		this.data = data;
 	}
-	
+
 	private void initWaveWithInputStream(InputStream inputStream) {
 		// reads the first 44 bytes for header
 		waveHeader = new WaveHeader(inputStream);
@@ -110,11 +105,9 @@ public class Wave implements Serializable{
 
 	/**
 	 * Trim the wave data
-	 * 
-	 * @param leftTrimNumberOfSample
-	 *            Number of sample trimmed from beginning
-	 * @param rightTrimNumberOfSample
-	 *            Number of sample trimmed from ending
+	 *
+	 * @param leftTrimNumberOfSample  Number of sample trimmed from beginning
+	 * @param rightTrimNumberOfSample Number of sample trimmed from ending
 	 */
 	public void trim(int leftTrimNumberOfSample, int rightTrimNumberOfSample) {
 
@@ -130,26 +123,24 @@ public class Wave implements Serializable{
 		// update wav info
 		chunkSize -= totalTrimmed;
 		subChunk2Size -= totalTrimmed;
-		
-		if (chunkSize>=0 && subChunk2Size>=0){
+
+		if (chunkSize >= 0 && subChunk2Size >= 0) {
 			waveHeader.setChunkSize(chunkSize);
 			waveHeader.setSubChunk2Size(subChunk2Size);
-	
+
 			byte[] trimmedData = new byte[(int) subChunk2Size];
 			System.arraycopy(data, (int) leftTrimNumberOfSample, trimmedData, 0,
 					(int) subChunk2Size);
 			data = trimmedData;
-		}
-		else{
+		} else {
 			System.err.println("Trim error: Negative length");
 		}
 	}
 
 	/**
 	 * Trim the wave data from beginning
-	 * 
-	 * @param numberOfSample
-	 *            numberOfSample trimmed from beginning
+	 *
+	 * @param numberOfSample numberOfSample trimmed from beginning
 	 */
 	public void leftTrim(int numberOfSample) {
 		trim(numberOfSample, 0);
@@ -157,9 +148,8 @@ public class Wave implements Serializable{
 
 	/**
 	 * Trim the wave data from ending
-	 * 
-	 * @param numberOfSample
-	 *            numberOfSample trimmed from ending
+	 *
+	 * @param numberOfSample numberOfSample trimmed from ending
 	 */
 	public void rightTrim(int numberOfSample) {
 		trim(0, numberOfSample);
@@ -167,11 +157,9 @@ public class Wave implements Serializable{
 
 	/**
 	 * Trim the wave data
-	 * 
-	 * @param leftTrimSecond
-	 *            Seconds trimmed from beginning
-	 * @param rightTrimSecond
-	 *            Seconds trimmed from ending
+	 *
+	 * @param leftTrimSecond  Seconds trimmed from beginning
+	 * @param rightTrimSecond Seconds trimmed from ending
 	 */
 	public void trim(double leftTrimSecond, double rightTrimSecond) {
 
@@ -189,9 +177,8 @@ public class Wave implements Serializable{
 
 	/**
 	 * Trim the wave data from beginning
-	 * 
-	 * @param second
-	 *            Seconds trimmed from beginning
+	 *
+	 * @param second Seconds trimmed from beginning
 	 */
 	public void leftTrim(double second) {
 		trim(second, 0);
@@ -199,9 +186,8 @@ public class Wave implements Serializable{
 
 	/**
 	 * Trim the wave data from ending
-	 * 
-	 * @param second
-	 *            Seconds trimmed from ending
+	 *
+	 * @param second Seconds trimmed from ending
 	 */
 	public void rightTrim(double second) {
 		trim(0, second);
@@ -209,37 +195,36 @@ public class Wave implements Serializable{
 
 	/**
 	 * Get the wave header
-	 * 
+	 *
 	 * @return waveHeader
 	 */
 	public WaveHeader getWaveHeader() {
 		return waveHeader;
 	}
-	
+
 	/**
 	 * Get the wave spectrogram
-	 * 
+	 *
 	 * @return spectrogram
 	 */
-	public Spectrogram getSpectrogram(){
+	public Spectrogram getSpectrogram() {
 		return new Spectrogram(this);
 	}
-	
+
 	/**
 	 * Get the wave spectrogram
-	 * 
-	 * @param fftSampleSize	number of sample in fft, the value needed to be a number to power of 2
-	 * @param overlapFactor	1/overlapFactor overlapping, e.g. 1/4=25% overlapping, 0 for no overlapping
-	 * 
+	 *
+	 * @param fftSampleSize number of sample in fft, the value needed to be a number to power of 2
+	 * @param overlapFactor 1/overlapFactor overlapping, e.g. 1/4=25% overlapping, 0 for no overlapping
 	 * @return spectrogram
 	 */
 	public Spectrogram getSpectrogram(int fftSampleSize, int overlapFactor) {
-		return new Spectrogram(this,fftSampleSize,overlapFactor);
+		return new Spectrogram(this, fftSampleSize, overlapFactor);
 	}
-	
+
 	/**
 	 * Get the wave data in bytes
-	 * 
+	 *
 	 * @return wave data
 	 */
 	public byte[] getBytes() {
@@ -248,16 +233,16 @@ public class Wave implements Serializable{
 
 	/**
 	 * Data byte size of the wave excluding header size
-	 * 
+	 *
 	 * @return byte size of the wave
 	 */
 	public int size() {
 		return data.length;
 	}
-	
+
 	/**
 	 * Length of the wave in second
-	 * 
+	 *
 	 * @return length in second
 	 */
 	public float length() {
@@ -267,7 +252,7 @@ public class Wave implements Serializable{
 
 	/**
 	 * Timestamp of the wave length
-	 * 
+	 *
 	 * @return timestamp
 	 */
 	public String timestamp() {
@@ -290,14 +275,14 @@ public class Wave implements Serializable{
 
 	/**
 	 * Get the amplitudes of the wave samples (depends on the header)
-	 * 
+	 *
 	 * @return amplitudes array (signed 16-bit)
 	 */
-	public short[] getSampleAmplitudes(){
+	public short[] getSampleAmplitudes() {
 		int bytePerSample = waveHeader.getBitsPerSample() / 8;
 		int numSamples = data.length / bytePerSample;
 		short[] amplitudes = new short[numSamples];
-		
+
 		int pointer = 0;
 		for (int i = 0; i < numSamples; i++) {
 			short amplitude = 0;
@@ -307,32 +292,32 @@ public class Wave implements Serializable{
 			}
 			amplitudes[i] = amplitude;
 		}
-		
+
 		return amplitudes;
 	}
-	
-	public String toString(){
-		StringBuffer sb=new StringBuffer(waveHeader.toString());
+
+	public String toString() {
+		StringBuffer sb = new StringBuffer(waveHeader.toString());
 		sb.append("\n");
 		sb.append("length: " + timestamp());
 		return sb.toString();
 	}
 
 	public double[] getNormalizedAmplitudes() {
-		NormalizedSampleAmplitudes amplitudes=new NormalizedSampleAmplitudes(this);
+		NormalizedSampleAmplitudes amplitudes = new NormalizedSampleAmplitudes(this);
 		return amplitudes.getNormalizedAmplitudes();
 	}
-	
-	public byte[] getFingerprint(){		
-		if (fingerprint==null){
-			FingerprintManager fingerprintManager=new FingerprintManager();
-			fingerprint=fingerprintManager.extractFingerprint(this);
+
+	public byte[] getFingerprint() {
+		if (fingerprint == null) {
+			FingerprintManager fingerprintManager = new FingerprintManager();
+			fingerprint = fingerprintManager.extractFingerprint(this);
 		}
 		return fingerprint;
 	}
-	
-	public FingerprintSimilarity getFingerprintSimilarity(Wave wave){		
-		FingerprintSimilarityComputer fingerprintSimilarityComputer=new FingerprintSimilarityComputer(this.getFingerprint(),wave.getFingerprint());
+
+	public FingerprintSimilarity getFingerprintSimilarity(Wave wave) {
+		FingerprintSimilarityComputer fingerprintSimilarityComputer = new FingerprintSimilarityComputer(this.getFingerprint(), wave.getFingerprint());
 		return fingerprintSimilarityComputer.getFingerprintsSimilarity();
 	}
 }

@@ -42,6 +42,10 @@ public abstract class GPSLocator extends Thread {
 		lm = (LocationManager) Status.getAppContext().getSystemService(Context.LOCATION_SERVICE);
 	}
 
+	public GPSLocator(LocationListener listener) {
+		setListener(listener);
+	}
+
 	public abstract void initLocationUpdates();
 
 	@Override
@@ -51,10 +55,6 @@ public abstract class GPSLocator extends Thread {
 
 		myLooper = Looper.myLooper();
 		Looper.loop();
-	}
-
-	public GPSLocator(LocationListener listener) {
-		setListener(listener);
 	}
 
 	protected void setListener(LocationListener listener) {

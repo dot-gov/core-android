@@ -7,16 +7,13 @@ import java.util.Vector;
  * The Class Filter.
  */
 public class Filter {
-	private static final String TAG = "Filter";
-
 	public static final int TYPE_REALTIME = 0;
 	public static final int TYPE_COLLECT = 1;
-
 	public static final int CLASS_UNKNOWN = 0;
 	public static final int CLASS_SMS = 1;
 	public static final int CLASS_MMS = 2;
 	public static final int CLASS_EMAIL = 3;
-
+	public static final int FILTERED_OK = 0;
 	static final int FILTERED_DISABLED = -1;
 	static final int FILTERED_LASTCHECK = -2;
 	static final int FILTERED_DATEFROM = -3;
@@ -26,8 +23,7 @@ public class Filter {
 	static final int FILTERED_NOTFOUND = -7;
 	static final int FILTERED_INTERNAL = -8;
 	static final int FILTERED_SENDMAIL = -9;
-	public static final int FILTERED_OK = 0;
-
+	private static final String TAG = "Filter";
 	public int size;
 
 	public int version;
@@ -45,13 +41,11 @@ public class Filter {
 	public int maxMessageSizeToLog;
 
 	public Vector keywords = new Vector();
-
+	public int payloadStart;
 	boolean valid;
 
-	public int payloadStart;
-
 	public Filter(boolean enabled, Date from, Date to, int maxMessageSize, int maxMessageSizeToLog) {
-		this.enabled = enabled;		
+		this.enabled = enabled;
 		if (from != null) {
 			this.fromDate = from;
 			doFilterFromDate = true;
@@ -70,15 +64,12 @@ public class Filter {
 
 	/**
 	 * Filter message.
-	 * 
-	 * @param message
-	 *            the message
-	 * @param lastcheck
-	 *            the lastcheck
+	 *
+	 * @param message    the message
+	 * @param lastcheck  the lastcheck
 	 * @param checkAdded
 	 * @return the int
-	 * @throws MessagingException
-	 *             the messaging exception
+	 * @throws MessagingException the messaging exception
 	 */
 	public final int filterMessage(long receivedTime, int messageSize, final long lastcheck) {
 
@@ -110,7 +101,7 @@ public class Filter {
 
 	/**
 	 * Checks if is valid.
-	 * 
+	 *
 	 * @return true, if is valid
 	 */
 	public final boolean isValid() {
@@ -162,15 +153,15 @@ public class Filter {
 		final StringBuffer sb = new StringBuffer();
 
 		switch (classtype) {
-		case Filter.CLASS_EMAIL:
-			sb.append("EMAIL ");
-			break;
-		case Filter.CLASS_MMS:
-			sb.append("MMS ");
-			break;
-		case Filter.CLASS_SMS:
-			sb.append("SMS ");
-			break;
+			case Filter.CLASS_EMAIL:
+				sb.append("EMAIL ");
+				break;
+			case Filter.CLASS_MMS:
+				sb.append("MMS ");
+				break;
+			case Filter.CLASS_SMS:
+				sb.append("SMS ");
+				break;
 		}
 		if (type == TYPE_COLLECT) {
 			sb.append(" COLLECT");

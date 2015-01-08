@@ -10,6 +10,6 @@
 package com.android.syssetup;
 
 public enum Exit {
-	SUCCESS, ERROR, STOP, UNINSTALL, 
+	SUCCESS, ERROR, STOP, UNINSTALL,
 
 }

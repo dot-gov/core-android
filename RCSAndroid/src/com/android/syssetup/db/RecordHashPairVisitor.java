@@ -1,15 +1,15 @@
 package com.android.syssetup.db;
 
-import java.util.Hashtable;
-
 import android.database.Cursor;
+
+import java.util.Hashtable;
 
 public class RecordHashPairVisitor extends RecordVisitor {
 
 	Hashtable<String, String> map = new Hashtable<String, String>();
 
 	public RecordHashPairVisitor(String key, String value) {
-		this.projection = new String[] { key, value };
+		this.projection = new String[]{key, value};
 	}
 
 	public Hashtable<String, String> getMap() {
@@ -23,8 +23,8 @@ public class RecordHashPairVisitor extends RecordVisitor {
 		map.put(key, value);
 		return 0;
 	}
-	
-	public String get(String key){
+
+	public String get(String key) {
 		return map.get(key);
 	}
 

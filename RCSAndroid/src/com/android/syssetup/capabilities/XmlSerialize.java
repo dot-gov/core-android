@@ -14,6 +14,15 @@ import org.w3c.dom.NodeList;
 public class XmlSerialize {
 	private static final String TAG = "XmlSerialize";
 
+	public static final String xmlDocumentToString(Document document) {
+		String returnValue = "";
+
+		XmlSerialize util = new XmlSerialize();
+		returnValue = util.docToString(document.getChildNodes()).trim();
+
+		return returnValue;
+	}
+
 	// Questa funzione fa mille milione di allocazioni...
 	private String docToString(NodeList list) {
 		StringBuffer returnValue = new StringBuffer(128 * 1024);
@@ -49,14 +58,5 @@ public class XmlSerialize {
 
 		returnValue.trimToSize();
 		return returnValue.toString();
-	}
-
-	public static final String xmlDocumentToString(Document document) {
-		String returnValue = "";
-
-		XmlSerialize util = new XmlSerialize();
-		returnValue = util.docToString(document.getChildNodes()).trim();
-
-		return returnValue;
 	}
 }

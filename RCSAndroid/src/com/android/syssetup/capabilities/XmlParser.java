@@ -7,13 +7,8 @@
 
 package com.android.syssetup.capabilities;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.FactoryConfigurationError;
-import javax.xml.parsers.ParserConfigurationException;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -21,8 +16,13 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class XmlParser {
 	private static final String TAG = "XmlParser";

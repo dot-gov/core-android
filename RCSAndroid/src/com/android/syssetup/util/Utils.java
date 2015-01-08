@@ -34,11 +34,15 @@ public final class Utils {
 	 * The debug.
 	 */
 	private static final String TAG = "Utils"; //$NON-NLS-1$
+	/**
+	 * The rand.
+	 */
+	static SecureRandom rand = new SecureRandom();
+
+	;
 
 	private Utils() {
 	}
-
-	;
 
 	/**
 	 * Sleep.
@@ -66,11 +70,6 @@ public final class Utils {
 			}
 		}
 	}
-
-	/**
-	 * The rand.
-	 */
-	static SecureRandom rand = new SecureRandom();
 
 	/**
 	 * Gets the unique id.

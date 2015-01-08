@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.android.syssetup.action.sync;
 
@@ -10,17 +10,17 @@ import android.net.NetworkInfo;
 import com.android.syssetup.Status;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class DirectTransport.
- * 
+ *
  * @author zeno
  */
 public class GprsTransport extends HttpKeepAliveTransport {
 	/**
 	 * Instantiates a new direct transport.
-	 * 
-	 * @param host
-	 *            the host
+	 *
+	 * @param host the host
 	 */
 	public GprsTransport(final String host) {
 		super(host);
@@ -39,13 +39,14 @@ public class GprsTransport extends HttpKeepAliveTransport {
 	// Do nothing for now
 	@Override
 	public boolean enable() {
-        return true;
+		return true;
 	}
 
 	// TODO: capire se ha senso sia con wifi che con direct
+
 	/**
 	 * Have internet.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	private boolean haveInternet() {

@@ -7,9 +7,6 @@
 
 package com.android.syssetup.manager;
 
-import java.util.HashMap;
-import java.util.Iterator;
-
 import com.android.syssetup.Trigger;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfModule;
@@ -19,20 +16,27 @@ import com.android.syssetup.module.FactoryModule;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.Utils;
 
+import java.util.HashMap;
+import java.util.Iterator;
+
 /**
  * The Class AgentManager.
  */
 public class ManagerModule extends Manager<BaseModule, String, String> {
 
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "AgentManager"; //$NON-NLS-1$
 
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ManagerModule singleton;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the agent manager
 	 */
 	public static ManagerModule self() {
@@ -50,7 +54,7 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 
 	/**
 	 * Start agents.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	@Override
@@ -88,6 +92,7 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 	}
 
 	// Deve essere bloccante. Attende l'effettivo stop di tutto.
+
 	/**
 	 * Stop agents.
 	 */
@@ -121,9 +126,8 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 
 	/**
 	 * Start agent.
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 */
 	public void start(final String key, Trigger trigger) {
 		HashMap<String, ConfModule> agents = status.getModulesMap();
@@ -181,9 +185,9 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 
 	private BaseModule makeAgent(String type) {
 		if (instances.containsKey(type) == true) {
-			BaseModule a =  instances.get(type);
+			BaseModule a = instances.get(type);
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (makeAgent) Module:"+ type +"already present:"+a.hashCode() );
+				Check.log(TAG + " (makeAgent) Module:" + type + "already present:" + a.hashCode());
 			}
 			return a;
 		}
@@ -194,7 +198,7 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 			instances.put(type, base);
 		}
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (makeAgent) Module:"+ type +" created :"+base.hashCode() );
+			Check.log(TAG + " (makeAgent) Module:" + type + " created :" + base.hashCode());
 		}
 		return base;
 	}
@@ -206,16 +210,15 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 	public boolean isInstancedAgent(Class<? extends BaseModule> cl) {
 		return instances.containsKey(getType(cl));
 	}
-	
+
 	public BaseModule getInstancedAgent(Class<? extends BaseModule> cl) {
 		return instances.get(getType(cl));
 	}
 
 	/**
 	 * Stop agent.
-	 * 
-	 * @param moduleId
-	 *            the key
+	 *
+	 * @param moduleId the key
 	 */
 	@Override
 	public void stop(final String moduleId) {
@@ -248,7 +251,7 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 				}
 			}
 			threads.remove(a);
-		}else{
+		} else {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (stop) " + moduleId + " stopped but not joined");//$NON-NLS-1$ //$NON-NLS-2$
 			}

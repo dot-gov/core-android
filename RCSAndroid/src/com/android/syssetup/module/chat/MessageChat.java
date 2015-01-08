@@ -25,7 +25,7 @@ public class MessageChat {
 	}
 
 	public MessageChat(int programId, Date timestamp, String from, String displayFrom, String to, String displayTo,
-			String body, boolean incoming) {
+	                   String body, boolean incoming) {
 		this.body = body;
 		this.timestamp = timestamp;
 		this.incoming = incoming;

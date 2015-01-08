@@ -25,11 +25,9 @@ public final class Check {
 
 	/**
 	 * Asserts, used to verify the truth of an expression
-	 * 
-	 * @param b
-	 *            the b
-	 * @param string
-	 *            the string
+	 *
+	 * @param b      the b
+	 * @param string the string
 	 */
 	public static void asserts(final boolean b, final String string) {
 		if (enabled && b != true) {
@@ -41,11 +39,9 @@ public final class Check {
 
 	/**
 	 * Requires. Used to Check.prerequisites of a method. //$NON-NLS-1$
-	 * 
-	 * @param b
-	 *            the b
-	 * @param string
-	 *            the string
+	 *
+	 * @param b      the b
+	 * @param string the string
 	 */
 	public static void requires(final boolean b, final String string) {
 		if (enabled && b != true) {
@@ -57,11 +53,9 @@ public final class Check {
 
 	/**
 	 * Ensures. Check. to be done at the end of a method. //$NON-NLS-1$
-	 * 
-	 * @param b
-	 *            the b
-	 * @param string
-	 *            the string
+	 *
+	 * @param b      the b
+	 * @param string the string
 	 */
 	public static void ensures(final boolean b, final String string) {
 		if (enabled && b != true) {
@@ -82,9 +76,9 @@ public final class Check {
 			if (Cfg.FILE) {
 				final AutoFile file = new AutoFile(Path.getCurLogfile());
 				final DateTime date = new DateTime();
-				try{
+				try {
 					file.append(date.getOrderedString() + " - " + string + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
-				}catch(Exception ex){
+				} catch (Exception ex) {
 					Cfg.FILE = false;
 				}
 
@@ -108,6 +102,6 @@ public final class Check {
 			ex.printStackTrace();
 			log(string + ex.toString(), true); //$NON-NLS-1$
 		}
-		
+
 	}
 }

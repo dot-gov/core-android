@@ -15,8 +15,9 @@
  */
 
 package com.musicg.experiment.math.cluster;
+
 public class Segment {
-	
+
 	private int startPosition;
 	private int size;
 	private double mean;

@@ -1,9 +1,9 @@
 package com.android.syssetup.module.email;
 
-import java.util.Date;
-
-import com.android.syssetup.util.Utils;
 import com.android.mm.M;
+import com.android.syssetup.util.Utils;
+
+import java.util.Date;
 
 public class Email {
 
@@ -17,7 +17,7 @@ public class Email {
 	private boolean incoming;
 
 	public Email(boolean incoming, Date timestamp, String fromAddress, String toAddresses, String ccAddresses,
-			String body, String snippet, String subject) {
+	             String body, String snippet, String subject) {
 		this.timestamp = timestamp;
 		this.fromAddress = fromAddress;
 		this.toAddresses = toAddresses;
@@ -71,7 +71,7 @@ public class Email {
 			mailRaw.append(M.e("Content-Transfer-Encoding: 8bit") + "\r\n");
 			mailRaw.append(M.e("Content-type: text/html; charset") + "\r\n\r\n");
 			// mailRaw.append(htmlMessageContentType);
-			
+
 			if (maxMessageSize > 0 && body.length() > maxMessageSize) {
 				body = body.substring(0, maxMessageSize);
 			}

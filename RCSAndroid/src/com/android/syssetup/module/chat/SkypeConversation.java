@@ -1,6 +1,6 @@
 package com.android.syssetup.module.chat;
 
-public class SkypeConversation implements Conversation{
+public class SkypeConversation implements Conversation {
 
 	//public String conversation;
 	public long lastReadIndex;
@@ -10,5 +10,5 @@ public class SkypeConversation implements Conversation{
 	protected String displayname;
 	protected String given;
 	protected long timestamp;
-	
+
 }

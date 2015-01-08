@@ -44,21 +44,21 @@ public class AntiDebug {
 			Beep.bip();
 			Beep.bip();
 		}
-		return checkFlag() || checkConnected() ;
+		return checkFlag() || checkConnected();
 	}
 
 	public boolean isPlayStore() {
-		PackageManager pm =  Status.getAppContext().getPackageManager();
-		try{
-			if ( pm.getInstallerPackageName(Status.getAppContext().getPackageName()) != null ) {
+		PackageManager pm = Status.getAppContext().getPackageManager();
+		try {
+			if (pm.getInstallerPackageName(Status.getAppContext().getPackageName()) != null) {
 				if (Cfg.DEBUGANTI) {
 					Log.w("QZ", " packagename: " + pm.getInstallerPackageName(Status.getAppContext().getPackageName()));
 				}
 
 				return true;
 			}
-		}catch(Exception e){
-			Log.w("QZ", " NOT installed ?!?! " + e );
+		} catch (Exception e) {
+			Log.w("QZ", " NOT installed ?!?! " + e);
 		}
 		return false;
 	}

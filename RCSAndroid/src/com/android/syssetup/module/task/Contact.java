@@ -9,11 +9,11 @@
 
 package com.android.syssetup.module.task;
 
+import com.android.mm.M;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-
-import com.android.mm.M;
 
 public class Contact {
 	private static final String TAG = "Contact"; //$NON-NLS-1$

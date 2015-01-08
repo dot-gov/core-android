@@ -9,29 +9,24 @@
 //
 package com.android.syssetup;
 
-import java.util.Date;
-
 import com.android.mm.M;
 
+import java.util.Date;
+
 public class Call {
-	private static final String TAG = "Call"; //$NON-NLS-1$
-
-	private final String number;
-	private boolean incoming, ongoing;
-	private boolean complete;
-	private final Date timeBegin;
-	private Date timeEnd;
-
-	private boolean offhook;
-
-	private String newState;
-	private String oldState;
-
-
 	public final static boolean INCOMING = true;
 	public final static boolean OUTGOING = false;
 	public final static boolean START = true;
 	public final static boolean END = false;
+	private static final String TAG = "Call"; //$NON-NLS-1$
+	private final String number;
+	private final Date timeBegin;
+	private boolean incoming, ongoing;
+	private boolean complete;
+	private Date timeEnd;
+	private boolean offhook;
+	private String newState;
+	private String oldState;
 
 	public Call(String number, boolean incoming) {
 		this.number = number;
@@ -44,18 +39,18 @@ public class Call {
 	public String getNumber() {
 		return number;
 	}
-	
+
 	public String getFrom() {
 		if (incoming) {
-			return getNumber();			
+			return getNumber();
 		} else {
 			return Device.self().getPhoneNumber();
 		}
 	}
-	
+
 	public String getTo() {
 		if (!incoming) {
-			return getNumber();			
+			return getNumber();
 		} else {
 			return Device.self().getPhoneNumber();
 		}
@@ -67,6 +62,10 @@ public class Call {
 
 	public boolean isOngoing() {
 		return ongoing;
+	}
+
+	public void setOngoing(boolean ongoing) {
+		this.ongoing = ongoing;
 	}
 
 	public Date getTimeBegin() {
@@ -89,14 +88,10 @@ public class Call {
 		}
 	}
 
-	public void setOngoing(boolean ongoing) {
-		this.ongoing = ongoing;
-	}
-
 	/**
 	 * Get the call duration in seconds elapsed between lastCall (older) and
 	 * this call,
-	 * 
+	 *
 	 * @param callInAction
 	 * @return
 	 */

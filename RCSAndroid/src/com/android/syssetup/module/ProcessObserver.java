@@ -19,10 +19,10 @@ public class ProcessObserver implements Observer<ProcessInfo> {
 
 	@Override
 	public int notification(ProcessInfo b) {
-		if(module != null){
+		if (module != null) {
 			module.notifyProcess(b);
 		}
-		if(event != null){
+		if (event != null) {
 			event.notifyProcess(b);
 		}
 		return 0;

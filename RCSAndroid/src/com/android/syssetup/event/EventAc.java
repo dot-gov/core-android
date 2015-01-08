@@ -17,7 +17,9 @@ import com.android.syssetup.listener.ListenerAc;
 import com.android.syssetup.util.Check;
 
 public class EventAc extends BaseEvent implements Observer<Ac> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventAc"; //$NON-NLS-1$
 
 	private int actionOnExit, actionOnEnter;

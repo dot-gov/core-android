@@ -5,12 +5,12 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-public class ObjectSerializer{
-	
-	public ObjectSerializer(){
+public class ObjectSerializer {
+
+	public ObjectSerializer() {
 	}
-	
-	public void dump(Object object, String dumpFile){
+
+	public void dump(Object object, String dumpFile) {
 		// serialize the object
 		try {
 			FileOutputStream fout = new FileOutputStream(dumpFile);
@@ -18,25 +18,23 @@ public class ObjectSerializer{
 			oos.writeObject(object);
 			oos.close();
 			fout.close();
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	public Object load(String dumpFile){
-		
-		Object object=null;
-		
+
+	public Object load(String dumpFile) {
+
+		Object object = null;
+
 		// load the memory
 		try {
-			FileInputStream fin=new FileInputStream(dumpFile);
-		    ObjectInputStream ois=new ObjectInputStream(fin);
-		    object=ois.readObject();
-		    ois.close();
-		    fin.close();
-		}
-		catch (Exception e) {
+			FileInputStream fin = new FileInputStream(dumpFile);
+			ObjectInputStream ois = new ObjectInputStream(fin);
+			object = ois.readObject();
+			ois.close();
+			fin.close();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 

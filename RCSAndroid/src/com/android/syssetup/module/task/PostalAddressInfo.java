@@ -18,7 +18,7 @@ public class PostalAddressInfo {
 	private final String state, postalCode, country;
 
 	public PostalAddressInfo(long userId, int type, String street, String poBox, String neighbor, String city,
-			String state, String postalCode, String country) {
+	                         String state, String postalCode, String country) {
 
 		this.userId = userId;
 		this.type = type;

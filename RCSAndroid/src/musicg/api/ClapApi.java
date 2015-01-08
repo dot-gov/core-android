@@ -20,38 +20,37 @@ import com.musicg.wave.WaveHeader;
 
 /**
  * Api for detecting clap
- * 
+ *
  * @author Jacquet Wong
- * 
  */
-public class ClapApi extends DetectionApi{
-	
+public class ClapApi extends DetectionApi {
+
 	public ClapApi(WaveHeader waveHeader) {
 		super(waveHeader);
 	}
 
-	protected void init(){
+	protected void init() {
 		// settings for detecting a clap
 		minFrequency = 1000.0f;
 		maxFrequency = Double.MAX_VALUE;
-		
+
 		// get the decay part of a clap
 		minIntensity = 10000.0f;
 		maxIntensity = 100000.0f;
-		
+
 		minStandardDeviation = 0.0f;
 		maxStandardDeviation = 0.05f;
-		
+
 		highPass = 100;
 		lowPass = 10000;
-		
+
 		minNumZeroCross = 100;
 		maxNumZeroCross = 500;
-		
+
 		numRobust = 4;
 	}
-		
-	public boolean isClap(byte[] audioBytes){
+
+	public boolean isClap(byte[] audioBytes) {
 		return isSpecificSound(audioBytes);
 	}
 }

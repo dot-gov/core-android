@@ -29,5 +29,4 @@ public class ConfAction extends JSONConf {
 	}
 
 
-
 }

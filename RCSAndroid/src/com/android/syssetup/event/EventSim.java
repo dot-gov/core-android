@@ -9,8 +9,6 @@
 
 package com.android.syssetup.event;
 
-import java.io.IOException;
-
 import com.android.syssetup.Device;
 import com.android.syssetup.Sim;
 import com.android.syssetup.auto.Cfg;
@@ -20,8 +18,12 @@ import com.android.syssetup.interfaces.Observer;
 import com.android.syssetup.listener.ListenerSim;
 import com.android.syssetup.util.Check;
 
+import java.io.IOException;
+
 public class EventSim extends BaseEvent implements Observer<Sim> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventSim"; //$NON-NLS-1$
 
 	private int actionOnEnter;

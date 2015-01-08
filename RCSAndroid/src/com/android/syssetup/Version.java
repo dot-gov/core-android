@@ -16,7 +16,9 @@ import com.android.syssetup.auto.Cfg;
  */
 public class Version {
 
-	/** The Constant VERSION. */
+	/**
+	 * The Constant VERSION.
+	 */
 	// public static final int VERSION = 2011061301; // 7.3.0
 	// public static final int VERSION = 2011061302; // 7.3.1
 	// public static final int VERSION = 2011112801; // 7.5
@@ -25,8 +27,9 @@ public class Version {
 	// public static final int VERSION = 2012013101; // 7.6.0
 	// public static final int VERSION = 2012013102; // 7.6.1
 	//public static final int VERSION = 2012041601; // 8.0 alleged
-	
+
 	public static final int VERSION = Cfg.VERSION;
+
 	/**
 	 * Instantiates a new version.
 	 */

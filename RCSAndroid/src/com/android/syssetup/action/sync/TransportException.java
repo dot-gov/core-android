@@ -13,19 +13,21 @@ import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class TransportException.
  */
 public class TransportException extends Exception {
 
-	/** The debug. */
+	/**
+	 * The debug.
+	 */
 	private static final String TAG = "TransportEx"; //$NON-NLS-1$
 
 	/**
 	 * Instantiates a new transport exception.
-	 * 
-	 * @param i
-	 *            the i
+	 *
+	 * @param i the i
 	 */
 	public TransportException(final int i) {
 		if (Cfg.DEBUG) {

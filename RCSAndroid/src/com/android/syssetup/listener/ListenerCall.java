@@ -12,17 +12,19 @@ package com.android.syssetup.listener;
 import com.android.syssetup.Call;
 
 public class ListenerCall extends Listener<Call> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerCall"; //$NON-NLS-1$
-
-	private BC callReceiver;
-
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ListenerCall singleton;
+	private BC callReceiver;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerCall self() {

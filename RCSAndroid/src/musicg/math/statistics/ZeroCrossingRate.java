@@ -18,46 +18,45 @@ package com.musicg.math.statistics;
 
 /**
  * Evaluate the zero crossing rate of a signal
- * 
- * @author Jacquet Wong
  *
+ * @author Jacquet Wong
  */
-public class ZeroCrossingRate{
-	
+public class ZeroCrossingRate {
+
 	private short[] signals;
 	private double lengthInSecond;
-	
+
 	/**
 	 * Constructor
-	 * 
-	 * @param signals	input signal array
-	 * @param lengthInSecond	length of the signal (in second)
+	 *
+	 * @param signals        input signal array
+	 * @param lengthInSecond length of the signal (in second)
 	 */
-	public ZeroCrossingRate(short[] signals, double lengthInSecond){
-		setSignals(signals,1);
+	public ZeroCrossingRate(short[] signals, double lengthInSecond) {
+		setSignals(signals, 1);
 	}
-	
+
 	/**
 	 * set the signals
-	 * 
-	 * @param signals	input signal array
-	 * @param lengthInSecond	length of the signal (in second)
+	 *
+	 * @param signals        input signal array
+	 * @param lengthInSecond length of the signal (in second)
 	 */
-	public void setSignals(short[] signals, double lengthInSecond){		
-		this.signals=signals;
-		this.lengthInSecond=lengthInSecond;
+	public void setSignals(short[] signals, double lengthInSecond) {
+		this.signals = signals;
+		this.lengthInSecond = lengthInSecond;
 	}
-	
-	public double evaluate(){
-		int numZC=0;
-		int size=signals.length;
-		
-		for (int i=0; i<size-1; i++){
-			if((signals[i]>=0 && signals[i+1]<0) || (signals[i]<0 && signals[i+1]>=0)){
+
+	public double evaluate() {
+		int numZC = 0;
+		int size = signals.length;
+
+		for (int i = 0; i < size - 1; i++) {
+			if ((signals[i] >= 0 && signals[i + 1] < 0) || (signals[i] < 0 && signals[i + 1] >= 0)) {
 				numZC++;
 			}
-		}			
+		}
 
-		return numZC/lengthInSecond;
+		return numZC / lengthInSecond;
 	}
 }

@@ -1,10 +1,10 @@
 package com.musicg.wave;
 
+import com.musicg.api.WhistleApi;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-
-import com.musicg.api.WhistleApi;
 
 public class WaveTypeDetector {
 

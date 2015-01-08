@@ -18,12 +18,12 @@ public class DisableEventAction extends EventAction {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (execute): " + eventId);//$NON-NLS-1$
 		}
-		
+
 		final ManagerEvent eventManager = ManagerEvent.self();
 
 		eventManager.stop(eventId);
 		eventManager.disable(eventId);
-		
+
 		return true;
 	}
 

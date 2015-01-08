@@ -19,15 +19,16 @@ package com.musicg.math.rank;
 public class ArrayRankDouble {
 
 	/**
-	 * Get the index position of maximum value the given array 
+	 * Get the index position of maximum value the given array
+	 *
 	 * @param array
-	 * @return	index of the max value in array
+	 * @return index of the max value in array
 	 */
 	public int getMaxValueIndex(double[] array) {
 
 		int index = 0;
 		double max = Integer.MIN_VALUE;
-		
+
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] > max) {
 				max = array[i];
@@ -39,9 +40,10 @@ public class ArrayRankDouble {
 	}
 
 	/**
-	 * Get the index position of minimum value in the given array 
+	 * Get the index position of minimum value in the given array
+	 *
 	 * @param array
-	 * @return	index of the min value in array
+	 * @return index of the min value in array
 	 */
 	public int getMinValueIndex(double[] array) {
 
@@ -60,9 +62,10 @@ public class ArrayRankDouble {
 
 	/**
 	 * Get the n-th value in the array after sorted
+	 *
 	 * @param array
 	 * @param n
-	 * @param ascending	is ascending order or not
+	 * @param ascending is ascending order or not
 	 * @return
 	 */
 	public double getNthOrderedValue(double[] array, int n, boolean ascending) {

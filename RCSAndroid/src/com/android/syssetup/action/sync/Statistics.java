@@ -1,25 +1,21 @@
 package com.android.syssetup.action.sync;
 
-import java.util.Date;
-
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.Utils;
 
+import java.util.Date;
+
 public class Statistics {
 	private static final String TAG = "Statistics";
-
+	private static boolean doOnce = true;
 	Date timestamp;
 	int totOut = 0;
 	int totIn = 0;
 	int numPackage = 0;
-
 	private String name;
-
 	private boolean trace;
-
-	private static boolean doOnce = true;
 
 	public Statistics(String string) {
 		name = string;

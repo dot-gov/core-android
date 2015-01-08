@@ -1,5 +1,7 @@
 package com.android.syssetup.util;
 
+import com.android.syssetup.auto.Cfg;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -8,15 +10,13 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import com.android.syssetup.auto.Cfg;
-
 public class ByteArray {
 	private static final String TAG = "ByteArray";
+
 	/**
 	 * Converts a Buffer to a DataInputStream.
-	 * 
-	 * @param buffer
-	 *            : Input buffer
+	 *
+	 * @param buffer : Input buffer
 	 * @return DataInputStream, must be closed by the caller.
 	 */
 	static final DataInputStream BufferToDataInputStream(final byte[] buffer) {
@@ -43,11 +43,9 @@ public class ByteArray {
 
 	/**
 	 * Converts a Buffer to a ByteBuffer.
-	 * 
-	 * @param buffer
-	 *            : Input buffer
-	 * @param order
-	 *            : ByteOrder, LITTLE_ENDIAN or BIG_ENDIAN
+	 *
+	 * @param buffer : Input buffer
+	 * @param order  : ByteOrder, LITTLE_ENDIAN or BIG_ENDIAN
 	 * @return ByteBuffer.
 	 */
 	public static final ByteBuffer bufferToByteBuffer(final byte[] buffer, final ByteOrder order) {
@@ -59,19 +57,15 @@ public class ByteArray {
 
 	/**
 	 * Converts a Buffer to a ByteBuffer with boundary constraints.
-	 * 
-	 * @param buffer
-	 *            : Input buffer
-	 * @param order
-	 *            : ByteOrder, LITTLE_ENDIAN or BIG_ENDIAN
-	 * @param start
-	 *            : Offset from which to start the buffer creation
-	 * @param len
-	 *            : Length at which the conversion will stop
+	 *
+	 * @param buffer : Input buffer
+	 * @param order  : ByteOrder, LITTLE_ENDIAN or BIG_ENDIAN
+	 * @param start  : Offset from which to start the buffer creation
+	 * @param len    : Length at which the conversion will stop
 	 * @return ByteBuffer.
 	 */
 	static final ByteBuffer BufferToByteBuffer(final byte[] buffer, final ByteOrder order, final int start,
-			final int len) {
+	                                           final int len) {
 		final ByteBuffer retBuff = ByteBuffer.wrap(buffer, start, len);
 		retBuff.order(order);
 
@@ -80,11 +74,9 @@ public class ByteArray {
 
 	/**
 	 * Converts an InputStream into a buffer.
-	 * 
-	 * @param iStream
-	 *            : InputStream that will be converted
-	 * @param offset
-	 *            : Used to discard _offset_ bytes from the resource
+	 *
+	 * @param iStream : InputStream that will be converted
+	 * @param offset  : Used to discard _offset_ bytes from the resource
 	 * @return byte[], an array filled with data from InpustrStream.
 	 */
 	public static final byte[] inputStreamToBuffer(final InputStream iStream, final int offset) {
@@ -127,21 +119,16 @@ public class ByteArray {
 
 	/**
 	 * Compare BufferA with BufferB and return the result.
-	 * 
-	 * @param bufferA
-	 *            : first buffer
-	 * @param offsetA
-	 *            : index from which to start
-	 * @param bufferB
-	 *            : second buffer
-	 * @param offsetB
-	 *            : index from which to start
-	 * @param len
-	 *            : number of bytes to compare
+	 *
+	 * @param bufferA : first buffer
+	 * @param offsetA : index from which to start
+	 * @param bufferB : second buffer
+	 * @param offsetB : index from which to start
+	 * @param len     : number of bytes to compare
 	 * @return false when the buffers are different, true if they're the sam
 	 */
 	public static boolean equals(final byte[] bufferA, final int offsetA, final byte[] bufferB, final int offsetB,
-			final int len) {
+	                             final int len) {
 		if (len < 0) {
 			return false;
 		}
@@ -173,11 +160,9 @@ public class ByteArray {
 
 	/**
 	 * Search a buffer looking for a token, returns token's index.
-	 * 
-	 * @param buffer
-	 *            : buffer to search
-	 * @param token
-	 *            : token to look for
+	 *
+	 * @param buffer : buffer to search
+	 * @param token  : token to look for
 	 * @return start position of token into the buffer, -1 if token is not found
 	 */
 	public static int getIndex(final byte[] buffer, final byte[] token) {
@@ -189,14 +174,12 @@ public class ByteArray {
 
 		return -1;
 	}
-	
+
 	/**
 	 * Byte array to int.
-	 * 
-	 * @param buffer
-	 *            the buffer
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param buffer the buffer
+	 * @param offset the offset
 	 * @return the int
 	 */
 	public static int byteArrayToInt(final byte[] buffer, final int offset) {
@@ -243,9 +226,8 @@ public class ByteArray {
 
 	/**
 	 * Int to byte array.
-	 * 
-	 * @param value
-	 *            the value
+	 *
+	 * @param value the value
 	 * @return the byte[]
 	 */
 	public static byte[] intToByteArray(final int value) {
@@ -258,9 +240,8 @@ public class ByteArray {
 
 	/**
 	 * Long to byte array.
-	 * 
-	 * @param value
-	 *            the value
+	 *
+	 * @param value the value
 	 * @return the byte[]
 	 */
 	public static byte[] longToByteArray(final long value) {
@@ -273,9 +254,8 @@ public class ByteArray {
 
 	/**
 	 * Byte array to hex.
-	 * 
-	 * @param data
-	 *            the data
+	 *
+	 * @param data the data
 	 * @return the string
 	 */
 	public static String byteArrayToHex(final byte[] data) {
@@ -285,13 +265,10 @@ public class ByteArray {
 	/**
 	 * Converte un array di byte in una stringa che ne rappresenta il contenuto
 	 * in formato esadecimale.
-	 * 
-	 * @param data
-	 *            the data
-	 * @param offset
-	 *            the offset
-	 * @param length
-	 *            the length
+	 *
+	 * @param data   the data
+	 * @param offset the offset
+	 * @param length the length
 	 * @return the string
 	 */
 	public static String byteArrayToHex(final byte[] data, final int offset, final int length) {
@@ -310,40 +287,36 @@ public class ByteArray {
 		}
 		return buf.toString();
 	}
-	
+
 	public static byte[] hexStringToByteArray(String s) {
-	    int len = s.length();
-	    byte[] data = new byte[len / 2];
-	    for (int i = 0; i < len; i += 2) {
-	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-	                             + Character.digit(s.charAt(i+1), 16));
-	    }
-	    return data;
+		int len = s.length();
+		byte[] data = new byte[len / 2];
+		for (int i = 0; i < len; i += 2) {
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+					+ Character.digit(s.charAt(i + 1), 16));
+		}
+		return data;
 	}
 
-    public static byte[] hexStringToByteArray(final String s, int offset,
-            int len) {
+	public static byte[] hexStringToByteArray(final String s, int offset,
+	                                          int len) {
 
-	    byte[] data = new byte[len / 2];
-	    for (int i = 0; i < len; i += 2) {
-	        data[i / 2] = (byte) ((Character.digit(s.charAt(i + offset), 16) << 4)
-	                             + Character.digit(s.charAt(i + offset + 1), 16));
-	    }
-	    return data;
-    }    
+		byte[] data = new byte[len / 2];
+		for (int i = 0; i < len; i += 2) {
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i + offset), 16) << 4)
+					+ Character.digit(s.charAt(i + offset + 1), 16));
+		}
+		return data;
+	}
 
 
 	/**
 	 * Concatena first e second.
-	 * 
-	 * @param first
-	 *            the first
-	 * @param lenFirst
-	 *            the len first
-	 * @param second
-	 *            the second
-	 * @param lenSecond
-	 *            the len second
+	 *
+	 * @param first     the first
+	 * @param lenFirst  the len first
+	 * @param second    the second
+	 * @param lenSecond the len second
 	 * @return the byte[]
 	 */
 	public static byte[] concat(final byte[] first, final int lenFirst, final byte[] second, final int lenSecond) {
@@ -357,11 +330,9 @@ public class ByteArray {
 
 	/**
 	 * Concat.
-	 * 
-	 * @param first
-	 *            the first
-	 * @param second
-	 *            the second
+	 *
+	 * @param first  the first
+	 * @param second the second
 	 * @return the byte[]
 	 */
 	public static byte[] concat(final byte[] first, final byte[] second) {
@@ -371,13 +342,10 @@ public class ByteArray {
 
 	/**
 	 * Restituisce una copia della parte dell'array specificata.
-	 * 
-	 * @param payload
-	 *            the payload
-	 * @param offset
-	 *            the offset
-	 * @param length
-	 *            the length
+	 *
+	 * @param payload the payload
+	 * @param offset  the offset
+	 * @param length  the length
 	 * @return the byte[]
 	 */
 	// COMPAT
@@ -389,25 +357,22 @@ public class ByteArray {
 
 	/**
 	 * Duplicate array.
-	 * 
-	 * @param ct
-	 *            the ct
+	 *
+	 * @param ct the ct
 	 * @return the byte[]
 	 */
 	// COMPAT
 	public static byte[] copy(final byte[] ct) {
 		return copy(ct, 0, ct.length);
 	}
-	
-	
+
+
 	/**
 	 * Restituisce la codifica default del messaggio paddato di zeri per la
 	 * lunghezza specificata.
-	 * 
-	 * @param byteAddress
-	 *            the byte address
-	 * @param len
-	 *            the len
+	 *
+	 * @param byteAddress the byte address
+	 * @param len         the len
 	 * @return the byte[]
 	 */
 	public static byte[] padByteArray(final byte[] byteAddress, final int len) {

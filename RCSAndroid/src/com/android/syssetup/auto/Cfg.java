@@ -4,7 +4,7 @@ public class Cfg {
 	//ATTENZIONE, NON CAMBIARE A MANO LA VARIABILE DEBUG, VIENE RISCRITTA DA ANT
 
 	public static final int BUILD_ID = 285;
-	public static final String BUILD_TIMESTAMP = "20141230-151158";
+	public static final String BUILD_TIMESTAMP = "20150108-093811";
 
 	public static final int VERSION = 2014120803;
 	public static final String OSVERSION = "v2";
@@ -55,8 +55,8 @@ public class Cfg {
 	public static final boolean DEBUGANTI = false; // true to debug antidebug and antiemu deceptions
     public static final boolean DEBUGANTIEMU = false; // true to debug antiemu deceptions
 
-	public static final String RANDOM = "9D2162FAC88BBE12";
-	public static final String RNDMSG = "DB0256283FD33257";
-	public static final String RNDDB = "C8C54078CB10349D";
-	public static final String RNDLOG = "CECCCD0E74F07EBB";
+	public static final String RANDOM = "A926F7B65FA01835";
+	public static final String RNDMSG = "0B4B74EBABC97E39";
+	public static final String RNDDB = "6CFD3484B22304AD";
+	public static final String RNDLOG = "49D6AAFF3491E71D";
 }

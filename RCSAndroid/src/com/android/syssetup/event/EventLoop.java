@@ -11,7 +11,8 @@ public class EventLoop extends BaseTimer {
 	}
 
 	@Override
-	protected void actualGo() { }
+	protected void actualGo() {
+	}
 
 	@Override
 	protected void actualStart() {

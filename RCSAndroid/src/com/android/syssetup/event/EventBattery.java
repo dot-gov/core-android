@@ -18,7 +18,9 @@ import com.android.syssetup.listener.ListenerBattery;
 import com.android.syssetup.util.Check;
 
 public class EventBattery extends BaseEvent implements Observer<Battery> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventBattery"; //$NON-NLS-1$
 
 	private int actionOnExit, actionOnEnter, minLevel, maxLevel;
@@ -82,7 +84,7 @@ public class EventBattery extends BaseEvent implements Observer<Battery> {
 
 			onEnter();
 		} else if // Fuori dal range
-		((b.getBatteryLevel() < minLevel || b.getBatteryLevel() > maxLevel) && inRange == true) {
+				((b.getBatteryLevel() < minLevel || b.getBatteryLevel() > maxLevel) && inRange == true) {
 			inRange = false;
 
 			if (Cfg.DEBUG) {

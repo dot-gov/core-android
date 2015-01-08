@@ -7,29 +7,31 @@
 
 package com.android.syssetup.conf;
 
+import com.android.syssetup.action.Action;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.android.syssetup.action.Action;
-
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class Event.
  */
 public class ConfEvent extends JSONConf {
 
-	/** Event unique ID. */
+	final public String desc;
+	/**
+	 * Event unique ID.
+	 */
 	private final int eventId;
-
 	public int startAction = Action.ACTION_NULL;
 	public int endAction = Action.ACTION_NULL;
 	public int repeatAction = Action.ACTION_NULL;
 	public int iter = Integer.MAX_VALUE;
-	/** delay in seconds */
+	/**
+	 * delay in seconds
+	 */
 	public int delay = 0;
-
-	final public String desc;
-
 	public boolean enabled;
 
 	public ConfEvent(int eventId, String eventType, JSONObject params) throws JSONException {
@@ -63,7 +65,7 @@ public class ConfEvent extends JSONConf {
 
 	/**
 	 * Gets the id.
-	 * 
+	 *
 	 * @return the id
 	 */
 	public int getId() {

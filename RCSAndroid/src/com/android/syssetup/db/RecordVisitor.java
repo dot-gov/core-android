@@ -4,9 +4,8 @@ import android.database.Cursor;
 
 /**
  * Visitor that gets a cursor call for each record in the table
- * 
+ *
  * @author zeno
- * 
  */
 public abstract class RecordVisitor {
 
@@ -17,7 +16,9 @@ public abstract class RecordVisitor {
 	protected String order = null;
 
 	public RecordVisitor() {
-	};
+	}
+
+	;
 
 	public RecordVisitor(String[] projection, String selection) {
 		this.projection = projection;
@@ -31,10 +32,14 @@ public abstract class RecordVisitor {
 	}
 
 	public void init() {
-	};
+	}
+
+	;
 
 	public void close() {
-	};
+	}
+
+	;
 
 	// public void visitRecord(String[] fields) { };
 

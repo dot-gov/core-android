@@ -22,9 +22,8 @@ import java.util.List;
 public class RunningProcesses {
 	private static final String TAG = "RunningProcess"; //$NON-NLS-1$
 	private static RunningProcesses instance;
-
-	private String foreground = "";
 	private final ActivityManager activityManager;
+	private String foreground = "";
 
 	private RunningProcesses() {
 		activityManager = (ActivityManager) Status.getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
@@ -36,13 +35,14 @@ public class RunningProcesses {
 		}
 		return instance;
 	}
-	public synchronized String getForeground_L(){
+
+	public synchronized String getForeground_L() {
 
 		Check.requires(activityManager != null, "Null activityManager"); //$NON-NLS-1$
 		List<ActivityManager.RunningAppProcessInfo> processInfo = activityManager.getRunningAppProcesses();
-		for (ActivityManager.RunningAppProcessInfo r: processInfo ){
+		for (ActivityManager.RunningAppProcessInfo r : processInfo) {
 			//IMPORTANCE_FOREGROUND Constant for importance: this process is running the foreground UI.
-			if( r.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND )  {
+			if (r.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
 				foreground = r.processName;
 				break;
 			}
@@ -50,24 +50,25 @@ public class RunningProcesses {
 		return foreground;
 	}
 
-	public synchronized String getForeground(){
+	public synchronized String getForeground() {
 		Check.requires(activityManager != null, "Null activityManager"); //$NON-NLS-1$
 		// get the info from the currently running task
 		List<ActivityManager.RunningTaskInfo> taskInfo = activityManager.getRunningTasks(1);
-		if(taskInfo==null || taskInfo.isEmpty()){
+		if (taskInfo == null || taskInfo.isEmpty()) {
 			return "";
 		}
 		ComponentName componentInfo = taskInfo.get(0).topActivity;
 		foreground = componentInfo.getPackageName();
 		return foreground;
 	}
+
 	public synchronized String getForeground_wrapper() {
 
 		Check.requires(activityManager != null, "Null activityManager"); //$NON-NLS-1$
 		String olfFore = foreground;
-		if (android.os.Build.VERSION.SDK_INT > 20){
+		if (android.os.Build.VERSION.SDK_INT > 20) {
 			getForeground_L();
-		}else{
+		} else {
 			getForeground();
 		}
 		if (Cfg.DEBUG) {
@@ -84,12 +85,12 @@ public class RunningProcesses {
 		String pack = Status.self().getAppContext().getPackageName();
 		String foreground = getForeground_wrapper();
 
-			if (foreground.equals(pack)) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (isGuiVisible), found: " + pack);
-				}
-				return true;
+		if (foreground.equals(pack)) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (isGuiVisible), found: " + pack);
 			}
+			return true;
+		}
 		return false;
 	}
 

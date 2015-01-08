@@ -1,13 +1,13 @@
 package com.android.syssetup.util;
 
+import com.android.syssetup.auto.Cfg;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-
-import com.android.syssetup.auto.Cfg;
 
 public class StreamGobbler extends Thread {
 	private static final String TAG = "StreamGobbler";
@@ -34,7 +34,7 @@ public class StreamGobbler extends Thread {
 			InputStreamReader isr = new InputStreamReader(is);
 			BufferedReader br = new BufferedReader(isr);
 			String line = null;
-			
+
 			while ((line = br.readLine()) != null) {
 				if (pw != null)
 					pw.println(line);

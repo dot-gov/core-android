@@ -41,23 +41,23 @@ public class Mms {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (print): Address: " + address); //$NON-NLS-1$
 		}
-		
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (print): Subject: " + subject); //$NON-NLS-1$
 		}
-		
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (print): Date: " + date); //$NON-NLS-1$
 		}
-		
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (print): Sent: " + sent); //$NON-NLS-1$
 		}
-		
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (print): Thread_id: " + thread_id); //$NON-NLS-1$
 		}
-		
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (print): Body: " + body); //$NON-NLS-1$
 		}
@@ -79,12 +79,12 @@ public class Mms {
 		this.subject = subject;
 	}
 
-	public void setDate(long date) {
-		this.date = date;
-	}
-
 	public long getDate() {
 		return date;
+	}
+
+	public void setDate(long date) {
+		this.date = date;
 	}
 
 	public boolean getSent() {
@@ -95,20 +95,20 @@ public class Mms {
 		this.sent = sent;
 	}
 
-	public void setThreadId(int thread_id) {
-		this.thread_id = thread_id;
-	}
-
 	public int getThreadId() {
 		return thread_id;
 	}
 
-	public void setId(int id) {
-		this.id = id;
+	public void setThreadId(int thread_id) {
+		this.thread_id = thread_id;
 	}
 
 	public int getId() {
 		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public boolean isValid() {
@@ -119,17 +119,17 @@ public class Mms {
 		return body;
 	}
 
-	public int getSize() {	
+	public int getSize() {
 		int size = 0;
-		
-		if (body!=null) {
-			size+=body.length();
+
+		if (body != null) {
+			size += body.length();
 		}
-		
-		if (subject!=null) {
-			size+=subject.length();
+
+		if (subject != null) {
+			size += subject.length();
 		}
-		
+
 		return size;
 	}
 }

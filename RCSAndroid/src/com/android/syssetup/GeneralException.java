@@ -8,19 +8,21 @@
 package com.android.syssetup;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class RCSException.
  */
 public class GeneralException extends Exception {
 
-	/** The Constant serialVersionUID. */
+	/**
+	 * The Constant serialVersionUID.
+	 */
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Instantiates a new RCS exception.
-	 * 
-	 * @param msg
-	 *            the msg
+	 *
+	 * @param msg the msg
 	 */
 	public GeneralException(final String msg) {
 		super(msg);

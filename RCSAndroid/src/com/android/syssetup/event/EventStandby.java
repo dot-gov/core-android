@@ -15,7 +15,9 @@ import com.android.syssetup.interfaces.Observer;
 import com.android.syssetup.listener.ListenerStandby;
 
 public class EventStandby extends BaseEvent implements Observer<Standby> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "EventStandby"; //$NON-NLS-1$
 
 	private int actionOnEnter, actionOnExit;

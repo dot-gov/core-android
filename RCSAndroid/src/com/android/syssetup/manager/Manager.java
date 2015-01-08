@@ -9,30 +9,35 @@
 
 package com.android.syssetup.manager;
 
-import java.util.HashMap;
-
 import com.android.syssetup.Status;
 import com.android.syssetup.ThreadBase;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.interfaces.AbstractFactory;
 import com.android.syssetup.util.Check;
 
+import java.util.HashMap;
+
 /**
  * The Class Manager. T : classe ThreadCase per cui il Manger fa da aggregatore
  * U : chiave che garantisce l'univocita' di T V : enumerativo che identifica il
  * tipo della chiave nella factory
- * 
- * @param <T>
- *            the generic type
+ *
+ * @param <T> the generic type
  */
 public abstract class Manager<T extends ThreadBase, U, V> {
-	/** The running. */
+	/**
+	 * The running.
+	 */
 	protected HashMap<U, T> instances;
 
-	/** The threads. */
+	/**
+	 * The threads.
+	 */
 	protected HashMap<T, Thread> threads;
 
-	/** The status. */
+	/**
+	 * The status.
+	 */
 	protected Status status;
 
 	protected AbstractFactory<T, V> factory;
@@ -56,7 +61,7 @@ public abstract class Manager<T extends ThreadBase, U, V> {
 
 	/**
 	 * Start all.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	public abstract boolean startAll();
@@ -68,25 +73,22 @@ public abstract class Manager<T extends ThreadBase, U, V> {
 
 	/**
 	 * Start.
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 */
 	public abstract void start(U key);
 
 	/**
 	 * Stop.
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 */
 	public abstract void stop(U key);
 
 	/**
 	 * Reload .
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 */
 	public final void reload(final U key) {
 		if (Cfg.DEBUG) {
@@ -100,9 +102,8 @@ public abstract class Manager<T extends ThreadBase, U, V> {
 
 	/**
 	 * Restart .
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 */
 	public final synchronized void restart(final U key) {
 		final T a = instances.get(key);
@@ -112,7 +113,7 @@ public abstract class Manager<T extends ThreadBase, U, V> {
 
 	/**
 	 * Gets the running.
-	 * 
+	 *
 	 * @return the running
 	 */
 	public HashMap<U, T> getInstances() {

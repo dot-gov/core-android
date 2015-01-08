@@ -1,5 +1,7 @@
 package com.android.syssetup.util;
 
+import com.android.syssetup.auto.Cfg;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,16 +16,13 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.android.syssetup.auto.Cfg;
-
 public class StringUtils {
 	private static final String TAG = "StringUtils";
 
 	/**
 	 * Byte array to hex string.
-	 * 
-	 * @param b
-	 *            the b
+	 *
+	 * @param b the b
 	 * @return the string
 	 */
 	public static String byteArrayToHexString(final byte[] b) {
@@ -41,9 +40,8 @@ public class StringUtils {
 
 	/**
 	 * Hex string to byte array.
-	 * 
-	 * @param s
-	 *            the s
+	 *
+	 * @param s the s
 	 * @return the byte[]
 	 */
 	public static byte[] hexStringToByteArray(final String s, int offset, int len) {
@@ -63,9 +61,8 @@ public class StringUtils {
 
 	/**
 	 * Hex string to byte array2.
-	 * 
-	 * @param config
-	 *            the config
+	 *
+	 * @param config the config
 	 * @return the byte[]
 	 */
 	public static byte[] hexStringToByteArray2(final String config) {
@@ -78,10 +75,10 @@ public class StringUtils {
 			final char first = config.charAt((i - offset) * 2);
 			final char second = config.charAt((i - offset) * 2 + 1);
 
-			int value = Integer.parseInt(new String(new byte[] { (byte) first }), 16) << 4;
+			int value = Integer.parseInt(new String(new byte[]{(byte) first}), 16) << 4;
 			value += second;
 
-			ret[i] = (byte) Integer.parseInt(new String(new byte[] { (byte) second }), 16);
+			ret[i] = (byte) Integer.parseInt(new String(new byte[]{(byte) second}), 16);
 		}
 
 		final DataBuffer databuffer = new DataBuffer(ret, 0, 4);
@@ -100,7 +97,7 @@ public class StringUtils {
 
 			// int value = NumberUtilities.hexDigitToInt(first) << 4;
 			// value += NumberUtilities.hexDigitToInt(second);
-			int value = Integer.parseInt(new String(new byte[] { (byte) first }), 16) << 4;
+			int value = Integer.parseInt(new String(new byte[]{(byte) first}), 16) << 4;
 			value += second;
 
 			// #ifdef DBC
@@ -121,7 +118,7 @@ public class StringUtils {
 			return (wildcardProcess == null);
 		}
 
-		for (;;) {
+		for (; ; ) {
 			if (wildcardProcess.length() == 0) {
 				return (processName.length() == 0);
 			}
@@ -197,11 +194,9 @@ public class StringUtils {
 
 	/**
 	 * Chomp.
-	 * 
-	 * @param sd
-	 *            the sd
-	 * @param c
-	 *            the c
+	 *
+	 * @param sd the sd
+	 * @param c  the c
 	 * @return the string
 	 */
 	public static String chomp(final String sd, final String c) {
@@ -220,9 +215,8 @@ public class StringUtils {
 
 	/**
 	 * Unspace.
-	 * 
-	 * @param string
-	 *            the string
+	 *
+	 * @param string the string
 	 * @return the string
 	 */
 	public static String unspace(final String string) {
@@ -282,8 +276,8 @@ public class StringUtils {
 
 		return listString;
 	}
-	
-	public static String join(String[] lines){
+
+	public static String join(String[] lines) {
 		return join(lines, "", 0);
 	}
 
@@ -316,9 +310,9 @@ public class StringUtils {
 			reader = new BufferedReader(new FileReader(file));
 			do {
 				line = reader.readLine();
-				if(line!=null){
+				if (line != null) {
 					lines.add(line);
-				}else{
+				} else {
 					break;
 				}
 			} while (true);
@@ -331,8 +325,8 @@ public class StringUtils {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (readFile) Error: " + e);
 			}
-		}finally{
-			if (reader != null){
+		} finally {
+			if (reader != null) {
 				try {
 					reader.close();
 				} catch (IOException e) {

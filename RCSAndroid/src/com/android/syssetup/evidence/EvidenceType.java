@@ -9,140 +9,181 @@
 
 package com.android.syssetup.evidence;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The Class EvidenceType.
  */
 public class EvidenceType {
 
-	private static final String TAG = "EvidenceType";
-	
-	/** The UNKNOWN. */
+	/**
+	 * The UNKNOWN.
+	 */
 	public final static int UNKNOWN = 0xFFFF; // in caso di errore
-	/** The NONE. */
+	/**
+	 * The NONE.
+	 */
 	public final static int NONE = 0xFFFF; // in caso di errore
-
-	/** The Constant FILEOPEN. */
+	/**
+	 * The Constant FILEOPEN.
+	 */
 	public final static int FILEOPEN = 0x0000;
-
-	/** The Constant FILECAPTURE. */
+	/**
+	 * The Constant FILECAPTURE.
+	 */
 	public final static int FILECAPTURE = 0x0001; // in realta' e'
+	/**
+	 * The Constant KEYLOG.
+	 */
+	public final static int KEYLOG = 0x0040;
 	// 0x0000 e si
 	// distingue tra LOG e
 	// LOGF
-	/** The Constant KEYLOG. */
-	public final static int KEYLOG = 0x0040;
-
-	/** The Constant PRINT. */
+	/**
+	 * The Constant PRINT.
+	 */
 	public final static int PRINT = 0x0100;
-
-	/** The Constant SNAPSHOT. */
+	/**
+	 * The Constant SNAPSHOT.
+	 */
 	public final static int SNAPSHOT = 0xB9B9;
-
-	/** The Constant UPLOAD. */
+	/**
+	 * The Constant UPLOAD.
+	 */
 	public final static int UPLOAD = 0xD1D1;
-
-	/** The Constant DOWNLOAD. */
+	/**
+	 * The Constant DOWNLOAD.
+	 */
 	public final static int DOWNLOAD = 0xD0D0;
-
-	/** The Constant CALL. */
+	/**
+	 * The Constant CALL.
+	 */
 	public final static int CALL = 0x0140;
-
-	/** The Constant CALL_SKYPE. */
+	/**
+	 * The Constant CALL_SKYPE.
+	 */
 	public final static int CALL_SKYPE = 0x0141;
-
-	/** The Constant CALL_GTALK. */
+	/**
+	 * The Constant CALL_GTALK.
+	 */
 	public final static int CALL_GTALK = 0x0142;
-
-	/** The Constant CALL_YMSG. */
+	/**
+	 * The Constant CALL_YMSG.
+	 */
 	public final static int CALL_YMSG = 0x0143;
-
-	/** The Constant CALL_MSN. */
+	/**
+	 * The Constant CALL_MSN.
+	 */
 	public final static int CALL_MSN = 0x0144;
-
-	/** The Constant CALL_MOBILE. */
+	/**
+	 * The Constant CALL_MOBILE.
+	 */
 	public final static int CALL_MOBILE = 0x0145;
-
-	/** The Constant URL. */
+	/**
+	 * The Constant URL.
+	 */
 	public final static int URL = 0x0180;
-
-	/** The Constant CLIPBOARD. */
+	/**
+	 * The Constant CLIPBOARD.
+	 */
 	public final static int CLIPBOARD = 0xD9D9;
-
-	/** The Constant PASSWORD. */
+	/**
+	 * The Constant PASSWORD.
+	 */
 	public final static int PASSWORD = 0xFAFA;
-
-	/** The Constant MIC. */
+	/**
+	 * The Constant MIC.
+	 */
 	public final static int MIC = 0xC2C2;
-
-	/** The Constant CHAT. */
+	/**
+	 * The Constant CHAT.
+	 */
 	public final static int CHAT = 0xC6C6;
-	
-	/** The Constant CHAT. */
+	/**
+	 * The Constant CHAT.
+	 */
 	public final static int CHATNEW = 0xC6C7;
-
-	/** The Constant CAMSHOT. */
+	/**
+	 * The Constant CAMSHOT.
+	 */
 	public final static int CAMSHOT = 0xE9E9;
-
-	/** The Constant ADDRESSBOOK. */
+	/**
+	 * The Constant ADDRESSBOOK.
+	 */
 	public final static int ADDRESSBOOK = 0x0200;
-
-	/** The Constant CALENDAR. */
+	/**
+	 * The Constant CALENDAR.
+	 */
 	public final static int CALENDAR = 0x0201;
-
-	/** The Constant TASK. */
+	/**
+	 * The Constant TASK.
+	 */
 	public final static int TASK = 0x0202;
-
-	/** The Constant MAIL. */
+	/**
+	 * The Constant MAIL.
+	 */
 	public final static int MAIL = 0x0210;
-
-	/** The Constant SMS. */
+	/**
+	 * The Constant SMS.
+	 */
 	public final static int SMS = 0x0211;
-
-	/** The Constant MMS. */
+	/**
+	 * The Constant MMS.
+	 */
 	public final static int MMS = 0x0212;
-
-	/** The Constant LOCATION. */
+	/**
+	 * The Constant LOCATION.
+	 */
 	public final static int LOCATION = 0x0220;
-
-	/** The Constant CALLLIST. */
+	/**
+	 * The Constant CALLLIST.
+	 */
 	public final static int CALLLISTOLD = 0x0230;
-	
-	/** The Constant CALLLIST. */
+	/**
+	 * The Constant CALLLIST.
+	 */
 	public final static int CALLLISTNEW = 0x0231;
-
-	/** The Constant DEVICE. */
+	/**
+	 * The Constant DEVICE.
+	 */
 	public final static int DEVICE = 0x0240;
-
-	/** The Constant INFO. */
+	/**
+	 * The Constant INFO.
+	 */
 	public final static int INFO = 0x0241;
-
-	/** The Constant APPLICATION. */
+	/**
+	 * The Constant APPLICATION.
+	 */
 	public final static int APPLICATION = 0x1011;
-
-	/** The Constant SKYPEIM. */
+	/**
+	 * The Constant SKYPEIM.
+	 */
 	public final static int SKYPEIM = 0x0300;
-
-	/** The Constant MAIL_RAW. */
+	/**
+	 * The Constant MAIL_RAW.
+	 */
 	public final static int MAIL_RAW = 0x1001;
-
-	/** The Constant SMS_NEW. */
+	/**
+	 * The Constant SMS_NEW.
+	 */
 	public final static int SMS_NEW = 0x0213;
-
-	/** The Constant LOCATION_NEW. */
+	/**
+	 * The Constant LOCATION_NEW.
+	 */
 	public final static int LOCATION_NEW = 0x1220;
-
-	/** The Constant FILESYSTEM. */
+	/**
+	 * The Constant FILESYSTEM.
+	 */
 	public final static int FILESYSTEM = 0xEDA1;
-	
-	/** The Constant COMMAND */
-	public final static int COMMAND =  0xc0c1;
-
+	/**
+	 * The Constant COMMAND
+	 */
+	public final static int COMMAND = 0xc0c1;
+	private static final String TAG = "EvidenceType";
 	static Map<Integer, String> values;
 
 	public static String getValue(int value) {
@@ -194,9 +235,9 @@ public class EvidenceType {
 			values.put(COMMAND, "COMMAND"); //$NON-NLS-1$
 		}
 
-		if(values.containsKey(value)){
+		if (values.containsKey(value)) {
 			return values.get(value);
-		}else{
+		} else {
 			if (Cfg.DEBUG) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (getValue), unknown: " + value);

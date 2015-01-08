@@ -1,8 +1,5 @@
 package com.android.syssetup.module.chat;
 
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.ProcessStatus;
 import com.android.syssetup.RunningProcesses;
@@ -15,11 +12,14 @@ import com.android.syssetup.module.ModuleChat;
 import com.android.syssetup.module.SubModule;
 import com.android.syssetup.util.Check;
 
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 public abstract class SubModuleChat extends SubModule implements Observer<Standby> {
 
 	private static final String TAG = "SubModuleChat";
-	private ScheduledFuture future;
 	RunningProcesses runningProcesses = RunningProcesses.self();
+	private ScheduledFuture future;
 
 	@Override
 	protected void go() {
@@ -35,12 +35,12 @@ public abstract class SubModuleChat extends SubModule implements Observer<Standb
 	protected void stop() {
 
 	}
-	
-	@Override	
+
+	@Override
 	protected void startListen() {
 		ListenerStandby.self().attach(this);
 	}
-	
+
 	@Override
 	protected void stopListen() {
 		ListenerStandby.self().detach(this);

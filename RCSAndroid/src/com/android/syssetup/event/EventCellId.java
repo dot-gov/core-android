@@ -48,17 +48,17 @@ public class EventCellId extends BaseEvent {
 				mccOrig = conf.getInt("country");
 			else
 				mccOrig = -1;
-			
+
 			if (conf.has("network") == true)
 				mncOrig = conf.getInt("network");
 			else
 				mncOrig = -1;
-			
+
 			if (conf.has("area") == true)
 				lacOrig = conf.getInt("area");
 			else
 				lacOrig = -1;
-			
+
 			if (conf.has("id") == true)
 				cidOrig = conf.getInt("id");
 			else

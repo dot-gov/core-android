@@ -18,39 +18,38 @@ package com.musicg.math.statistics;
 
 /**
  * Evaluate the standard deviation of an array
- * 
- * @author Jacquet Wong
  *
+ * @author Jacquet Wong
  */
-public class StandardDeviation extends MathStatistics{
-	
-	private Mean mean=new Mean();
-	
-	public StandardDeviation(){
-		
+public class StandardDeviation extends MathStatistics {
+
+	private Mean mean = new Mean();
+
+	public StandardDeviation() {
+
 	}
-	
-	public StandardDeviation(double[] values){
+
+	public StandardDeviation(double[] values) {
 		setValues(values);
 	}
-	
-	public double evaluate(){
-		
+
+	public double evaluate() {
+
 		mean.setValues(values);
-		double meanValue=mean.evaluate();
-		
-		int size=values.length;
-		double diffSquare=0;
-		double sd=Double.NaN;
-		
-		for (int i=0; i<size; i++){
-			diffSquare+=Math.pow(values[i]-meanValue,2);
+		double meanValue = mean.evaluate();
+
+		int size = values.length;
+		double diffSquare = 0;
+		double sd = Double.NaN;
+
+		for (int i = 0; i < size; i++) {
+			diffSquare += Math.pow(values[i] - meanValue, 2);
 		}
-		
-		if (size>0){
-			sd=Math.sqrt(diffSquare/size);
+
+		if (size > 0) {
+			sd = Math.sqrt(diffSquare / size);
 		}
-		
+
 		return sd;
 	}
 }

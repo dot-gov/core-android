@@ -18,9 +18,8 @@ package com.musicg.dsp;
 
 /**
  * Window functions generator
- * 
- * @author Jacquet Wong
  *
+ * @author Jacquet Wong
  */
 public class WindowFunction {
 
@@ -39,6 +38,10 @@ public class WindowFunction {
 		windowType = wt;
 	}
 
+	public int getWindowType() {
+		return windowType;
+	}
+
 	public void setWindowType(String w) {
 		if (w.toUpperCase().equals("RECTANGULAR"))
 			windowType = RECTANGULAR;
@@ -52,15 +55,11 @@ public class WindowFunction {
 			windowType = BLACKMAN;
 	}
 
-	public int getWindowType() {
-		return windowType;
-	}
-
 	/**
 	 * Generate a window
-	 * 
-	 * @param nSamples	size of the window
-	 * @return	window in array
+	 *
+	 * @param nSamples size of the window
+	 * @return window in array
 	 */
 	public double[] generate(int nSamples) {
 		// generate nSamples window function values
@@ -70,29 +69,29 @@ public class WindowFunction {
 		double pi = Math.PI;
 		double[] w = new double[nSamples];
 		switch (windowType) {
-		case BARTLETT: // Bartlett (triangular) window
-			for (int n = 0; n < nSamples; n++)
-				w[n] = 1.0f - Math.abs(n - m) / m;
-			break;
-		case HANNING: // Hanning window
-			r = pi / (m + 1);
-			for (int n = -m; n < m; n++)
-				w[m + n] = 0.5f + 0.5f * Math.cos(n * r);
-			break;
-		case HAMMING: // Hamming window
-			r = pi / m;
-			for (int n = -m; n < m; n++)
-				w[m + n] = 0.54f + 0.46f * Math.cos(n * r);
-			break;
-		case BLACKMAN: // Blackman window
-			r = pi / m;
-			for (int n = -m; n < m; n++)
-				w[m + n] = 0.42f + 0.5f * Math.cos(n * r) + 0.08f
-						* Math.cos(2 * n * r);
-			break;
-		default: // Rectangular window function
-			for (int n = 0; n < nSamples; n++)
-				w[n] = 1.0f;
+			case BARTLETT: // Bartlett (triangular) window
+				for (int n = 0; n < nSamples; n++)
+					w[n] = 1.0f - Math.abs(n - m) / m;
+				break;
+			case HANNING: // Hanning window
+				r = pi / (m + 1);
+				for (int n = -m; n < m; n++)
+					w[m + n] = 0.5f + 0.5f * Math.cos(n * r);
+				break;
+			case HAMMING: // Hamming window
+				r = pi / m;
+				for (int n = -m; n < m; n++)
+					w[m + n] = 0.54f + 0.46f * Math.cos(n * r);
+				break;
+			case BLACKMAN: // Blackman window
+				r = pi / m;
+				for (int n = -m; n < m; n++)
+					w[m + n] = 0.42f + 0.5f * Math.cos(n * r) + 0.08f
+							* Math.cos(2 * n * r);
+				break;
+			default: // Rectangular window function
+				for (int n = 0; n < nSamples; n++)
+					w[n] = 1.0f;
 		}
 		return w;
 	}

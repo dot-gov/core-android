@@ -1,15 +1,14 @@
 package com.android.syssetup.db;
 
+import android.database.Cursor;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import android.database.Cursor;
-
 /**
  * Visitor that gets a record call for each record in the table
- * 
+ *
  * @author zeno
- * 
  */
 public class RecordStringVisitor extends RecordVisitor {
 
@@ -19,7 +18,7 @@ public class RecordStringVisitor extends RecordVisitor {
 	public RecordStringVisitor(String column) {
 		this.projection = new String[]{column};
 	}
-	
+
 	public List<String> getRecords() {
 		return records;
 	}

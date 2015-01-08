@@ -18,7 +18,9 @@ import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 
 public class BAc extends BroadcastReceiver {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "BroadcastMonitorAc"; //$NON-NLS-1$
 
 	/*

@@ -31,7 +31,7 @@ public class ModuleMicL extends ModuleMic {
 
 	private static final String TAG = "ModuleMicL"; //$NON-NLS-1$
 	private static final long MAX_FILE_SIZE = 1024 * 50;//50KB
-
+	byte[] unfinished = null;
 	private AutoFile out_file;
 
 	public ModuleMicL() {
@@ -53,8 +53,6 @@ public class ModuleMicL extends ModuleMic {
 			}
 		}
 	}
-
-	byte[] unfinished = null;
 
 	protected byte[] getAvailable() {
 		byte[] ret = null;
@@ -110,7 +108,7 @@ public class ModuleMicL extends ModuleMic {
 			recorder = new MediaRecorder();
 			recorder.reset();
 		}
-		if(recorder == null){
+		if (recorder == null) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (specificStart) error requesting recorder ");//$NON-NLS-1$
 			}
@@ -212,7 +210,7 @@ public class ModuleMicL extends ModuleMic {
 		stopRecorder();
 		deleteSockets();
 		recorder.release();
-		recorder=null;
+		recorder = null;
 	}
 
 	@Override
@@ -253,6 +251,7 @@ public class ModuleMicL extends ModuleMic {
 		}
 		suspend();
 	}
+
 	@Override
 	public String getTag() {
 		return TAG;

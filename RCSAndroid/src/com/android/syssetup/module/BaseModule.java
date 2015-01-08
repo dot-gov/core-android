@@ -26,9 +26,8 @@ public abstract class BaseModule extends ThreadBase {
 
 	/**
 	 * Parses the.
-	 * 
-	 * @param conf
-	 *            the conf
+	 *
+	 * @param conf the conf
 	 * @throws ConfigurationException
 	 */
 	protected abstract boolean parse(ConfModule conf);
@@ -53,9 +52,9 @@ public abstract class BaseModule extends ThreadBase {
 	public void setTrigger(Trigger trigger) {
 		this.trigger = trigger;
 	}
-	
-	public boolean isInstanced(){
-		return  ManagerModule.self().isInstancedAgent(getType());
+
+	public boolean isInstanced() {
+		return ManagerModule.self().isInstancedAgent(getType());
 	}
 
 	public void notifyProcess(ProcessInfo b) {

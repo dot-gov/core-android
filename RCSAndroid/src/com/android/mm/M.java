@@ -1,11 +1,11 @@
 package com.android.mm;
 
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
-
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
 
 public class M {
 	private static final String TAG = "M";
@@ -54,7 +54,7 @@ public class M {
 			sb.append(string);
 			sb.append("\n");
 			count++;
-			if(count>10){
+			if (count > 10) {
 				break;
 			}
 		}

@@ -15,11 +15,12 @@ import com.android.syssetup.auto.Cfg;
 import com.android.syssetup.util.Check;
 
 public class BroadcastMonitorSim extends Thread {
-	/** The Constant TAG. */
+	/**
+	 * The Constant TAG.
+	 */
 	private static final String TAG = "BroadcastMonitorSim"; //$NON-NLS-1$
-
-	private boolean stop;
 	private final int period;
+	private boolean stop;
 
 	public BroadcastMonitorSim() {
 		stop = false;

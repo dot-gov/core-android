@@ -1,5 +1,9 @@
 package com.android.syssetup.crypto;
 
+import com.android.mm.M;
+import com.android.syssetup.action.sync.Statistics;
+import com.android.syssetup.auto.Cfg;
+
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -10,10 +14,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import com.android.syssetup.action.sync.Statistics;
-import com.android.syssetup.auto.Cfg;
-import com.android.mm.M;
 
 public class CryptoCBC {
 
@@ -47,26 +47,24 @@ public class CryptoCBC {
 
 	/**
 	 * Encrypt.
-	 * 
-	 * @param clear
-	 *            the clear
+	 *
+	 * @param clear the clear
 	 * @return the byte[]
 	 * @throws InvalidAlgorithmParameterException
 	 * @throws InvalidKeyException
 	 * @throws BadPaddingException
 	 * @throws IllegalBlockSizeException
-	 * @throws Exception
-	 *             the exception
+	 * @throws Exception                          the exception
 	 */
 	public byte[] encrypt(final byte[] clear) throws InvalidKeyException, InvalidAlgorithmParameterException,
 			IllegalBlockSizeException, BadPaddingException {
-		
+
 		Statistics stats;
-		if(Cfg.STATISTICS){
-			stats=new Statistics("Encrypt",clear.length);
+		if (Cfg.STATISTICS) {
+			stats = new Statistics("Encrypt", clear.length);
 		}
 		final byte[] encrypted = cipherEnc.doFinal(clear);
-		if(Cfg.STATISTICS){
+		if (Cfg.STATISTICS) {
 			stats.stop();
 		}
 		return encrypted;
@@ -74,16 +72,14 @@ public class CryptoCBC {
 
 	/**
 	 * Decrypt.
-	 * 
-	 * @param encrypted
-	 *            the encrypted
+	 *
+	 * @param encrypted the encrypted
 	 * @return the byte[]
-	 * @throws Exception
-	 *             the exception
+	 * @throws Exception the exception
 	 */
 	public byte[] decrypt(final byte[] encrypted, int offset, long length) throws Exception {
-		
-		final byte[] decrypted = cipherDec.doFinal(encrypted,offset,(int) length);
+
+		final byte[] decrypted = cipherDec.doFinal(encrypted, offset, (int) length);
 		return decrypted;
 	}
 }

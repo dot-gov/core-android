@@ -277,7 +277,11 @@ public class Core extends Activity implements Runnable {
 		return true;
 	}
 
-	public static boolean isServiceRunning() {
+	/**
+	 * isServiceRunning
+	 * @return
+	 */
+	public static boolean iSR() {
 		return serviceRunning;
 	}
 

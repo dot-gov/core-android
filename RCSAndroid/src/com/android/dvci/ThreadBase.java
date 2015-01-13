@@ -211,6 +211,9 @@ public abstract class ThreadBase implements Runnable {
 	 */
 	public synchronized void stopThread() {
 		if (!stopRequest) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (stopThread) stopping: " + this.getClass().getName());
+			}
 			stopRequest = true;
 			notifyAll();
 		}

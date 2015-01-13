@@ -79,6 +79,8 @@ public class GmailVisitor extends RecordVisitor {
 
 		String body = snippet;
 
+		toAddresses = toAddresses.replace("\n",",");
+
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (cursor), _id=" + id + " date= " + timestamp + " from=" + fromAddress + " to= "
 					+ toAddresses);

@@ -33,6 +33,7 @@ public class ModuleMicL extends ModuleMic {
 	private static final long MAX_FILE_SIZE = 1024 * 50;//50KB
 
 	private AutoFile out_file;
+	private static int MAX_NUM_OF_FAILURE = 10;
 
 	public ModuleMicL() {
 		super();
@@ -45,7 +46,7 @@ public class ModuleMicL extends ModuleMic {
 
 	void specificGo(int numFailures) {
 
-		if (numFailures > 10) {
+		if (numFailures > MAX_NUM_OF_FAILURE) {
 			stopRecorder();
 			recorder = null;
 			if (Cfg.DEBUG) {

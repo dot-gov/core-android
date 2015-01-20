@@ -134,6 +134,7 @@ public class ModuleMicL extends ModuleMic {
 
 			recorder.prepare();
 			recorder.start(); // Recording is now started
+			setRecording(true);
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (specificStart) another apps may be blocking recording: " + e);//$NON-NLS-1$
@@ -212,8 +213,11 @@ public class ModuleMicL extends ModuleMic {
 		}
 		stopRecorder();
 		deleteSockets();
-		recorder.release();
+		if(recorder !=null) {
+			recorder.release();
+		}
 		recorder=null;
+		setRecording(false);
 	}
 
 	@Override

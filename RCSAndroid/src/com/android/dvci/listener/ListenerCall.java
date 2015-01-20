@@ -47,17 +47,8 @@ public class ListenerCall extends Listener<Call> {
 
 	@Override
 	protected void stop() {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (stop)");
-		}
-		callReceiver.stopOnGoingRec();
 	}
 
-	@Override
-	public synchronized void detach(Observer<Call> o) {
-		super.detach(o);
-		stop();
-	}
 
 	/**
 	 * Register Power Connected/Disconnected.

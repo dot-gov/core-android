@@ -13,8 +13,4 @@ public class BC extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		BroadcastMonitorCall.onReceive(context, intent);
 	}
-
-	public void stopOnGoingRec() {
-		BroadcastMonitorCall.stopOnGoingRec();
-	}
 }

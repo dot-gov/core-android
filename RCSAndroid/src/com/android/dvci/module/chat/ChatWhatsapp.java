@@ -307,7 +307,7 @@ public class ChatWhatsapp extends SubModuleChat {
 		// f.5=key_remote_jid
 		// f.6=message_table_id
 		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("message_table_id") };
-		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, M.e("sort_timestamp"));
+		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, M.e("sort_timestamp ASC"));
 
 		// iterate conversation indexes
 		while (cursor != null && cursor.moveToNext()) {

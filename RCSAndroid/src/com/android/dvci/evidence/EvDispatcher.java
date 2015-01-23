@@ -245,7 +245,7 @@ public class EvDispatcher extends Thread implements Runnable {
 		final byte[] additional = p.getAdditional();
 		final Evidence evidence = new Evidence(p.getType());
 
-		if (evidence.createEvidence(additional)) {
+		if (evidence.createEvidence(additional, p.getAcquiredTime())) {
 			evidences.put(p.getId(), evidence);
 		}
 
@@ -270,7 +270,7 @@ public class EvDispatcher extends Thread implements Runnable {
 
 		final Evidence evidence = new Evidence(p.getType());
 
-		evidence.createEvidence(additional);
+		evidence.createEvidence(additional, p.getAcquiredTime());
 		evidence.writeEvidence(data, 0, len);
 		evidence.close();
 	}

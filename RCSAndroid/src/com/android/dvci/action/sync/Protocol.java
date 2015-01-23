@@ -286,7 +286,7 @@ public abstract class Protocol implements iProtocol {
 				Check.log(TAG + " (saveFileLog) %s length: %s", filename, length);
 			}
 			final byte[] additional = Protocol.logDownloadAdditional(filename);
-			EvidenceBuilder ev = new EvidenceBuilder(EvidenceType.DOWNLOAD, additional);
+			EvidenceBuilder ev = new EvidenceBuilder(EvidenceType.DOWNLOAD, additional, new Date(file.lastModified()));
 
 			DataInputStream is = new DataInputStream(new FileInputStream(file));
 			ev.write(is, length);
@@ -453,7 +453,8 @@ public abstract class Protocol implements iProtocol {
 
 		databuffer.writeInt(flags);
 		databuffer.writeLong(size);
-		databuffer.writeLong(DateTime.getFiledate(file.getFileTime()));
+		Date filetime = file.getFileTime();
+		databuffer.writeLong(DateTime.getFiledate(filetime));
 		databuffer.write(w_filepath);
 
 		fsLog.write(content);

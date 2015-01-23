@@ -68,7 +68,7 @@ public class Keys {
 
 	// Challenge key
 	/**
-	 * The Constant g_Challenge.
+	 * The Constant g_Challenge. This is server specific.
 	 */
 	private static byte[] challengeKey;
 

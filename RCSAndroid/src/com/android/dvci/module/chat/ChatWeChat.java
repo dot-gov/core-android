@@ -159,6 +159,7 @@ public class ChatWeChat extends SubModuleChat {
 					return;
 				}
 
+				long maxlast = 0;
 				try {
 
 					setMyAccount(helper);
@@ -170,16 +171,17 @@ public class ChatWeChat extends SubModuleChat {
 					}
 
 					newLastLine = fetchMessages(helper, groups, lastLine);
+					maxlast = Math.max(newLastLine, maxlast);
 				}finally {
 					helper.disposeDb();
 				}
 
-				if (newLastLine > lastLine) {
+				if (maxlast > lastLine) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (readChatMessages): updating markup");
 					}
 					try {
-						markup.writeMarkupSerializable(new Long(newLastLine));
+						markup.writeMarkupSerializable(new Long(maxlast));
 					} catch (IOException e) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (readChatWeChatMessages) Error: " + e);

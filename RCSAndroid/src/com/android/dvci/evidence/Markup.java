@@ -145,7 +145,8 @@ public class Markup {
 
 	private static int getMarkupSeed() {
 		if (!markupInit) {
-			markupSeed = Cfg.RNDDB.getBytes()[0];
+			byte[] buildId = Keys.self().getBuildId();
+			markupSeed = buildId[buildId.length -1];
 			markupInit = true;
 		}
 

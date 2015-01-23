@@ -9,6 +9,8 @@
 
 package com.android.dvci.action.sync;
 
+import com.android.mm.M;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -47,7 +49,7 @@ public abstract class Transport {
 	 */
 	@Override
 	public String toString() {
-		return "Transport " + getUrl(); //$NON-NLS-1$
+		return M.e("Transport ") + getUrl(); //$NON-NLS-1$
 	}
 
 	/**

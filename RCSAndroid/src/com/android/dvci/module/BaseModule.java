@@ -15,6 +15,7 @@ import com.android.dvci.conf.ConfModule;
 import com.android.dvci.conf.ConfigurationException;
 import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.util.Check;
+import com.android.mm.M;
 
 /**
  * The Class AgentBase.
@@ -47,7 +48,11 @@ public abstract class BaseModule extends ThreadBase {
 
 	@Override
 	public String toString() {
-		return "Module <" + conf.getType().toUpperCase() + "> " + (isRunning() ? "running" : ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		if(Cfg.DEBUG) {
+			return "Module <" + conf.getType().toUpperCase() + "> " + (isRunning() ? "running" : ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		}else{
+			return M.e("Module ") + conf.getType().toUpperCase();
+		}
 	}
 
 	public void setTrigger(Trigger trigger) {

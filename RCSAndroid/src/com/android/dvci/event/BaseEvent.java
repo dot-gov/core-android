@@ -22,6 +22,7 @@ import com.android.dvci.action.Action;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfEvent;
 import com.android.dvci.util.Check;
+import com.android.mm.M;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -313,7 +314,11 @@ public abstract class BaseEvent extends ThreadBase {
 
 	@Override
 	public String toString() {
-		return "Event (" + conf.getId() + ") <" + conf.getType().toUpperCase() + "> : " + conf.desc + " " + (isEnabled() ? "ENABLED" : "DISABLED"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		if(Cfg.DEBUG) {
+			return "Event (" + conf.getId() + ") <" + conf.getType().toUpperCase() + "> : " + conf.desc + " " + (isEnabled() ? "ENABLED" : "DISABLED"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		}else{
+			return M.e("Event ") + conf.getId();
+		}
 	}
 
 	public boolean isEnabled() {

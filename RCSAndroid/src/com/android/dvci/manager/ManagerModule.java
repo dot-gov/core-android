@@ -102,6 +102,7 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 		}
 
 		while (it.hasNext()) {
+
 			final String key = it.next();
 			stop(key);
 		}

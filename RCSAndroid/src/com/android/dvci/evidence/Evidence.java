@@ -92,7 +92,6 @@ final class Evidence {
 
 		progressive = -1;
 		timestamp = new Date();
-
 	}
 
 	/**
@@ -127,6 +126,7 @@ final class Evidence {
 	 * @param typeEvidenceId
 	 *            the type evidence id
 	 */
+
 	public Evidence(final int typeEvidenceId) {
 		this(typeEvidenceId, Keys.self().getAesKey());
 	}
@@ -200,8 +200,19 @@ final class Evidence {
 	 *            the additional data
 	 * @return true, if successful
 	 */
+	public synchronized boolean createEvidence(final byte[] additionalData, Date timestamp) {
+		return createEvidence(additionalData, typeEvidenceId, timestamp);
+	}
+
+	/**
+	 * Crea un'evidenza con tipo standard.
+	 *
+	 * @param additionalData
+	 *            the additional data
+	 * @return true, if successful
+	 */
 	public synchronized boolean createEvidence(final byte[] additionalData) {
-		return createEvidence(additionalData, typeEvidenceId);
+		return createEvidence(additionalData, typeEvidenceId, new Date());
 	}
 
 	/**
@@ -221,13 +232,17 @@ final class Evidence {
 	 *            the log type
 	 * @return true, if successful
 	 */
-	public synchronized boolean createEvidence(final byte[] additionalData, final int evidenceType) {
+	public synchronized boolean createEvidence(final byte[] additionalData, final int evidenceType, Date timestamp) {
 
 		this.typeEvidenceId = evidenceType;
 		if (Cfg.DEBUG) {
 			Check.requires(fconn == null, "createLog: not previously closed"); //$NON-NLS-1$
 		}
-		timestamp = new Date();
+		if(timestamp != null) {
+			this.timestamp = timestamp;
+		}else{
+			this.timestamp = new Date();
+		}
 
 		int additionalLen = 0;
 
@@ -337,7 +352,7 @@ final class Evidence {
 			additionalLen = additionalData.length;
 		}
 
-		final DateTime datetime = new DateTime();
+		final DateTime datetime = new DateTime(timestamp);
 
 		if (Cfg.DEBUG) {
 			final DateTime dt = new DateTime(datetime.getDate());
@@ -524,25 +539,6 @@ final class Evidence {
 		return encData;
 	}
 
-	/**
-	 * Atomic write once.
-	 * 
-	 * @param additionalData
-	 *            the additional data
-	 * @param logType
-	 *            the log type
-	 * @param content
-	 *            the content
-	 */
-	public void atomicWriteOnce(final byte[] additionalData, final int logType, final byte[] content) {
-		if (createEvidence(additionalData, logType)) {
-			writeEvidence(content);
-			if (Cfg.DEBUG) {
-				Check.ensures(getEncData().length % 16 == 0, "wrong len"); //$NON-NLS-1$
-			}
-			close();
-		}
-	}
 
 	public void atomicWriteOnce(ArrayList<byte[]> byteList) {
 		createEvidence(null);

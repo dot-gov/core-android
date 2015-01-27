@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 
 // Singleton Class
 
@@ -135,11 +136,10 @@ public class Status {
 	static boolean activityListTested = false;
 	private static int persistencyStatus = PERSISTENCY_STATUS_NOT_REQUIRED;
 
-
 	RunningProcesses runningProcess = RunningProcesses.self();
-	public Object lockFramebuffer = new Object();
 
 	private static ASG gui;
+	public Semaphore semaphoreMediaserver = new Semaphore(1);
 
 	/**
 	 * Instantiates a new status.

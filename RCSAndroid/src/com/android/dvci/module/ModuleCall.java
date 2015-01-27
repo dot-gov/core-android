@@ -232,7 +232,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 			if (hijack != null) {
 				hijack.stopInstrumentation();
-				hijack.killProc();
+
 			}
 
 			if (isMicAvailable()) {

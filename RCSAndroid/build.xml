@@ -666,7 +666,7 @@
 	</target>
 
 	<target name="update-polluce">
-		<updaterelease server="rcs-polluce" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-polluce" login="zeno" password="Pollucep123" file="server/android_${version}.zip" />
 	</target>
 
     <target name="update-local">
@@ -679,7 +679,7 @@
 	</target>
 
 	<target name="update-minotauro">
-		<updaterelease server="rcs-minotauro" login="zeno" password="zenop123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-minotauro" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />
 	</target>
 
 	<target name="ci">

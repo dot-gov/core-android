@@ -169,6 +169,9 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 		return 0;
 	}
 
+	public String getLastForeground() {
+		return lastForeground;
+	}
 
 	class BroadcastMonitorProcess implements Runnable {
 

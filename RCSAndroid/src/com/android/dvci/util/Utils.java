@@ -14,14 +14,19 @@ import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.file.AutoFile;
+import com.android.mm.M;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // TODO: Auto-generated Javadoc
 
@@ -214,4 +219,76 @@ public final class Utils {
 		InputStream stream = getAssetStream(asset);
 		return streamDecodeWrite(filename, stream, Cfg.RNDDB + asset.charAt(0));
 	}
+
+	/**
+	 * checks if a pid is running,
+	 *
+	 * @param pid
+	 *            the pid to search
+	 */
+	public static boolean pidAlive(String pid){
+
+		AutoFile file = new AutoFile(M.e("/proc/"), pid);
+		if(file!=null && file.exists()){
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the pid of a matching line of the ps command, null
+	 * if not found
+	 *
+	 * @param lookFor
+	 *            the string to search for
+	 */
+public static String pidOf(String lookFor) {
+	String line;
+	//Executable file name of the application to check.
+	String pid=null;
+	boolean applicationIsOk = false;
+	//Running command that will get all the working processes.
+	Process proc = null;
+	try {
+		proc = Runtime.getRuntime().exec("ps");
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+	if(proc != null) {
+		InputStream stream = proc.getInputStream();
+		BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+//Parsing the input stream.
+		try {
+			while ((line = reader.readLine()) != null) {
+				Pattern pattern = Pattern.compile(lookFor);
+				Matcher matcher = pattern.matcher(line);
+				if (matcher.find()) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (pidOf): find=" + lookFor + "in:\n" + line);
+					}
+						//esempio u0_a72    24334 1     5900   5280  ffffffff 00000000 R /data/data/com.android.dvci/files/vs
+						String[] splited = line.split("\\s+");
+						if(splited.length>3){
+							int p = -1;
+
+							try {
+								p = Integer.parseInt(splited[1]);
+							}catch(NumberFormatException nf){
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (pidOf): failure parsing:"+splited[1]);
+								}
+							}
+							if(p>0){
+								pid = new String(splited[1]);
+							}
+						}
+					break;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	return pid;
+}
 }

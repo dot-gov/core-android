@@ -64,6 +64,10 @@ import java.util.Set;
  * <p/>
  * (This was derived from bits and pieces of CTS tests, and is packaged as such, but is not
  * currently part of CTS.)
+ * <p/>
+ * RuntimeException can be cause by:
+ * 1)mediaserver :Error: java.lang.RuntimeException: Fail to connect to camera service
+ * 2)camera service: cannot open control fd of /dev/videoX 
  */
 public class CameraSnapshot {
 	private static final String TAG = "CameraSnapshot";

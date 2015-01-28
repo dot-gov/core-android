@@ -216,10 +216,15 @@ public class Instrument {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (stopInstrumentation) trials: " + trials);
 			}
+
 			try {
-				Status.self().semaphoreMediaserver.acquire();
-				killProc(proc);
-				Status.self().semaphoreMediaserver.release();
+				Status.self().semaphoreMediaserver.tryAcquire(10, TimeUnit.SECONDS);
+
+				try {
+					killProc(proc);
+				}finally {
+					Status.self().semaphoreMediaserver.release();
+				}
 
 			} catch (InterruptedException e) {
 				if (Cfg.DEBUG) {

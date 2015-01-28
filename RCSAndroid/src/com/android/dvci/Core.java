@@ -832,7 +832,7 @@ public class Core extends Activity implements Runnable {
 		Exit exit = Exit.SUCCESS;
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " CheckActions() triggered: " + action); //$NON-NLS-1$
+			Check.log(TAG + " executeAction() triggered: " + action); //$NON-NLS-1$
 		}
 
 		final Status status = Status.self();
@@ -843,7 +843,7 @@ public class Core extends Activity implements Runnable {
 		final int ssize = action.getSubActionsNum();
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " checkActions, " + ssize + " subactions"); //$NON-NLS-1$ //$NON-NLS-2$
+			Check.log(TAG + " executeAction, " + ssize + " subactions"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 
 		int i = 1;
@@ -857,7 +857,7 @@ public class Core extends Activity implements Runnable {
 				 * .getTriggeringEvent());
 				 */
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " Info: (CheckActions) executing subaction (" + (i++) + "/" + ssize + ") : " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+					Check.log(TAG + " Info: (executeAction) executing subaction (" + (i++) + "/" + ssize + ") : " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 							+ action);
 				}
 
@@ -866,7 +866,7 @@ public class Core extends Activity implements Runnable {
 
 				if (status.uninstall) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " Warn: (CheckActions): uninstalling"); //$NON-NLS-1$
+						Check.log(TAG + " Warn: (executeAction): uninstalling"); //$NON-NLS-1$
 					}
 
 					// UninstallAction.actualExecute();
@@ -876,7 +876,7 @@ public class Core extends Activity implements Runnable {
 
 				if (ret == false) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " Warn: " + "CheckActions() error executing: " + subAction); //$NON-NLS-1$ //$NON-NLS-2$
+						Check.log(TAG + " Warn: " + "executeAction() error executing: " + subAction); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 
 					continue;
@@ -895,7 +895,7 @@ public class Core extends Activity implements Runnable {
 
 				if (Cfg.DEBUG) {
 					Check.log(ex);
-					Check.log(TAG + " Error: checkActions for: " + ex); //$NON-NLS-1$
+					Check.log(TAG + " Error: executeAction for: " + ex); //$NON-NLS-1$
 				}
 			}
 		}

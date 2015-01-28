@@ -140,6 +140,7 @@ public class Status {
 
 	private static ASG gui;
 	public Semaphore semaphoreMediaserver = new Semaphore(1);
+	public Semaphore semaphoreSync = new Semaphore(1);
 
 	/**
 	 * Instantiates a new status.

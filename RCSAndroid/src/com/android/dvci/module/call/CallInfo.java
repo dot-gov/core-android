@@ -26,6 +26,19 @@ public class CallInfo {
 	private long[] streamId = new long[2];
 	public Date begin;
 	public Date end;
+	public boolean micStopped =false;
+
+	public CallInfo(boolean micStopped) {
+		this.micStopped = micStopped;
+	}
+
+	public boolean isMicStopped() {
+		return micStopped;
+	}
+
+	public void setMicStopped(boolean micStopped) {
+		this.micStopped = micStopped;
+	}
 
 	public String getCaller() {
 		if (!incoming) {

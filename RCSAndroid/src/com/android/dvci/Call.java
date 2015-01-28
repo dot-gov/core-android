@@ -86,9 +86,8 @@ public class Call {
 	public void setComplete(boolean answered) {
 		this.complete = true;
 		this.offhook = answered;
-		if (answered) {
-			timeEnd = new Date();
-		}
+		timeEnd = new Date();
+
 	}
 
 	public void setOngoing(boolean ongoing) {

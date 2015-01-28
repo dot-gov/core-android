@@ -35,6 +35,6 @@ RCSAndroid/src/com/android/deviceinfo/auto/Cfg.java
 
 .gradle/
 .idea/
-
+*/local.properties/*
 /core-android.iml
 RCSAndroid/rcs_mapping.txt

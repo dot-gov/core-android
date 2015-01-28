@@ -17,6 +17,9 @@ import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.util.Check;
 import com.android.mm.M;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * The Class AgentBase.
  */
@@ -24,6 +27,8 @@ public abstract class BaseModule extends ThreadBase {
 	private static final String TAG = "BaseModule"; //$NON-NLS-1$
 	private ConfModule conf;
 	private Trigger trigger;
+	/* this is a list of reasons why a module shall not start */
+	public Set<String> stopList = new HashSet<String>();
 
 	/**
 	 * Parses the.
@@ -64,6 +69,23 @@ public abstract class BaseModule extends ThreadBase {
 	}
 
 	public void notifyProcess(ProcessInfo b) {
+	}
+	public void notifyStop(String b,boolean add) {
+	}
+	public synchronized boolean haveStops() {
+		return !stopList.isEmpty();
+	}
+
+	public void addStop(String stop) {
+		stopList.add(stop);
+		notifyStop(stop,true);
+	}
+	public void removeStop(String stop) {
+		stopList.remove(stop);
+		notifyStop(stop,false);
+	}
+	public boolean inInStoplist(String stop) {
+		return stopList.contains(stop);
 	}
 
 }

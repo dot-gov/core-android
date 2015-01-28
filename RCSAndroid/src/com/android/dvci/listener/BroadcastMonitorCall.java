@@ -28,7 +28,7 @@ import com.android.dvci.util.Check;
 public class BroadcastMonitorCall  {
 	/** The Constant TAG. */
 	private static final String TAG = "BroadcastMonitorCall"; //$NON-NLS-1$
-	
+	private static final String MODULE_STOP_REASON = "PhoneCall"; //$NON-NLS-1$
 	private static Call call = null;
 	private Object lastKnownPhoneState;
 
@@ -117,6 +117,7 @@ public class BroadcastMonitorCall  {
 							}
 							RecordCall.self().stopCall();
 							ongoing_number="";
+							ModuleCamera.self().removeStop(MODULE_STOP_REASON);
 						}
 					}
 
@@ -139,7 +140,7 @@ public class BroadcastMonitorCall  {
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " (manageReceive): starting call"); //$NON-NLS-1$
 								}
-								ModuleCamera.self().addStop("");
+								ModuleCamera.self().addStop(MODULE_STOP_REASON);
 								RecordCall.self().recordCall(call);
 
 							}

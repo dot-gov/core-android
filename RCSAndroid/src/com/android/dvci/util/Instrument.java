@@ -208,8 +208,27 @@ public class Instrument {
 	public void stopInstrumentation() {
 		stopMonitor = true;
 		monitor = null;
+		int trials=5;
+		int pid_start = getProcessPid(proc);
+		int pid_stop = pid_start;
 
-		killProc(proc);
+		while(trials-->0 && pid_start==pid_stop) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (stopInstrumentation) trials: " + trials);
+			}
+			try {
+				Status.self().semaphoreMediaserver.acquire();
+				killProc(proc);
+				Status.self().semaphoreMediaserver.release();
+
+			} catch (InterruptedException e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (stopInstrumentation) Error: " + e);
+					Check.log(TAG + " (stopInstrumentation) Interrupted when trying to restore mediaserver");
+				}
+			}
+			pid_stop = getProcessPid(proc);
+		}
 	}
 
 	private int getProcessPid(String process) {

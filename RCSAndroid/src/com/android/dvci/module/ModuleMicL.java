@@ -211,7 +211,9 @@ public class ModuleMicL extends ModuleMic {
 		}
 		stopRecorder();
 		deleteSockets();
-		recorder.release();
+		if(recorder !=null) {
+			recorder.release();
+		}
 		recorder=null;
 	}
 

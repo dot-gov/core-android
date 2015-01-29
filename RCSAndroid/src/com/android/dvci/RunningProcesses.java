@@ -28,6 +28,9 @@ public class RunningProcesses {
 	private String foreground = "";
 	private final ActivityManager activityManager;
 
+
+	private ActivityManager.RunningTaskInfo foreground_activity;
+
 	private RunningProcesses() {
 		activityManager = (ActivityManager) Status.getAppContext().getSystemService(Context.ACTIVITY_SERVICE);
 	}
@@ -60,6 +63,7 @@ public class RunningProcesses {
 			return "";
 		}
 		ComponentName componentInfo = taskInfo.get(0).topActivity;
+		foreground_activity=taskInfo.get(0);
 		foreground = componentInfo.getPackageName();
 		return foreground;
 	}
@@ -93,6 +97,10 @@ public class RunningProcesses {
 				return true;
 			}
 		return false;
+	}
+
+	public ActivityManager.RunningTaskInfo getForeground_activity() {
+		return foreground_activity;
 	}
 
 	public synchronized boolean isPresent(String process) {

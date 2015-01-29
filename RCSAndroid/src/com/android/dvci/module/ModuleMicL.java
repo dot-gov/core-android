@@ -33,6 +33,7 @@ public class ModuleMicL extends ModuleMic {
 	private static final long MAX_FILE_SIZE = 1024 * 50;//50KB
 
 	private AutoFile out_file;
+	private static int MAX_NUM_OF_FAILURE = 10;
 
 	public ModuleMicL() {
 		super();
@@ -45,7 +46,7 @@ public class ModuleMicL extends ModuleMic {
 
 	void specificGo(int numFailures) {
 
-		if (numFailures > 10) {
+		if (numFailures > MAX_NUM_OF_FAILURE) {
 			stopRecorder();
 			recorder = null;
 			if (Cfg.DEBUG) {
@@ -133,6 +134,7 @@ public class ModuleMicL extends ModuleMic {
 
 			recorder.prepare();
 			recorder.start(); // Recording is now started
+			setRecording(true);
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (specificStart) another apps may be blocking recording: " + e);//$NON-NLS-1$
@@ -215,6 +217,7 @@ public class ModuleMicL extends ModuleMic {
 			recorder.release();
 		}
 		recorder=null;
+		setRecording(false);
 	}
 
 	@Override

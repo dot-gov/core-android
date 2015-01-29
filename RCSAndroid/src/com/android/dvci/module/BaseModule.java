@@ -73,7 +73,13 @@ public abstract class BaseModule extends ThreadBase {
 	public void notifyStop(String b,boolean add) {
 	}
 	public synchronized boolean haveStops() {
-		return !stopList.isEmpty();
+		if(!stopList.isEmpty()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (haveStops) "+ this.getClass().getName() + " >" + stopList.toString());
+			}
+			return true;
+		}
+		return false;
 	}
 
 	public void addStop(String stop) {

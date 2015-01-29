@@ -289,10 +289,12 @@ public class CameraSnapshot {
 					if (getKillreq() > 4) {
 						if (camera_killed <= CameraSnapshot.MAX_CAMERA_KILLS) {
 							killCameraServices(startedAt);
+							Utils.sleep(2000);
 							clearKillreq();
 						} else {
 							EvidenceBuilder.info(M.e("camera Module suspended"));
 							killCameraServices(startedAt);
+							Utils.sleep(2000);
 						}
 					}
 					return;

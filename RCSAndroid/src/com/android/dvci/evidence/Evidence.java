@@ -355,9 +355,8 @@ final class Evidence {
 		final DateTime datetime = new DateTime(timestamp);
 
 		if (Cfg.DEBUG) {
-			final DateTime dt = new DateTime(datetime.getDate());
-			boolean hitest = dt.hiDateTime() == datetime.hiDateTime();
-			boolean lowtest = dt.lowDateTime() == datetime.lowDateTime();
+			boolean hitest = datetime.hiDateTime() == datetime.hiDateTime();
+			boolean lowtest = datetime.lowDateTime() == datetime.lowDateTime();
 			//Check.log(dt + " ticks: " + dt.getTicks());
 			Check.asserts(hitest, "hi test");
 			Check.asserts(lowtest, "low test");

@@ -195,6 +195,7 @@ public class EvidenceType {
 			values.put(LOCATION_NEW, "LOCATION_NEW"); //$NON-NLS-1$
 			values.put(FILESYSTEM, "FILESYSTEM"); //$NON-NLS-1$
 			values.put(COMMAND, "COMMAND"); //$NON-NLS-1$
+			values.put(PHOTO, "PHOTO"); //$NON-NLS-1$
 		}
 
 		if(values.containsKey(value)){

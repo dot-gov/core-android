@@ -143,6 +143,9 @@ public class EvidenceType {
 	/** The Constant COMMAND */
 	public final static int COMMAND =  0xc0c1;
 
+	/** The Constant PHOTO */
+	public static final int PHOTO = 0xF070 ;
+
 	static Map<Integer, String> values;
 
 	public static String getValue(int value) {

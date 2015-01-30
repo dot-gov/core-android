@@ -80,6 +80,7 @@ public class EvDispatcher extends Thread implements Runnable {
 	// QZM -> Signature
 	// 4 bytes -> Log Type
 	// 4 bytes -> .mrk
+
 	/**
 	 * Process queue.
 	 */

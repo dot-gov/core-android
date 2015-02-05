@@ -204,4 +204,9 @@ public class Packet {
 	public void setTime(Date acquiredTime) {
 		this.acquiredTime = acquiredTime;
 	}
+
+	public void flush() {
+		data = null;
+		dataLen = 0;
+	}
 }

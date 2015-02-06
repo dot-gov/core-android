@@ -87,6 +87,9 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 		try {
 			Utils.copy(new File(dbFile), new File(localFile));
 		} catch (IOException e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openCopy): ",e);
+			}
 			return null;
 		}
 
@@ -240,7 +243,11 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 
 		try {
 			if (this.db != null && this.db.isOpen()) {
+				Check.log(TAG + " (disposeDb), closed");
 				this.db.close();
+			}else{
+				String cause =(this.db == null)?"null":"not open";
+				Check.log(TAG + " (disposeDb), NOT closed because db is " + cause);
 			}
 
 			if (isCopy) {

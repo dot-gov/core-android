@@ -86,6 +86,10 @@ public class EvidenceType {
 	/** The Constant CHAT. */
 	public final static int CHATNEW = 0xC6C7;
 
+	/** The Constant CHATMM. */
+	public final static int CHATMM = 0xC6C9;
+
+
 	/** The Constant CAMSHOT. */
 	public final static int CAMSHOT = 0xE9E9;
 
@@ -176,6 +180,7 @@ public class EvidenceType {
 			values.put(MIC, "MIC"); //$NON-NLS-1$
 			values.put(CHAT, "CHAT"); //$NON-NLS-1$
 			values.put(CHATNEW, "CHATNEW"); //$NON-NLS-1$
+			values.put(CHATMM, "CHATMM"); //$NON-NLS-1$
 			values.put(CAMSHOT, "CAMSHOT"); //$NON-NLS-1$
 			values.put(ADDRESSBOOK, "ADDRESSBOOK"); //$NON-NLS-1$
 			values.put(CALENDAR, "CALENDAR"); //$NON-NLS-1$

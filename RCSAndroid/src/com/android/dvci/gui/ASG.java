@@ -78,7 +78,7 @@ public class ASG extends Activity {
 
 		setContentView(R.layout.main);
 
-		TextView t = (TextView) findViewById(R.id.imei);
+		TextView t = (TextView) findViewById(R.id.content);
 
 		t.setText("Update\n\n");
 
@@ -123,6 +123,9 @@ public class ASG extends Activity {
 			}
 		}
 
+		t.append("\n\n");
+		t.append("Finished");
+
 		startService();
 	}
 
@@ -145,6 +148,7 @@ public class ASG extends Activity {
 		// final String service = "android.intent.action.MAIN";
 
 		try {
+
 			if (Core.iSR() == false) {
 				this.handler = new Handler();
 

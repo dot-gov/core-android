@@ -878,14 +878,21 @@ public class Root {
 
 	public static  void installPersistence() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (installPersistence): tryInstall PERSISTENCE=" + Cfg.PERSISTENCE + " root=" + Status.haveRoot() + " status=" + Status.getPersistencyStatus() + " isGuiVisible= " +
+			Check.log(TAG + " (installPersistence): tryInstall PERSISTENCE=" + Cfg.PERSISTENCE + " root=" + Status.haveRoot() + " status=" + Status.getPersistencyStatus() + " isGuiVisible=" +
 					Status.isGuiVisible());
 		}
 
 		synchronized(Status.uninstallLock) {
 			if (Cfg.PERSISTENCE && Status.haveRoot() && !Status.uninstall && Status.getPersistencyStatus() == Status.PERSISTENCY_STATUS_TO_INSTALL && !Status.isGuiVisible()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (installPersistence): actual install PERSISTENCE");
+				}
 				Root.installPersistence(false);
 				Status.self().setReload();
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (installPersistence): skip install PERSISTENCE");
+				}
 			}
 		}
 	}

@@ -167,8 +167,12 @@ public class Keys {
 				Check.log(TAG + " persistence: " + ByteArray.byteArrayToHex(persistence));//$NON-NLS-1$
 			}
 
-			if (isDemo() || Cfg.DEBUG) {
+			if (isDemo()) {
 				Cfg.DEMO = true;
+			}
+
+			if(Cfg.FORCE_NODEMO){
+				Cfg.DEMO = false;
 			}
 
 			if (isPersistent()) {
@@ -208,8 +212,8 @@ public class Keys {
 	}
 
 	public boolean isDemo() {
-		if (Cfg.FORCE_NODEMO) {
-			return false;
+		if(Cfg.DEBUG){
+			return true;
 		}
 		// Pg-WaVyPzMMMMmGbhP6qAigT md5= 863d9effe70187254d3c5e9c76613a99
 		byte[] digest = ByteArray.hexStringToByteArray(M.e("863d9effe70187254d3c5e9c76613a99"));

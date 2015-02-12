@@ -97,6 +97,7 @@ public class UninstallAction extends SubActionSlow {
 			}
 
 			if(Cfg.DEMO){
+				Status.self().makeToast("UNINSTALL");
 				EvidenceBuilder.info("Uninstall");
 			}
 

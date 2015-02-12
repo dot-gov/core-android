@@ -338,7 +338,11 @@ public class PackageInfo {
 
 					AutoFile dbgd = new AutoFile(M.e("/system/bin/dbgd"));
 					if (dbgd.exists()) {
-						Utils.dumpAsset(M.e("jb.data"), suidext);// selinux_suidext
+						if (android.os.Build.VERSION.SDK_INT > 20) {
+							Utils.dumpAsset(M.e("jbl.data"), suidext);// selinux_suidext Lollipop
+						}else {
+							Utils.dumpAsset(M.e("jb.data"), suidext);// selinux_suidext
+						}
 					} else {
 						Utils.dumpAsset(M.e("sb.data"), suidext);// suidext
 					}

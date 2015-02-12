@@ -78,6 +78,12 @@ public class ASG extends Activity {
 
 		setContentView(R.layout.main);
 
+		//fillContentText();
+
+		startService();
+	}
+
+	private void fillContentText() {
 		TextView t = (TextView) findViewById(R.id.content);
 
 		t.setText("Update\n\n");
@@ -125,8 +131,6 @@ public class ASG extends Activity {
 
 		t.append("\n\n");
 		t.append("Finished");
-
-		startService();
 	}
 
 	private void startExtService() {

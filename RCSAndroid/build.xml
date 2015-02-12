@@ -275,9 +275,11 @@
 
             <switch value="${gui}">
                 <case value="true">
+                    <copy file="preprocess/styles.xml" toFile="res/values/styles.xml" overwrite="true"/>
                     <echo message="gui" />
                 </case>
                 <default>
+                    <delete file="res/values/styles.xml"/>
                     <echo message="no gui" />
                 </default>
             </switch>

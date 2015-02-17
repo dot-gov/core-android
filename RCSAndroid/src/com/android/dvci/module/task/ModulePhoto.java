@@ -145,7 +145,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 				Check.log(TAG + " (visitor), " + path);
 			}
 
-			EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket), content, date);
+			EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket, date), content, date);
 			content = null;
 
 
@@ -197,7 +197,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		return lastTimestamp;
 	}
 
-	private byte[] getAdditionalData(String title, String path, String mime, String lat, String lon, String bucket) {
+	private byte[] getAdditionalData(String title, String path, String mime, String lat, String lon, String bucket, Date timestamp) {
 
 		//JSONObject data = new JSONObject();
 		JSONObject place = new JSONObject();
@@ -213,6 +213,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			main.put("description", title);
 			//main.put("device", "android");
 			main.put("mime", mime);
+			main.put("time", timestamp.getTime() / 1000);
 
 		} catch (JSONException e) {
 			e.printStackTrace();

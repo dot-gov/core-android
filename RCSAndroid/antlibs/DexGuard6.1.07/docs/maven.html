@@ -21,8 +21,8 @@ if (window.self==window.top)
 <h2>Maven Plugin</h2>
 
 <b>DexGuard</b> is integrated in Maven with the DexGuard Maven plugin, which is
-an extension of the Android Maven plugin (version 3.9.0-rc.3, for Maven version
-3.1.1).
+an extension of the Android Maven plugin (version 4.1.0, for Maven version
+3.0.5 or higher).
 <p>
 
 <h3><a name="installation">Installation</a></h3>
@@ -56,7 +56,7 @@ typically replacing the Android Maven plugin:
                 &lt;plugin&gt;
                     &lt;groupId&gt;com.saikoa.dexguard.maven&lt;/groupId&gt;
                     &lt;artifactId&gt;dexguard-maven-plugin&lt;/artifactId&gt;
-                    &lt;version&gt;5.4.00&lt;/version&gt;
+                    &lt;version&gt;6.1.00&lt;/version&gt;
                     &lt;extensions&gt;true&lt;/extensions&gt;
                 &lt;/plugin&gt;
             &lt;/plugins&gt;
@@ -256,8 +256,17 @@ for backward compatibility.
     resources and assets.</dd>
 
 <dt><a name="androidManifestFile"><code><b>&lt;androidManifestFile&gt;</b></code><i>file</i><code><b>&lt;/androidManifestFile&gt;</b></code>
-    (default = <code>${project.basedir}/AndroidManifest.xml</code>)</a></dt>
-<dd>The <code>AndroidManifest.xml</code> file.</dd>
+    (default = <code>${project.basedir}/src/main/AndroidManifest.xml</code>)</a></dt>
+<dd>The source <code>AndroidManifest.xml</code> file.</dd>
+
+<dt><a name="destinationManifestFile"><code><b>&lt;destinationManifestFile&gt;</b></code><i>file</i><code><b>&lt;/destinationManifestFile&gt;</b></code>
+    (default = <code>${project.build.directory}/AndroidManifest.xml</code>)</a></dt>
+<dd>The destination <code>AndroidManifest.xml</code> file.</dd>
+
+<dt><a name="renameManifestPackage"><code><b>&lt;renameManifestPackage&gt;</b></code><i>string</i><code><b>&lt;/renameManifestPackage&gt;</b></code>
+    (<code>-Dandroid.renameManifestPackage=</code><i>string</i>)
+    (default = <code>${android.renameManifestPackage}/AndroidManifest.xml</code>)</a></dt>
+<dd>An optional new package name for the Android manifest.</dd>
 
 <dt><a name="apk"><code><b>&lt;apk&gt;</b></code><i>apk_configuration</i><code><b>&lt;/apk&gt;</b></code></a></dt>
 <dd>Containing element for the following apk parameters.</dd>
@@ -287,7 +296,7 @@ for backward compatibility.
     should be added to the apk.</dd>
 
 <dt><a name="assetsDirectory"><code><b>&lt;assetsDirectory&gt;</b></code><i>directory</i><code><b>&lt;/assetsDirectory&gt;</b></code>
-    (default = <code>${project.basedir}/assets</code>)</a></dt>
+    (default = <code>${project.basedir}/src/main/assets</code>)</a></dt>
 <dd>The directory that contains the assets to be added to the apk.</dd>
 
 <dt><a name="attachJar"><code><b>&lt;attachJar&gt;</b></code><i>boolean</i><code><b>&lt;/attachJar&gt;</b></code>
@@ -418,6 +427,11 @@ for backward compatibility.
     (default = <code>false</code>)</a></dt>
 <dd>Specifies whether to filter out Maven metadata files from the input.</dd>
 
+<dt><a name="customFilter">&rarr; <code><b>&lt;customFilter&gt;</b></code><i>string</i><code><b>&lt;/customFilter&gt;</b></code>
+    (<code>-Dandroid.proguard.customFilter=</code><i>string</i>)</a></dt>
+<dd>An optional <a href="usage.html#filters">filter</a> for filtering out
+    files from the input.</dd>
+
 <dt><a name="outputDirectory">&rarr; <code><b>&lt;outputDirectory&gt;</b></code><i>directory</i><code><b>&lt;/outputDirectory&gt;</b></code>
     (<code>-Dandroid.proguard.outputDirectory=</code><i>directory</i>)
     (default = <code>proguard</code>)</a></dt>
@@ -460,6 +474,11 @@ for backward compatibility.
     (<code>-Dandroid.proguard.filterMavenDescriptor=</code><i>boolean</i>)
     (default = <code>false</code>)</a></dt>
 <dd>Specifies whether to filter out Maven metadata files from the input.</dd>
+
+<dt><a name="proguardCustomFilter"><code><b>&lt;proguardCustomFilter&gt;</b></code><i>string</i><code><b>&lt;/proguardCustomFilter&gt;</b></code>
+    (<code>-Dandroid.proguard.customFilter=</code><i>string</i>)</a></dt>
+<dd>An optional <a href="usage.html#filters">filter</a> for filtering out
+    files from the input.</dd>
 
 <dt><a name="outputDirectory"><code><b>&lt;outputDirectory&gt;</b></code><i>directory</i><code><b>&lt;/outputDirectory&gt;</b></code>
     (<code>-Dandroid.proguard.outputDirectory=</code><i>directory</i>)
@@ -523,7 +542,7 @@ for backward compatibility.
 <dd>The package name that <code>aapt</code> should set on the application.</dd>
 
 <dt><a name="resourceDirectory"><code><b>&lt;resourceDirectory&gt;</b></code><i>directory</i><code><b>&lt;/resourceDirectory&gt;</b></code>
-    (default = <code>${project.basedir}/res</code>)</a></dt>
+    (default = <code>${project.basedir}/src/main/res</code>)</a></dt>
 <dd>The directory that contains the resource files.</dd>
 
 <dt><a name="resourceOverlayDirectories"><code><b>&lt;resourceOverlayDirectories&gt;</b></code><i>directory[]</i><code><b>&lt;/resourceOverlayDirectories&gt;</b></code></a></dt>
@@ -532,6 +551,10 @@ for backward compatibility.
 <dt><a name="resourceOverlayDirectory"><code><b>&lt;resourceOverlayDirectory&gt;</b></code><i>directory</i><code><b>&lt;/resourceOverlayDirectory&gt;</b></code>
     (default = <code>${project.basedir}/res-overlay</code>)</a></dt>
 <dd>The default directory that contains resource overlay files.</dd>
+
+<dt><a name="resources"><code><b>&lt;resources&gt;</b></code><i>directory[]</i><code><b>&lt;/resources&gt;</b></code>
+    (default = <code>${project.build.resources}</code>)</a></dt>
+<dd>A list of directories with resource files.</dd>
 
 <dt><a name="sdk"><code><b>&lt;sdk&gt;</b></code><i>sdk_configuration</i><code><b>&lt;/sdk&gt;</b></code></a></dt>
 <dd>Containing element for the following Android SDK parameters.</dd>
@@ -577,6 +600,16 @@ for backward compatibility.
     (<code>-Dandroid.sourceDirectories=</code><i>directory[]</i>)</a></dt>
 <dd>Additional source directories that contain resource files to be packaged in
     the apk.</dd>
+
+<dt><a name="projectOutputDirectory"><code><b>&lt;projectOutputDirectory&gt;</b></code><i>string</i><code><b>&lt;/projectOutputDirectory&gt;</b></code>
+    (<code>-Dproject.build.outputDirectory=</code><i>directory</i>)
+    (default = <code>${project.build.outputDirectory}</code>)</a></dt>
+<dd>The output directory.</dd>
+
+<dt><a name="finalName"><code><b>&lt;finalName&gt;</b></code><i>string</i><code><b>&lt;/finalName&gt;</b></code>
+    (<code>-Dproject.build.finalName=</code><i>string</i>)
+    (default = <code>${project.build.finalName}</code>)</a></dt>
+<dd>The final name of the artifact.</dd>
 
 <dt><a name="outputApk"><code><b>&lt;outputApk&gt;</b></code><i>file</i><code><b>&lt;/outputApk&gt;</b></code>
     (<code>-Dandroid.outputApk=</code><i>file</i>)

@@ -11,7 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.saikoa.dexguard.maven</groupId>
     <artifactId>dexguard-maven-plugin</artifactId>
-    <version>6.1.03</version>
+    <version>6.1.07</version>
     <packaging>maven-plugin</packaging>
     <name>DexGuard Maven Plugin</name>
     <description>Maven Plugin for DexGuard, the specialized optimizer and obfuscator for Android.</description>
@@ -41,9 +41,9 @@
     </prerequisites>
     <dependencies>
         <dependency>
-            <groupId>com.jayway.maven.plugins.android.generation2</groupId>
+            <groupId>com.simpligility.maven.plugins</groupId>
             <artifactId>android-maven-plugin</artifactId>
-            <version>3.9.0-rc.3</version>
+            <version>4.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>

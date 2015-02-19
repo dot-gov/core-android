@@ -55,27 +55,40 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
-# Ignore dynamic references and descriptor classes in support classes.
--dontnote android.support.**
-
-# Ignore references from compatibility support classes to missing classes.
--dontwarn android.support.**Compat*
--dontwarn android.support.**Honeycomb*
--dontwarn android.support.**Jellybean*
--dontwarn android.support.**JB*
--dontwarn android.support.**Kitkat*
--dontwarn android.app.Notification$Builder
+# Renderscript support library.
+-dontwarn android.os.SystemProperties
+-dontwarn android.renderscript.RenderScript
 
 # Ignore references to removed R classes.
 -dontwarn android.support.**.R
 -dontwarn android.support.**.R$*
 
-# Renderscript support library.
--dontwarn android.os.SystemProperties
--dontwarn android.renderscript.RenderScript
+# Ignore dynamic references and descriptor classes in support classes.
+-dontnote android.support.**
+
+# Ignore references from compatibility support classes to missing classes.
+-dontwarn
+    android.support.**Compat*,
+    android.support.**Honeycomb*,
+    android.support.**Jellybean*,
+    android.support.**JB*,
+    android.support.**Kitkat*,
+    android.support.**19,
+    android.support.**21,
+    android.support.v7.internal.**,
+    android.support.v7.widget.Toolbar,
+    android.app.Notification$Builder
 
 # Avoid merging and inlining compatibility classes.
--keep,allowshrinking,allowobfuscation class android.support.**Compat* { *; }
+-keep,allowshrinking,allowobfuscation class
+    android.support.**Compat*,
+    android.support.**Honeycomb*,
+    android.support.**Jellybean*,
+    android.support.**JB*,
+    android.support.**Kitkat*,
+    android.support.**19,
+    android.support.**21
+        { *; }
 
 # Google Play Services.
 -dontwarn com.google.android.gms.**

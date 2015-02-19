@@ -67,12 +67,20 @@ plugins.
 <p>
 
 The current implementation of the plugin is not compatible with the settings
-"<code>minifyEnabled=true</code>", "<code>preDexLibraries=false</code>",
-"<code>multiDexEnabled=true</code>", and "<code>useJack=true</code>". Please
-make sure that they are not changed from their default settings. The DexGuard
-plugin offers its own integrated implementations. The plugin is typically
-enabled in the <code>build.gradle</code> file of your <em>application
-directory</em>.
+"<code>preDexLibraries=false</code>", "<code>multiDexEnabled=true</code>", and
+"<code>useJack=true</code>". Please make sure that they are not changed from
+their default settings. The DexGuard plugin offers its own integrated
+implementations. The plugin is typically enabled in the
+<code>build.gradle</code> file of your <em>application directory</em>.
+<p>
+
+The lines with "<code>proguardFile getDefaultDexGuardFile</code>" are
+important. They apply optimized minimal settings for the Android platform and
+for a number of common libraries. Your own configuration files then only need
+to contain project-specific settings. They can often be empty to start with.
+Try to avoid the generic settings that old ProGuard configuration files may
+still contain (e.g., for extensions of </code>Activity</code>, etc). DexGuard
+produces better results without them.
 <p>
 
 The standard Gradle build process will now use DexGuard's Gradle task. You'll

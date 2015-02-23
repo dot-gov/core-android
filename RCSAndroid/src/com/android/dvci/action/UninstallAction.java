@@ -270,7 +270,7 @@ public class UninstallAction extends SubActionSlow {
 		}
 
 		boolean ret = Root.uninstallRoot();
-
+		Root.checkRemoval();
 		if (Cfg.DEMO) {
 			Beep.beepPenta();
 		}

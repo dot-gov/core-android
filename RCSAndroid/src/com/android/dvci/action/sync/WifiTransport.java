@@ -128,6 +128,7 @@ public class WifiTransport extends HttpKeepAliveTransport implements Observer<St
 		} else {
 			for (int i = 0; i < 30; i++) {
 				if (isAvailable()) {
+					Utils.sleep(5000);
 					return true;
 				}
 

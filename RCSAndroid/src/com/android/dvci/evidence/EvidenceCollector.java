@@ -336,7 +336,7 @@ public class EvidenceCollector {
 			}
 		}
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " removeLogRecursive removed: " + numLogsDeleted);//$NON-NLS-1$
+			Check.log(TAG + " removeLogRecursive removed: " + numLogsDeleted + " of " + basePath);//$NON-NLS-1$
 		}
 		return numLogsDeleted;
 

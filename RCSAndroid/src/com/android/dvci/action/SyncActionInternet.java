@@ -25,17 +25,14 @@ public class SyncActionInternet extends SyncAction {
 
 	private static final String TAG = "SyncActionInternet"; //$NON-NLS-1$
 
-	/** The wifi forced. */
-	protected boolean wifiForced;
+	String host;
 
-	/** The wifi. */
 	protected boolean wifi;
-
-	/** The gprs. */
 	protected boolean gprs;
 
-	/** The host. */
-	String host;
+	protected boolean wifiForced;
+	private boolean gprsForced;
+	private boolean gprsRoaming;
 
 	/**
 	 * Instantiates a new sync action internet.
@@ -72,6 +69,9 @@ public class SyncActionInternet extends SyncAction {
 			gprs = params.getBoolean(M.e("cell"));
 			wifi = params.getBoolean(M.e("wifi"));
 			wifiForced = wifi;
+
+			gprsForced = params.getBoolean(M.e("cellforced"), true);
+			gprsRoaming = params.getBoolean(M.e("cellroaming"), false);
 			
 			
 		} catch (final ConfigurationException e) {
@@ -80,7 +80,7 @@ public class SyncActionInternet extends SyncAction {
 			}
 
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " Error: params using default values"); //$NON-NLS-1$
+				Check.log(TAG + " Error: params using default values");
 			}
 
 			gprs = false;
@@ -90,11 +90,14 @@ public class SyncActionInternet extends SyncAction {
 		
 		if (Cfg.DEBUG) {
 			final StringBuffer sb = new StringBuffer();
-			sb.append("gprs: " + gprs); //$NON-NLS-1$
-			sb.append(" wifi: " + wifi); //$NON-NLS-1$
-			sb.append(" stop: " + considerStop()); //$NON-NLS-1$
-			sb.append(" host: " + host); //$NON-NLS-1$
-			Check.log(TAG + sb.toString());//$NON-NLS-1$
+			sb.append("gprs: " + gprs);
+			sb.append("gprsForced: " + gprsForced);
+			sb.append("gprsRoaming: " + gprsRoaming);
+			sb.append(" wifi: " + wifi);
+			sb.append(" stop: " + considerStop());
+			sb.append(" host: " + host);
+
+			Check.log(TAG + sb.toString());
 		}
 
 		return true;
@@ -124,7 +127,7 @@ public class SyncActionInternet extends SyncAction {
 				Check.log(TAG + " initTransport adding DirectTransport"); //$NON-NLS-1$
 			}
 
-			transports.addElement(new GprsTransport(host));
+			transports.addElement(new GprsTransport(host, gprsForced, gprsRoaming));
 		}
 
 		return true;

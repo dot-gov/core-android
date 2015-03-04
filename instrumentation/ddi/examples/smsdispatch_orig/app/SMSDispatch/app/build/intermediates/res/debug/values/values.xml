@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- From: file:/home/zad/work/devel/instrumentation/ddi/examples/smsdispatch/app/SMSDispatch/app/src/main/res/values/strings.xml -->
+    <eat-comment/>
+    <string name="app_name">SMSDispatch</string>
+    <!-- From: file:/home/zad/work/devel/instrumentation/ddi/examples/smsdispatch/app/SMSDispatch/app/src/main/res/values/styles.xml -->
+    <eat-comment/>
+    <style name="AppTheme" parent="android:Theme.Black">
+        <!-- Customize your theme here. -->
+    </style>
+</resources>

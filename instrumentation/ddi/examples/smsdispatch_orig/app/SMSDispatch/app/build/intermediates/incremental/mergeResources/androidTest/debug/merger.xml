@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="3"><dataSet config="main"><source path="/home/zad/work/devel/instrumentation/ddi/examples/smsdispatch/app/SMSDispatch/app/src/androidTest/res"/><source path="/home/zad/work/devel/instrumentation/ddi/examples/smsdispatch/app/SMSDispatch/app/build/generated/res/rs/androidTest/debug"/><source path="/home/zad/work/devel/instrumentation/ddi/examples/smsdispatch/app/SMSDispatch/app/build/generated/res/generated/androidTest/debug"/></dataSet><mergedItems/></merger>

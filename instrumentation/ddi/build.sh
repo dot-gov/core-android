@@ -7,8 +7,8 @@ cd ../..
 
 echo "building examples"
 cd examples
-echo "building ex:strmon"
-cd strmon/jni
+echo "building ex:keylogger"
+cd keylogger/jni
 ndk-build
 cd ../..
 

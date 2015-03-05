@@ -19,7 +19,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := libsmsdispatch
 LOCAL_SRC_FILES := smsdispatch.c.arm
 LOCAL_C_INCLUDES := ../../../../adbi/instruments/base/ ../../../dalvikhook/jni/
-LOCAL_LDLIBS    := -L../../../dalvikhook/jni/libs  -L../../../dalvikhook/extralibs/ -ldl -ldvm -llog 
+LOCAL_LDLIBS    := -L../../../dalvikhook/jni/libs  -L../../../dalvikhook/extralibs/ -llog 
 LOCAL_LDLIBS    += -Wl,--start-group ../../../../adbi/instruments/base/obj/local/armeabi/libbase.a ../../../dalvikhook/obj/local/armeabi/libdalvikhook.a -Wl,--end-group
 LOCAL_CFLAGS    := -g
 

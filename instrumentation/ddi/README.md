@@ -228,3 +228,31 @@ libsmsdispatch: clazz = 0x41825c80
 libsmsdispatch: new obj = 0x95700025
 success calling : dispatchPdus
 ```
+
+
+
+## one line reference
+
+# build the hijacker
+cd ../adbi/hijack/jni
+ndk-build
+cd -
+
+# push the hijacker
+adb push ../adbi/hijack/obj/local/armeabi/hijack /data/local/tmp && adb shell su -c "chmod 777  /data/local/tmp/hijack"
+
+#echo "building dalvikhook needed for hijacking high in java"
+cd ../dalvikhook/jni && ndk-build && cd -
+
+#inside an ddi/example/<dir> :
+##to build lib
+cd jni && ndk-build && cd -
+##to build dext
+./build-dex.sh
+##to copy dex and update
+dex=$(ls obj/*.dex | xargs basename) && adb shell su -c  "chmod 777 /data/dalvik-cache/" && adb shell su -c "rm /data/dalvik-cache/*$dex*" && adb push obj/*.dex /data/local/tmp/
+
+
+##to run the injector
+./hijjj.sh <processNameToinject> <libraryToInject> <localFileForLog> example
+./hijjj.sh com.android.phone libikey.so libkey.log

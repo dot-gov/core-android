@@ -20,6 +20,7 @@ LOCAL_MODULE    := libdalvikhook
 LOCAL_INCLUDE   := ../../../adbi/instruments/base/hook.h
 LOCAL_SRC_FILES := dexstuff.c.arm dalvik_hook.c
 LOCAL_LDLIBS    := -L./libs -ldl -ldvm ../../../adbi/instruments/base/obj/local/armeabi/libbase.a 
+LOCAL_LDLIBS    := ../../../adbi/instruments/base/obj/local/armeabi/libbase.a
 
 LOCAL_SHARED_LIBRARIES := ../../../adbi/instruments/base/obj/local/armeabi/libbase.a 
 

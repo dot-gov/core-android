@@ -18,7 +18,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := libexample
 LOCAL_SRC_FILES := ../epoll.c  ../epoll_arm.c.arm
-LOCAL_LDLIBS    := -L./libs -ldl -ldvm -lbase
+#LOCAL_LDLIBS    := -L./libs -ldl -ldvm -lbase
 LOCAL_LDLIBS := -Wl,--start-group ../../base/obj/local/armeabi/libbase.a  -Wl,--end-group
 LOCAL_CFLAGS := -g
 

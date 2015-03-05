@@ -60,7 +60,7 @@ import com.android.mm.M;
 public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private static final String TAG = "ModuleMessage"; //$NON-NLS-1$
 	//$NON-NLS-1$
-	private static final int SMS_VERSION = 2010050501;
+	public static final int SMS_VERSION = 2010050501;
 	private static final int MAIL_VERSION2 = 2012030601;
 	private static final int ID_MAIL = 0;
 	private static final int ID_SMS = 1;

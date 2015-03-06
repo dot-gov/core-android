@@ -1,7 +1,7 @@
 #!/bin/bash
 #arguments: <processNameToinject> <libraryToInject> <localFileForLog>
 
-adb push libs/armeabi/$2 /data/local/tmp/$
+adb push libs/armeabi/$2 /data/local/tmp/
 for i in 1 2; do
   n=0
   for a in `adb shell ps | grep $1` then; 

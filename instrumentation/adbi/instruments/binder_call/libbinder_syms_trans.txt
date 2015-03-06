@@ -1,0 +1,918 @@
+D/binderr:my_log( 6575): name:  0 
+
+D/binderr:my_log( 6575): name: android::IBinder::IBinder() 178e5 
+
+D/binderr:my_log( 6575): name: __aeabi_unwind_cpp_pr0 0 
+
+D/binderr:my_log( 6575): name: android::IBinder::~IBinder() 178f5 
+
+D/binderr:my_log( 6575): name: android::IBinder::queryLocalInterface(android::String16 const&) 178f9 
+
+D/binderr:my_log( 6575): name: android::IBinder::localBinder() 17901 
+
+D/binderr:my_log( 6575): name: android::IBinder::remoteBinder() 17901 
+
+D/binderr:my_log( 6575): name: android::IBinder::checkSubclass(void const*) const 17901 
+
+D/binderr:my_log( 6575): name: android::BBinder::BBinder() 17905 
+
+D/binderr:my_log( 6575): name: android::BBinder::isBinderAlive() const 17925 
+
+D/binderr:my_log( 6575): name: android::BBinder::pingBinder() 17901 
+
+D/binderr:my_log( 6575): name: android::BBinder::linkToDeath(android::sp<android::IBinder::DeathRecipient> const&, void*, unsigned int) 17929 
+
+D/binderr:my_log( 6575): name: android::BBinder::unlinkToDeath(android::wp<android::IBinder::DeathRecipient> const&, void*, unsigned int, android::wp<android::IBinder::DeathRecipient>*) 17929 
+
+D/binderr:my_log( 6575): name: android::BBinder::dump(int, android::Vector<android::String16> const&) 17901 
+
+D/binderr:my_log( 6575): name: android::BBinder::localBinder() 178f5 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::onIncStrongAttempted(unsigned int, void const*) 17931 
+
+D/binderr:my_log( 6575): name: android::RefBase::weakref_type::attemptIncStrong(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::onLastStrongRef(void const*) 17941 
+
+D/binderr:my_log( 6575): name: android::RefBase::decStrong(void const*) const 0 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::onFirstRef() 17959 
+
+D/binderr:my_log( 6575): name: android_atomic_or 0 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::~BpRefBase() 17969 
+
+D/binderr:my_log( 6575): name: android::RefBase::weakref_type::decWeak(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::~BpRefBase() 1799d 
+
+D/binderr:my_log( 6575): name: android::RefBase::~RefBase() 0 
+
+D/binderr:my_log( 6575): name: vtable for android::BpRefBase 23088 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::~BpRefBase() 179e9 
+
+D/binderr:my_log( 6575): name: operator delete(void*) 0 
+
+D/binderr:my_log( 6575): name: android::IBinder::~IBinder() 179fd 
+
+D/binderr:my_log( 6575): name: vtable for android::IBinder 23208 
+
+D/binderr:my_log( 6575): name: android::IBinder::~IBinder() 17a29 
+
+D/binderr:my_log( 6575): name: android::BBinder::BBinder() 17a3d 
+
+D/binderr:my_log( 6575): name: android::RefBase::RefBase() 0 
+
+D/binderr:my_log( 6575): name: VTT for android::BBinder 231f0 
+
+D/binderr:my_log( 6575): name: vtable for android::BBinder 230e0 
+
+D/binderr:my_log( 6575): name: android::IBinder::IBinder() 17a81 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::BpRefBase(android::sp<android::IBinder> const&) 17aa9 
+
+D/binderr:my_log( 6575): name: android::RefBase::extendObjectLifetime(int) 0 
+
+D/binderr:my_log( 6575): name: android::RefBase::incStrong(void const*) const 0 
+
+D/binderr:my_log( 6575): name: android::RefBase::createWeak(void const*) const 0 
+
+D/binderr:my_log( 6575): name: android::BpRefBase::BpRefBase(android::sp<android::IBinder> const&) 17b15 
+
+D/binderr:my_log( 6575): name: android::Vector<android::String16>::do_destroy(void*, unsigned int) const 17b65 
+
+D/binderr:my_log( 6575): name: android::String16::~String16() 0 
+
+D/binderr:my_log( 6575): name: android::Vector<android::String16>::do_move_backward(void*, void const*, unsigned int) const 17b7d 
+
+D/binderr:my_log( 6575): name: android::String16::String16(android::String16 const&) 0 
+
+D/binderr:my_log( 6575): name: android::Vector<android::String16>::do_move_forward(void*, void const*, unsigned int) const 17ba9 
+
+D/binderr:my_log( 6575): name: android::Vector<android::String16>::do_splat(void*, void const*, unsigned int) const 17bd9 
+
+D/binderr:my_log( 6575): name: android::Vector<android::String16>::do_copy(void*, void const*, unsigned int) const 17bf5 
+
+D/binderr:my_log( 6575): name: android::Vector<android::String16>::do_construct(void*, unsigned int) const 17c19 
+
+D/binderr:my_log( 6575): name: android::String16::String16() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::finish_vector() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::~VectorImpl() 0 
+
+D/binderr:my_log( 6575): name: vtable for android::Vector<android::String16> 23040 
+
+D/binderr:my_log( 6575): name: android::BBinder::onTransact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 17c59 
+
+D/binderr:my_log( 6575): name: android::Parcel::writeString16(android::String16 const&) 1f43d 
+
+D/binderr:my_log( 6575): name: android::Parcel::readFileDescriptor() const 1e729 
+
+D/binderr:my_log( 6575): name: android::Parcel::readInt32() const 1e605 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::VectorImpl(unsigned int, unsigned int) 0 
+
+D/binderr:my_log( 6575): name: android::Parcel::dataAvail() const 1e415 
+
+D/binderr:my_log( 6575): name: android::Parcel::readString16() const 1ea89 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::add(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::BBinder::~BBinder() 17d29 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::~ObjectManager() 18791 
+
+D/binderr:my_log( 6575): name: pthread_mutex_destroy 0 
+
+D/binderr:my_log( 6575): name: android::BBinder::~BBinder() 17d85 
+
+D/binderr:my_log( 6575): name: android::BBinder::~BBinder() 17d99 
+
+D/binderr:my_log( 6575): name: android::BBinder::detachObject(void const*) 17dcd 
+
+D/binderr:my_log( 6575): name: pthread_mutex_lock 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::detach(void const*) 18661 
+
+D/binderr:my_log( 6575): name: pthread_mutex_unlock 0 
+
+D/binderr:my_log( 6575): name: android::BBinder::findObject(void const*) const 17ded 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::find(void const*) const 18699 
+
+D/binderr:my_log( 6575): name: android::BBinder::attachObject(void const*, void*, void*, void (*)(void const*, void*, void*)) 17e15 
+
+D/binderr:my_log( 6575): name: operator new(unsigned int) 0 
+
+D/binderr:my_log( 6575): name: pthread_mutex_init 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::ObjectManager() 188ed 
+
+D/binderr:my_log( 6575): name: android_atomic_release_cas 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::attach(void const*, void*, void*, void (*)(void const*, void*, void*)) 186e5 
+
+D/binderr:my_log( 6575): name: android::BBinder::transact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 17e85 
+
+D/binderr:my_log( 6575): name: android::Parcel::setDataPosition(unsigned int) const 1e429 
+
+D/binderr:my_log( 6575): name: android::Parcel::writeInt32(int) 1f311 
+
+D/binderr:my_log( 6575): name: android::BBinder::getInterfaceDescriptor() const 17ed9 
+
+D/binderr:my_log( 6575): name: __cxa_guard_acquire 0 
+
+D/binderr:my_log( 6575): name: __cxa_guard_release 0 
+
+D/binderr:my_log( 6575): name: __aeabi_atexit 0 
+
+D/binderr:my_log( 6575): name: __android_log_print 0 
+
+D/binderr:my_log( 6575): name: __dso_handle 28570 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BBinder::~BBinder() 17f3d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BBinder::~BBinder() 17f4d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IBinder::~IBinder() 17f5d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IBinder::~IBinder() 17f6d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpRefBase::~BpRefBase() 17f7d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpRefBase::~BpRefBase() 17f8d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpRefBase::onFirstRef() 17f9d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpRefBase::onLastStrongRef(void const*) 17fad 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpRefBase::onIncStrongAttempted(unsigned int, void const*) 17fbd 
+
+D/binderr:my_log( 6575): name: VTT for android::BpRefBase 23200 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IBinder-in-android::BBinder 23170 
+
+D/binderr:my_log( 6575): name: VTT for android::IBinder 23168 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl1() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl2() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl3() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl4() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl5() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl6() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl7() 0 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::reservedVectorImpl8() 0 
+
+D/binderr:my_log( 6575): name: android::RefBase::onLastWeakRef(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::RefBase::onFirstRef() 0 
+
+D/binderr:my_log( 6575): name: android::RefBase::onLastStrongRef(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::RefBase::onIncStrongAttempted(unsigned int, void const*) 0 
+
+D/binderr:my_log( 6575): name: __cxa_pure_virtual 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::isBinderAlive() const 17fd9 
+
+D/binderr:my_log( 6575): name: android::BpBinder::remoteBinder() 178f5 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BpBinder::Obituary>::do_construct(void*, unsigned int) const 17fe5 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> >::do_construct(void*, unsigned int) const 178f5 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> >::do_destroy(void*, unsigned int) const 178f5 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> >::do_copy(void*, void const*, unsigned int) const 17ff5 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> >::do_splat(void*, void const*, unsigned int) const 1801d 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> >::do_move_forward(void*, void const*, unsigned int) const 18045 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> >::do_move_backward(void*, void const*, unsigned int) const 17ff5 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> >::do_compare(void const*, void const*) const 1806d 
+
+D/binderr:my_log( 6575): name: android::BpBinder::onIncStrongAttempted(unsigned int, void const*) 18085 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::self() 1ad85 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::attemptIncStrongHandle(int) 1b40d 
+
+D/binderr:my_log( 6575): name: android::BpBinder::onLastStrongRef(void const*) 180a1 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::decStrongHandle(int) 1a90d 
+
+D/binderr:my_log( 6575): name: android::BpBinder::onFirstRef() 180b5 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::incStrongHandle(int) 1a92d 
+
+D/binderr:my_log( 6575): name: android::BpBinder::isDescriptorCached() const 180c9 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BpBinder::Obituary>::do_destroy(void*, unsigned int) const 180f1 
+
+D/binderr:my_log( 6575): name: android::BpBinder::reportOneDeath(android::BpBinder::Obituary const&) 18111 
+
+D/binderr:my_log( 6575): name: android::BpBinder::sendObituary() 18171 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::clearDeathNotification(int, android::BpBinder*) 1a875 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::flushCommands() 1ab21 
+
+D/binderr:my_log( 6575): name: android::RefBase::weakref_type::incWeak(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BpBinder::Obituary>::do_move_backward(void*, void const*, unsigned int) const 181f9 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BpBinder::Obituary>::do_move_forward(void*, void const*, unsigned int) const 1822d 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BpBinder::Obituary>::do_splat(void*, void const*, unsigned int) const 18259 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BpBinder::Obituary>::do_copy(void*, void const*, unsigned int) const 18275 
+
+D/binderr:my_log( 6575): name: android::BpBinder::unlinkToDeath(android::wp<android::IBinder::DeathRecipient> const&, void*, unsigned int, android::wp<android::IBinder::DeathRecipient>*) 18299 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::removeItemsAt(unsigned int, unsigned int) 0 
+
+D/binderr:my_log( 6575): name: vtable for android::Vector<android::BpBinder::Obituary> 23288 
+
+D/binderr:my_log( 6575): name: android::BpBinder::linkToDeath(android::sp<android::IBinder::DeathRecipient> const&, void*, unsigned int) 183b1 
+
+D/binderr:my_log( 6575): name: __android_log_assert 0 
+
+D/binderr:my_log( 6575): name: android::RefBase::getWeakRefs() const 0 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::requestDeathNotification(int, android::BpBinder*) 1a8a1 
+
+D/binderr:my_log( 6575): name: android::BpBinder::transact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 184b1 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::transact(int, unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 1b449 
+
+D/binderr:my_log( 6575): name: android::BpBinder::dump(int, android::Vector<android::String16> const&) 184e5 
+
+D/binderr:my_log( 6575): name: android::Parcel::Parcel() 1e575 
+
+D/binderr:my_log( 6575): name: android::Parcel::writeFileDescriptor(int, bool) 1f5f9 
+
+D/binderr:my_log( 6575): name: android::Parcel::~Parcel() 1eea5 
+
+D/binderr:my_log( 6575): name: android::BpBinder::pingBinder() 18559 
+
+D/binderr:my_log( 6575): name: android::Parcel::dataSize() const 1e405 
+
+D/binderr:my_log( 6575): name: android::BpBinder::getInterfaceDescriptor() const 185b5 
+
+D/binderr:my_log( 6575): name: android::String16::setTo(android::String16 const&) 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::kill() 18635 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::clear() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::remove(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::detachObject(void const*) 18675 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::indexOf(void const*) const 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::findObject(void const*) const 186bd 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::add(void const*) 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::attachObject(void const*, void*, void*, void (*)(void const*, void*, void*)) 18735 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::~SortedVectorImpl() 0 
+
+D/binderr:my_log( 6575): name: vtable for android::SortedVector<android::key_value_pair_t<void const*, android::BpBinder::ObjectManager::entry_t> > 232d0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::~BpBinder() 187a5 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::expungeHandle(int, android::IBinder*) 1b4d5 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::decWeakHandle(int) 1a8cd 
+
+D/binderr:my_log( 6575): name: vtable for android::BpBinder 233d0 
+
+D/binderr:my_log( 6575): name: VTT for android::BpBinder 23340 
+
+D/binderr:my_log( 6575): name: android::BpBinder::~BpBinder() 18845 
+
+D/binderr:my_log( 6575): name: android::BpBinder::~BpBinder() 18859 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::~ObjectManager() 18791 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::SortedVectorImpl(unsigned int, unsigned int) 0 
+
+D/binderr:my_log( 6575): name: android::BpBinder::BpBinder(int) 18911 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::incWeakHandle(int) 1a8ed 
+
+D/binderr:my_log( 6575): name: android::BpBinder::BpBinder(int) 18991 
+
+D/binderr:my_log( 6575): name: android::BpBinder::ObjectManager::ObjectManager() 188ed 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpBinder::~BpBinder() 189ed 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpBinder::~BpBinder() 189fd 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpBinder::onFirstRef() 18a0d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpBinder::onLastStrongRef(void const*) 18a1d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpBinder::onIncStrongAttempted(unsigned int, void const*) 18a2d 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IBinder-in-android::BpBinder 23350 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl1() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl2() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl3() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl4() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl5() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl6() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl7() 0 
+
+D/binderr:my_log( 6575): name: android::SortedVectorImpl::reservedSortedVectorImpl8() 0 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::clear() 18a3d 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::freeLastRow() 18a71 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::getRowSlot(unsigned int) 18a89 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::getFieldSlot(unsigned int, unsigned int) 18aa5 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::putNull(unsigned int, unsigned int) 18b19 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::putDouble(unsigned int, unsigned int, double) 18b4d 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::putLong(unsigned int, unsigned int, long long) 18b9d 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::alloc(unsigned int, bool) 18bed 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::putBlobOrString(unsigned int, unsigned int, void const*, unsigned int, int) 18c35 
+
+D/binderr:my_log( 6575): name: memcpy 0 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::putString(unsigned int, unsigned int, char const*, unsigned int) 18cc1 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::putBlob(unsigned int, unsigned int, void const*, unsigned int) 18cd1 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::allocRowSlot() 18ce1 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::setNumColumns(unsigned int) 18d35 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::allocRow() 18d71 
+
+D/binderr:my_log( 6575): name: memset 0 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::writeToParcel(android::Parcel*) 18dc5 
+
+D/binderr:my_log( 6575): name: android::Parcel::writeString8(android::String8 const&) 1f499 
+
+D/binderr:my_log( 6575): name: android::Parcel::writeDupFileDescriptor(int) 1f6e5 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::~CursorWindow() 18de1 
+
+D/binderr:my_log( 6575): name: munmap 0 
+
+D/binderr:my_log( 6575): name: close 0 
+
+D/binderr:my_log( 6575): name: android::String8::~String8() 0 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::~CursorWindow() 18de1 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::CursorWindow(android::String8 const&, int, void*, unsigned int, bool) 18dfd 
+
+D/binderr:my_log( 6575): name: android::String8::String8(android::String8 const&) 0 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::createFromParcel(android::Parcel*, android::CursorWindow**) 18e21 
+
+D/binderr:my_log( 6575): name: android::Parcel::readString8() const 1eac5 
+
+D/binderr:my_log( 6575): name: ashmem_get_size_region 0 
+
+D/binderr:my_log( 6575): name: dup 0 
+
+D/binderr:my_log( 6575): name: __errno 0 
+
+D/binderr:my_log( 6575): name: mmap 0 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::create(android::String8 const&, unsigned int, android::CursorWindow**) 18ec9 
+
+D/binderr:my_log( 6575): name: android::String8::String8(char const*) 0 
+
+D/binderr:my_log( 6575): name: android::String8::append(android::String8 const&) 0 
+
+D/binderr:my_log( 6575): name: ashmem_create_region 0 
+
+D/binderr:my_log( 6575): name: ashmem_set_prot_region 0 
+
+D/binderr:my_log( 6575): name: android::CursorWindow::CursorWindow(android::String8 const&, int, void*, unsigned int, bool) 18dfd 
+
+D/binderr:my_log( 6575): name: android::IInterface::IInterface() 178e5 
+
+D/binderr:my_log( 6575): name: android::IInterface::~IInterface() 178f5 
+
+D/binderr:my_log( 6575): name: android::IInterface::asBinder() const 18f9d 
+
+D/binderr:my_log( 6575): name: android::IInterface::asBinder() 18f9d 
+
+D/binderr:my_log( 6575): name: android::IInterface::~IInterface() 18fc1 
+
+D/binderr:my_log( 6575): name: vtable for android::IInterface 23468 
+
+D/binderr:my_log( 6575): name: android::IInterface::~IInterface() 18fed 
+
+D/binderr:my_log( 6575): name: android::IInterface::IInterface() 19001 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IInterface::~IInterface() 19029 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IInterface::~IInterface() 19039 
+
+D/binderr:my_log( 6575): name: VTT for android::IInterface 23460 
+
+D/binderr:my_log( 6575): name: android::IMemory::getInterfaceDescriptor() const 19049 
+
+D/binderr:my_log( 6575): name: android::IMemory::descriptor 28590 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::getInterfaceDescriptor() const 19055 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::descriptor 2858c 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> >::do_construct(void*, unsigned int) const 19065 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> >::do_compare(void const*, void const*) const 19079 
+
+D/binderr:my_log( 6575): name: android::BnInterface<android::IMemory>::onAsBinder() 190b5 
+
+D/binderr:my_log( 6575): name: android::BnInterface<android::IMemoryHeap>::onAsBinder() 190b5 
+
+D/binderr:my_log( 6575): name: vtable for android::IBinder::DeathRecipient 239e8 
+
+D/binderr:my_log( 6575): name: strzcmp16 0 
+
+D/binderr:my_log( 6575): name: android::sp<android::IMemoryHeap>::sp(android::sp<android::IMemoryHeap> const&) 191e9 
+
+D/binderr:my_log( 6575): name: android::sp<android::HeapCache>::~sp() 19205 
+
+D/binderr:my_log( 6575): name: android::sp<android::IMemoryHeap>::operator=(android::sp<android::IMemoryHeap> const&) 19221 
+
+D/binderr:my_log( 6575): name: android::sp<android::IMemoryHeap>::~sp() 19205 
+
+D/binderr:my_log( 6575): name: android::IMemory::offset() const 19251 
+
+D/binderr:my_log( 6575): name: android::IMemory::size() const 1926d 
+
+D/binderr:my_log( 6575): name: android::IMemory::pointer() const 19289 
+
+D/binderr:my_log( 6575): name: android::sp<android::IBinder>::~sp() 19205 
+
+D/binderr:my_log( 6575): name: android::HeapCache::dump_heaps() 192b9 
+
+D/binderr:my_log( 6575): name: android::wp<android::IBinder>::wp(android::sp<android::IBinder> const&) 19325 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> >::do_splat(void*, void const*, unsigned int) const 19371 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> >::do_copy(void*, void const*, unsigned int) const 1938d 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> >::do_move_backward(void*, void const*, unsigned int) const 19401 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> >::do_move_forward(void*, void const*, unsigned int) const 1942d 
+
+D/binderr:my_log( 6575): name: android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> >::do_destroy(void*, unsigned int) const 1945d 
+
+D/binderr:my_log( 6575): name: android::HeapCache::free_heap(android::wp<android::IBinder> const&) 19475 
+
+D/binderr:my_log( 6575): name: android::VectorImpl::editItemLocation(unsigned int) 0 
+
+D/binderr:my_log( 6575): name: android_atomic_dec 0 
+
+D/binderr:my_log( 6575): name: android::HeapCache::free_heap(android::sp<android::IBinder> const&) 194f5 
+
+D/binderr:my_log( 6575): name: android::HeapCache::binderDied(android::wp<android::IBinder> const&) 19519 
+
+D/binderr:my_log( 6575): name: vtable for android::SortedVector<android::key_value_pair_t<android::wp<android::IBinder>, android::HeapCache::heap_info_t> > 23da0 
+
+D/binderr:my_log( 6575): name: android::HeapCache::~HeapCache() 1955d 
+
+D/binderr:my_log( 6575): name: vtable for android::HeapCache 23ec0 
+
+D/binderr:my_log( 6575): name: VTT for android::HeapCache 23f10 
+
+D/binderr:my_log( 6575): name: android::HeapCache::~HeapCache() 195b1 
+
+D/binderr:my_log( 6575): name: android::HeapCache::~HeapCache() 195c5 
+
+D/binderr:my_log( 6575): name: android::HeapCache::HeapCache() 195e9 
+
+D/binderr:my_log( 6575): name: android::String16::String16(char const*) 0 
+
+D/binderr:my_log( 6575): name: android::HeapCache::HeapCache() 196f1 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BnMemoryHeap::onTransact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 19741 
+
+D/binderr:my_log( 6575): name: android::BnMemoryHeap::onTransact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 19749 
+
+D/binderr:my_log( 6575): name: android::Parcel::checkInterface(android::IBinder*) const 1ebf1 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::~IMemoryHeap() 197b9 
+
+D/binderr:my_log( 6575): name: vtable for android::IMemoryHeap 24a20 
+
+D/binderr:my_log( 6575): name: VTT for android::IMemoryHeap 24978 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::~IMemoryHeap() 197f5 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::~IMemoryHeap() 19809 
+
+D/binderr:my_log( 6575): name: vtable for android::BnInterface<android::IMemoryHeap> 234b8 
+
+D/binderr:my_log( 6575): name: VTT for android::BnInterface<android::IMemoryHeap> 23570 
+
+D/binderr:my_log( 6575): name: vtable for android::BpInterface<android::IMemoryHeap> 23a40 
+
+D/binderr:my_log( 6575): name: VTT for android::BpInterface<android::IMemoryHeap> 23ac8 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BnMemoryHeap::~BnMemoryHeap() 1997d 
+
+D/binderr:my_log( 6575): name: android::BnMemoryHeap::~BnMemoryHeap() 19985 
+
+D/binderr:my_log( 6575): name: vtable for android::BnMemoryHeap 23fa8 
+
+D/binderr:my_log( 6575): name: VTT for android::BnMemoryHeap 24998 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BnMemoryHeap::~BnMemoryHeap() 199c9 
+
+D/binderr:my_log( 6575): name: android::BnMemoryHeap::~BnMemoryHeap() 199d1 
+
+D/binderr:my_log( 6575): name: android::BnMemoryHeap::~BnMemoryHeap() 199e5 
+
+D/binderr:my_log( 6575): name: android::IMemory::~IMemory() 19a35 
+
+D/binderr:my_log( 6575): name: vtable for android::IMemory 247e0 
+
+D/binderr:my_log( 6575): name: VTT for android::IMemory 24988 
+
+D/binderr:my_log( 6575): name: android::IMemory::~IMemory() 19a71 
+
+D/binderr:my_log( 6575): name: android::IMemory::~IMemory() 19809 
+
+D/binderr:my_log( 6575): name: vtable for android::BnInterface<android::IMemory> 23760 
+
+D/binderr:my_log( 6575): name: VTT for android::BnInterface<android::IMemory> 23808 
+
+D/binderr:my_log( 6575): name: vtable for android::BpInterface<android::IMemory> 23c00 
+
+D/binderr:my_log( 6575): name: VTT for android::BpInterface<android::IMemory> 23c78 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BnMemory::~BnMemory() 19bad 
+
+D/binderr:my_log( 6575): name: android::BnMemory::~BnMemory() 19bb5 
+
+D/binderr:my_log( 6575): name: vtable for android::BnMemory 23e10 
+
+D/binderr:my_log( 6575): name: VTT for android::BnMemory 24630 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BnMemory::~BnMemory() 19bf9 
+
+D/binderr:my_log( 6575): name: android::BnMemory::~BnMemory() 19c01 
+
+D/binderr:my_log( 6575): name: android::BnMemory::~BnMemory() 199e5 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BpMemory::~BpMemory() 19c15 
+
+D/binderr:my_log( 6575): name: android::BpMemory::~BpMemory() 19c1d 
+
+D/binderr:my_log( 6575): name: vtable for android::BpMemory 24300 
+
+D/binderr:my_log( 6575): name: VTT for android::BpMemory 24150 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BpMemory::~BpMemory() 19c69 
+
+D/binderr:my_log( 6575): name: android::BpMemory::~BpMemory() 19c71 
+
+D/binderr:my_log( 6575): name: android::BpMemory::~BpMemory() 19c85 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::IMemoryHeap() 19cb1 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::IMemoryHeap() 19ced 
+
+D/binderr:my_log( 6575): name: android::BnMemoryHeap::BnMemoryHeap() 19d35 
+
+D/binderr:my_log( 6575): name: android::BnMemoryHeap::BnMemoryHeap() 19d79 
+
+D/binderr:my_log( 6575): name: android::IMemory::IMemory() 19d99 
+
+D/binderr:my_log( 6575): name: android::IMemory::IMemory() 19ced 
+
+D/binderr:my_log( 6575): name: android::BnMemory::BnMemory() 19dd5 
+
+D/binderr:my_log( 6575): name: android::BnMemory::BnMemory() 19d79 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::assertReallyMapped() const 19e19 
+
+D/binderr:my_log( 6575): name: android::Parcel::writeInterfaceToken(android::String16 const&) 1f455 
+
+D/binderr:my_log( 6575): name: strerror 0 
+
+D/binderr:my_log( 6575): name: android_atomic_release_store 0 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BpMemoryHeap::~BpMemoryHeap() 19fa9 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::~BpMemoryHeap() 19fb1 
+
+D/binderr:my_log( 6575): name: vtable for android::BpMemoryHeap 24ad8 
+
+D/binderr:my_log( 6575): name: VTT for android::BpMemoryHeap 248c0 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BpMemoryHeap::~BpMemoryHeap() 1a04d 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::~BpMemoryHeap() 1a055 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::~BpMemoryHeap() 1a069 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::BpMemoryHeap(android::sp<android::IBinder> const&) 1a111 
+
+D/binderr:my_log( 6575): name: android::IMemoryHeap::asInterface(android::sp<android::IBinder> const&) 1a175 
+
+D/binderr:my_log( 6575): name: android::HeapCache::get_heap(android::sp<android::IBinder> const&) 1a209 
+
+D/binderr:my_log( 6575): name: android::IMemory::fastPointer(android::sp<android::IBinder> const&, long) const 1a281 
+
+D/binderr:my_log( 6575): name: android::HeapCache::find_heap(android::sp<android::IBinder> const&) 1a2b5 
+
+D/binderr:my_log( 6575): name: android_atomic_inc 0 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::assertMapped() const 1a395 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::getOffset() const 1a445 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::getFlags() const 1a451 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::getSize() const 1a45d 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::getBase() const 1a469 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::getHeapID() const 1a475 
+
+D/binderr:my_log( 6575): name: android::BpMemoryHeap::BpMemoryHeap(android::sp<android::IBinder> const&) 1a481 
+
+D/binderr:my_log( 6575): name: android::BpMemory::BpMemory(android::sp<android::IBinder> const&) 1a4bd 
+
+D/binderr:my_log( 6575): name: android::IMemory::asInterface(android::sp<android::IBinder> const&) 1a50d 
+
+D/binderr:my_log( 6575): name: android::BpMemory::BpMemory(android::sp<android::IBinder> const&) 1a5a1 
+
+D/binderr:my_log( 6575): name: non-virtual thunk to android::BnMemory::onTransact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 1a5c9 
+
+D/binderr:my_log( 6575): name: android::BnMemory::onTransact(unsigned int, android::Parcel const&, android::Parcel*, unsigned int) 1a5d1 
+
+D/binderr:my_log( 6575): name: android::Parcel::writeStrongBinder(android::sp<android::IBinder> const&) 1fb31 
+
+D/binderr:my_log( 6575): name: android::BpMemory::getMemory(long*, unsigned int*) const 1a641 
+
+D/binderr:my_log( 6575): name: android::Parcel::readStrongBinder() const 1ef45 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpMemoryHeap::~BpMemoryHeap() 1a701 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpMemoryHeap::~BpMemoryHeap() 1a711 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpMemory::~BpMemory() 1a721 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpMemory::~BpMemory() 1a731 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnMemory::~BnMemory() 1a741 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnMemory::~BnMemory() 1a751 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpInterface<android::IMemory>::~BpInterface() 19b9d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpInterface<android::IMemory>::~BpInterface() 19b71 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnInterface<android::IMemory>::~BnInterface() 19b09 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnInterface<android::IMemory>::~BnInterface() 19add 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IMemory::~IMemory() 1a761 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IMemory::~IMemory() 1a771 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnMemoryHeap::~BnMemoryHeap() 1a781 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnMemoryHeap::~BnMemoryHeap() 1a791 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpInterface<android::IMemoryHeap>::~BpInterface() 1993d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BpInterface<android::IMemoryHeap>::~BpInterface() 19911 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnInterface<android::IMemoryHeap>::~BnInterface() 198a9 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::BnInterface<android::IMemoryHeap>::~BnInterface() 1987d 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IMemoryHeap::~IMemoryHeap() 1a7a1 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IMemoryHeap::~IMemoryHeap() 1a7b1 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::HeapCache::~HeapCache() 1a7c1 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::HeapCache::~HeapCache() 1a7d1 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IBinder::DeathRecipient::~DeathRecipient() 19129 
+
+D/binderr:my_log( 6575): name: virtual thunk to android::IBinder::DeathRecipient::~DeathRecipient() 19105 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BpInterface<android::IMemory>-in-android::BpMemory 24710 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemory-in-android::BpMemory 24180 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BpMemory 24480 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BpRefBase-in-android::BpMemory 24520 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BpInterface<android::IMemoryHeap>-in-android::BpMemoryHeap 23f20 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemoryHeap-in-android::BpMemoryHeap 240e8 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BpMemoryHeap 249d0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BpRefBase-in-android::BpMemoryHeap 24788 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IBinder::DeathRecipient-in-android::HeapCache 246c0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BnInterface<android::IMemory>-in-android::BnMemory 241d8 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemory-in-android::BnMemory 24668 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BnMemory 244d0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BBinder-in-android::BnMemory 248f0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IBinder-in-android::BnMemory 24280 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::IMemory 24430 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BnInterface<android::IMemoryHeap>-in-android::BnMemoryHeap 24578 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemoryHeap-in-android::BnMemoryHeap 243c8 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BnMemoryHeap 24a88 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BBinder-in-android::BnMemoryHeap 24838 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IBinder-in-android::BnMemoryHeap 24068 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::IMemoryHeap 24378 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemoryHeap-in-android::BnInterface<android::IMemoryHeap> 235a0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BnInterface<android::IMemoryHeap> 23608 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BBinder-in-android::BnInterface<android::IMemoryHeap> 23658 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IBinder-in-android::BnInterface<android::IMemoryHeap> 236e0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemory-in-android::BnInterface<android::IMemory> 23838 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BnInterface<android::IMemory> 23890 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BBinder-in-android::BnInterface<android::IMemory> 238e0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IBinder-in-android::BnInterface<android::IMemory> 23968 
+
+D/binderr:my_log( 6575): name: VTT for android::IBinder::DeathRecipient 23a38 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemoryHeap-in-android::BpInterface<android::IMemoryHeap> 23af0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BpInterface<android::IMemoryHeap> 23b58 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BpRefBase-in-android::BpInterface<android::IMemoryHeap> 23ba8 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IMemory-in-android::BpInterface<android::IMemory> 23ca0 
+
+D/binderr:my_log( 6575): name: construction vtable for android::IInterface-in-android::BpInterface<android::IMemory> 23cf8 
+
+D/binderr:my_log( 6575): name: construction vtable for android::BpRefBase-in-android::BpInterface<android::IMemory> 23d48 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::disableBackgroundScheduling(bool) 1a7e1 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::clearLastError() 1a7ed 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::getCallingPid() 1a7fd 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::getCallingUid() 1a805 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::setStrictModePolicy(int) 1a80d 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::getStrictModePolicy() const 1a815 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::setLastTransactionBinderFlags(int) 1a81d 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::getLastTransactionBinderFlags() const 1a825 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::restoreCallingIdentity(long long) 1a82d 
+
+D/binderr:my_log( 6575): name: android::Vector<android::RefBase::weakref_type*>::do_construct(void*, unsigned int) const 178f5 
+
+D/binderr:my_log( 6575): name: android::Vector<android::RefBase::weakref_type*>::do_destroy(void*, unsigned int) const 178f5 
+
+D/binderr:my_log( 6575): name: android::Vector<android::RefBase::weakref_type*>::do_splat(void*, void const*, unsigned int) const 1a839 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BBinder*>::do_construct(void*, unsigned int) const 178f5 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BBinder*>::do_destroy(void*, unsigned int) const 178f5 
+
+D/binderr:my_log( 6575): name: android::Vector<android::BBinder*>::do_splat(void*, void const*, unsigned int) const 1a839 
+
+D/binderr:my_log( 6575): name: android::the_context_object 28594 
+
+D/binderr:my_log( 6575): name: android::sp<android::BBinder>::~sp() 19205 
+
+D/binderr:my_log( 6575): name: android::setTheContextObject(android::sp<android::BBinder>) 1a94d 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::process() 191e9 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::writeTransactionData(int, unsigned int, int, unsigned int, android::Parcel const&, int*) 1a991 
+
+D/binderr:my_log( 6575): name: android::Parcel::errorCheck() const 1e44d 
+
+D/binderr:my_log( 6575): name: android::Parcel::ipcDataSize() const 1e405 
+
+D/binderr:my_log( 6575): name: android::Parcel::ipcData() const 1d059 
+
+D/binderr:my_log( 6575): name: android::Parcel::ipcObjectsCount() const 1e449 
+
+D/binderr:my_log( 6575): name: android::Parcel::ipcObjects() const 1d061 
+
+D/binderr:my_log( 6575): name: android::Parcel::write(void const*, unsigned int) 1f479 
+
+D/binderr:my_log( 6575): name: __stack_chk_fail 0 
+
+D/binderr:my_log( 6575): name: __stack_chk_guard 0 
+
+D/binderr:my_log( 6575): name: android::IPCThreadState::talkWithDriver(bool) 1aa45 
+
+D/binderr:my_log( 6575): name: android::Parcel::dataPosition() const 1d05d 
+
+D/binderr:my_log( 6575): name: android::Parcel::data() const 1d059 
+
+D/binderr:my_log( 6575): name: android::Parcel::dataCapacity() const 1c5c5 
+
+D/binderr:my_log( 6575): name: ioctl 0 
+
+D/binderr:my_log( 6575): hooking:   ioctl = 0x401ae000 
+
+D/binderr:my_log( 6575): ARM using 0x5bd775d4
+

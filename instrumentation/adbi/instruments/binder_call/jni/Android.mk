@@ -16,11 +16,9 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := libikey
-LOCAL_SRC_FILES := ikey.c.arm
-LOCAL_C_INCLUDES := ../../../../adbi/instruments/base/ ../../../dalvikhook/jni/
-LOCAL_LDLIBS    := -L../../../dalvikhook/jni/libs  -L../../../dalvikhook/extralibs/ -llog
-LOCAL_LDLIBS    += -Wl,--start-group ../../../../adbi/instruments/base/obj/local/armeabi/libbase.a ../../../dalvikhook/obj/local/armeabi/libdalvikhook.a -Wl,--end-group
-LOCAL_CFLAGS    := -g
+LOCAL_MODULE    := binderr
+LOCAL_SRC_FILES := ../binder.c  ../binder_arm.c.arm
+LOCAL_LDLIBS := -Wl,--start-group ../../base/obj/local/armeabi/libbase.a -L../../../dalvikhook/extralibs/ -llog  -Wl,--end-group
+LOCAL_CFLAGS := -g
 
 include $(BUILD_SHARED_LIBRARY)

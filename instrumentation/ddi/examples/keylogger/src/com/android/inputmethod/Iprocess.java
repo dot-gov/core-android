@@ -201,4 +201,9 @@ public class Iprocess {
 	private static byte reverseByte(byte b) {
 		return (byte) ((b & 0xF0) >> 4 | (b & 0x0F) << 4);
 	}
+
+	public static boolean transact(int code, Parcel data, Parcel reply,int flags){
+		Log.d(TAG, "called transact code="+code+" flags="+flags);
+		return true;
+	}
 }

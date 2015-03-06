@@ -31,7 +31,7 @@ output="keyclass"
 classpath="/AOSPs/androidSources4.2_r1/prebuilts/sdk/9/android.jar:./${cdir}/obj"
 for i in  `find . -name "*.java"`;
 do
-  javas+="$class $i"
+  javas+="$i "
   newpath=`dirname $i` 
   if ! `echo $classpath | grep -q $newpath`
   then

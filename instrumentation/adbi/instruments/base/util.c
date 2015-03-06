@@ -375,7 +375,7 @@ static int lookup2(struct symlist *sl, unsigned char type,
 
 	len = strlen(name);
 	for (i = 0, p = sl->sym; i < sl->num; i++, p++) {
-		//log("name: %s %x\n", sl->str+p->st_name, p->st_value)
+		//log("name: %s %x against %s\n", sl->str+p->st_name, p->st_value,name)
 		if (!strncmp(sl->str+p->st_name, name, len) && *(sl->str+p->st_name+len) == 0
 		    && ELF32_ST_TYPE(p->st_info) == type) {
 			//if (p->st_value != 0) {
@@ -411,21 +411,21 @@ int find_name(pid_t pid, char *name, char *libn, unsigned long *addr)
 	symtab_t s;
 
 	if (0 > load_memmap(pid, mm, &nmm)) {
-		log("cannot read memory map\n")
+		log("find_name:cannot read memory map\n")
 		return -1;
 	}
 	if (0 > find_libname(libn, libc, sizeof(libc), &libcaddr, mm, nmm)) {
-		log("cannot find lib: %s\n", libn)
+		log("find_name:cannot find lib: %s\n", libn)
 		return -1;
 	}
 	//log("lib: >%s<\n", libc)
 	s = load_symtab(libc);
 	if (!s) {
-		log("cannot read symbol table\n");
+		log("find_name:cannot read symbol table\n");
 		return -1;
 	}
 	if (0 > lookup_func_sym(s, name, addr)) {
-		log("cannot find function: %s\n", name);
+		log("find_name:cannot find function: %s\n", name);
 		return -1;
 	}
 	*addr += libcaddr;

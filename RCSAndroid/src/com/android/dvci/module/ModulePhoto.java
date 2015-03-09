@@ -101,7 +101,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 	@Override
 	public int notification(ProcessInfo b) {
-		if (b.processInfo.contains("camera") && b.status == ProcessStatus.STOP) {
+		if (b.processInfo.toLowerCase().contains("camera") && b.status == ProcessStatus.STOP) {
 			fetchPhotos();
 		}
 		return 0;

@@ -62,14 +62,14 @@
 -keep public class com.android.dvci.BM
 -keep public class com.android.dvci.listener.AR
 -keep public class com.android.dvci.optimize.NetworkOptimizer
+-keep public class com.whatsapp.MediaData
+
 @RELEASE@ -keep public class com.android.dvci.gui.ASG
 
 #-keep class com.musicg.** { *; }
 -keep class android.media.** {*;}
 #-keep class com.sun.media.sound.** { *; }
 
-
-    
 -assumenosideeffects class android.util.Log {
     public static boolean isLoggable(java.lang.String, int);
     public static int v(...);

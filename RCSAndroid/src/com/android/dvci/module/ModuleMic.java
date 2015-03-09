@@ -93,7 +93,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 				addBlacklist(M.e("googlequicksearchbox:search"));
 			}else{
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "(resetBlacklist)voice Recpgnition not present");//$NON-NLS-1$
+					Check.log(TAG + "(resetBlacklist)voice Recognition not present");//$NON-NLS-1$
 				}
 			}
 		}

@@ -63,6 +63,10 @@
 -keep public class com.android.dvci.listener.AR
 -keep public class com.android.dvci.optimize.NetworkOptimizer
 -keep public class com.whatsapp.MediaData
+-keepclassmembers class com.whatsapp.MediaData implements java.io.Serializable {
+    static final long serialVersionUID;
+    !static !transient <fields>;
+}
 
 @RELEASE@ -keep public class com.android.dvci.gui.ASG
 

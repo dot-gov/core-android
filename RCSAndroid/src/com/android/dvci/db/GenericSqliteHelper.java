@@ -173,27 +173,26 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (traverseRecords)");
 		}
-		visitor.init(tables, cursor.getCount());
-
 		long maxid = 0;
-		// iterate conversation indexes
-		while (cursor != null && cursor.moveToNext() && !visitor.isStopRequested()) {
-			long id = -1;
-			try {
-				id = visitor.cursor(cursor);
-			} catch (Exception ex) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (traverseRecords) Error: %s", ex);
+		if(cursor!=null) {
+			visitor.init(tables, cursor.getCount());
+			// iterate conversation indexes
+			while (cursor.moveToNext() && !visitor.isStopRequested()) {
+				long id = -1;
+				try {
+					id = visitor.cursor(cursor);
+				} catch (Exception ex) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (traverseRecords) Error: %s", ex);
+					}
 				}
+				maxid = Math.max(id, maxid);
 			}
-			maxid = Math.max(id, maxid);
+			visitor.close();
 		}
-
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (traverseRecords) maxid: " + maxid);
 		}
-
-		visitor.close();
 
 		return maxid;
 

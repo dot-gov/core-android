@@ -836,6 +836,10 @@ public class Status {
 	public String getForeground() {
 		return runningProcess.getForeground_wrapper();
 	}
+	public android.app.ActivityManager.RunningTaskInfo getForeground_activity() {
+		return runningProcess.getForeground_activity();
+	}
+
 
 	public RunningProcesses getRunningProcess() {
 		return runningProcess;

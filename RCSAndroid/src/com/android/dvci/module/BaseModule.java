@@ -84,10 +84,16 @@ public abstract class BaseModule extends ThreadBase {
 
 	public void addStop(String stop) {
 		stopList.add(stop);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (addStop) "+ this.getClass().getName() + " >" + stop);
+		}
 		notifyStop(stop,true);
 	}
 	public void removeStop(String stop) {
 		stopList.remove(stop);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (removeStop) "+ this.getClass().getName() + " >" + stop);
+		}
 		notifyStop(stop,false);
 	}
 	public boolean inInStoplist(String stop) {

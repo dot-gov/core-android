@@ -59,7 +59,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
 	protected static final int SUSPEND_CALL = 0;
 	protected static StandByObserver standbyObserver;
-
+	protected boolean recorder_started=false;
 	protected int numFailures;
 	protected long fId;
 	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
@@ -77,7 +77,9 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		super();
 		resetBlacklist();
 	}
-
+	public boolean isRecording() {
+		return recorder_started;
+	}
 	public synchronized void resetBlacklist() {
 		blacklist.clear();
 		addBlacklist(M.e("shazam"));
@@ -254,6 +256,9 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 				delBlacklist(M.e("googlequicksearchbox:search"));
 			}
 		}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualGo), recorder=" + recorder + "is recording=" + isRecording());
+		}
 		if (recorder == null) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (actualGo), recorder not ready");
@@ -273,6 +278,14 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		if (amp != 0) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (actualGo): max amplitude=" + amp);//$NON-NLS-1$
+			}
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (actualGo) start again recorder amplitude was null");//$NON-NLS-1$
+			}
+			specificStop();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (stopAndStart): stop");
 			}
 		}
 
@@ -294,6 +307,9 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 
 	@Override
 	public void notifyStop(String b, boolean add) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (notifyStop): " + b + "add="+add);
+		}
 		if(add){
 			suspend();
 		}else if(!haveStops()){

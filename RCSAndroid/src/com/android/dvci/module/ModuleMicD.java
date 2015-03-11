@@ -129,6 +129,10 @@ public class ModuleMicD extends ModuleMic {
 			recorder.setOutputFile(sender.getFileDescriptor());
 			recorder.prepare();
 			recorder.start(); // Recording is now started
+			int ampl = recorder.getMaxAmplitude();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (specificStart) recorder started ampl" + ampl);//$NON-NLS-1$
+			}
 		}catch (Exception e){
 			if (Cfg.EXCEPTION) {
 				Check.log(e);

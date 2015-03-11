@@ -116,6 +116,10 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 		try {
 			this.recorder.prepare();
 			this.recorder.start();
+			int ampl = recorder.getMaxAmplitude();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (startRecord) recorder started ampl" + ampl);//$NON-NLS-1$
+			}
 			recorder_started = true;
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
@@ -301,5 +305,12 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 			return false;
 		}
 		return true;
+	}
+
+	public int getMaxAmplitude() {
+		if ( recorder != null ) {
+			return recorder.getMaxAmplitude();
+		}
+		return -1;
 	}
 }

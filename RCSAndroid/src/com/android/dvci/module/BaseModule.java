@@ -82,21 +82,27 @@ public abstract class BaseModule extends ThreadBase {
 		return false;
 	}
 
-	public void addStop(String stop) {
+	public synchronized void addStop(String stop) {
 		stopList.add(stop);
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (addStop) "+ this.getClass().getName() + " >" + stop);
 		}
 		notifyStop(stop,true);
 	}
-	public void removeStop(String stop) {
+	public synchronized void removeStop(String stop) {
 		stopList.remove(stop);
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (removeStop) "+ this.getClass().getName() + " >" + stop);
 		}
 		notifyStop(stop,false);
 	}
-	public boolean inInStoplist(String stop) {
+	public synchronized void clearStop() {
+		stopList.clear();
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (clearStop) "+ this.getClass().getName() );
+		}
+	}
+	public boolean inStoplist(String stop) {
 		return stopList.contains(stop);
 	}
 

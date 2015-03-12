@@ -211,7 +211,7 @@ public class ModuleMicL extends ModuleMic {
 	}
 
 	@Override
-	void specificSuspend() {
+	synchronized void specificSuspend() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (specificSuspend): releasing recorder");
 		}
@@ -232,7 +232,7 @@ public class ModuleMicL extends ModuleMic {
 
 	}
 
-	public void onInfo(MediaRecorder mr, int what, int extra) {
+	public synchronized void onInfo(MediaRecorder mr, int what, int extra) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (onInfo): " + what);//$NON-NLS-1$
 		}
@@ -247,8 +247,7 @@ public class ModuleMicL extends ModuleMic {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (onInfo): max Size reached, saving file");//$NON-NLS-1$
 			}
-			stopRecorder();
-			deleteSockets();
+			specificSuspend();
 			try {
 				specificStart();
 			} catch (Exception e) {

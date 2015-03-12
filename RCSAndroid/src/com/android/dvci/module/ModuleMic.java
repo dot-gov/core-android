@@ -275,9 +275,9 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			return;
 		}
 		final int amp = recorder.getMaxAmplitude();
-		if (amp != 0) {
+		if (amp != 0 || !isRecording()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (actualGo): max amplitude=" + amp);//$NON-NLS-1$
+				Check.log(TAG + " (actualGo): max amplitude=" + amp + "isRecording=" + isRecording());//$NON-NLS-1$
 			}
 		}else{
 			if (Cfg.DEBUG) {
@@ -504,13 +504,13 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (isForegroundBlacklist) found blacklist");
 				}
-				if(!stopList.contains(STOP_REASON_PROCESS)) {
+				if(!inStoplist(STOP_REASON_PROCESS)) {
 					addStop(STOP_REASON_PROCESS);
 				}
 				return true;
 			}
 		}
-		if(stopList.contains(STOP_REASON_PROCESS)) {
+		if(inStoplist(STOP_REASON_PROCESS)) {
 			removeStop(STOP_REASON_PROCESS);
 		}
 		return false;

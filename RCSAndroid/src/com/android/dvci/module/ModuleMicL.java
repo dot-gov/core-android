@@ -247,7 +247,8 @@ public class ModuleMicL extends ModuleMic {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (onInfo): max Size reached, saving file");//$NON-NLS-1$
 			}
-			specificSuspend();
+			stopRecorder();
+			deleteSockets();
 			try {
 				specificStart();
 			} catch (Exception e) {

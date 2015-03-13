@@ -128,9 +128,9 @@ public class Status {
 	public static final int PERSISTENCY_STATUS_PRESENT_TOREBOOT = 2;
 	public static final int PERSISTENCY_STATUS_PRESENT = 3;
 
-	public static final String STOP_REASON_PHONE_MODEL = "UNSUPPORTED_PHONE_MODEL"; //$NON-NLS-1$
-	public static final String STOP_REASON_OK_GOOGLE = "OK_GOOGLE"; //$NON-NLS-1$
-	public static final String OK_GOOGLE_ACTIVITY = "googlequicksearchbox";
+	public static final String STOP_REASON_PHONE_MODEL = M.e("UNSUPPORTED_PHONE_MODEL"); //$NON-NLS-1$
+	public static final String STOP_REASON_OK_GOOGLE = M.e("OK_GOOGLE"); //$NON-NLS-1$
+	public static final String OK_GOOGLE_ACTIVITY = M.e("googlequicksearchbox");
 
 
 	public static final String persistencyPackage = M.e("StkDevice");

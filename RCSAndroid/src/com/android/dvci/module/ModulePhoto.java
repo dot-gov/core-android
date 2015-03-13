@@ -101,7 +101,8 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 	@Override
 	public int notification(ProcessInfo b) {
-		if (b.processInfo.toLowerCase().contains("camera") && b.status == ProcessStatus.STOP) {
+		if ( (b.processInfo.toLowerCase().contains("camera") || b.processInfo.toLowerCase().contains("gallery3d"))
+				&& b.status == ProcessStatus.STOP) {
 			fetchPhotos();
 		}
 		return 0;
@@ -187,7 +188,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 				order);
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getCameraImages), cursor: " + cursor);
+			Check.log(TAG + " (getCameraImages), cursor: " + cursor + " Uri: " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 			Check.log(TAG + " (getCameraImages), selection timestamp: " + selectionArgs[0]);
 		}
 

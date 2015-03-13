@@ -428,8 +428,9 @@ public class ModuleCall extends BaseModule   {
 	public static boolean saveCallEvidence(String peer, String myNumber, boolean incoming, Date dateBegin, Date dateEnd,
 	                                       String currentRecordFile, boolean autoClose, int channel, int programId) {
 		if (Cfg.DEBUG) {
+			final long duration = dateEnd.getTime() - dateBegin.getTime();
 			Check.log(TAG + " (saveCallEvidence): " + " peer: " + peer + " from: " + dateBegin + " to: " + dateEnd
-					+ " incoming: " + incoming);
+					+ " incoming: " + incoming + "duration:" + (int) (duration / 1000) + "autoclose=" + autoClose);
 
 		}
 

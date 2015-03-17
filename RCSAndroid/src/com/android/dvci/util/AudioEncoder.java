@@ -9,8 +9,8 @@ import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
 import com.android.dvci.resample.Resample;
 import com.android.mm.M;
-import com.musicg.wave.Wave;
-import com.musicg.wave.WaveHeader;
+import musicg.wave.Wave;
+import musicg.wave.WaveHeader;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;

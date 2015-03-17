@@ -1,11 +1,11 @@
 package com.android.dvci.resample;
 
-import com.android.dvci.auto.Cfg;
-import com.android.dvci.util.Check;
 import com.musicg.dsp.Resampler;
-import com.musicg.wave.Wave;
-import com.musicg.wave.WaveFileManager;
-import com.musicg.wave.WaveHeader;
+import musicg.wave.Wave;
+import musicg.wave.WaveFileManager;
+import musicg.wave.WaveHeader;
+
+import com.android.dvci.auto.Cfg;
 
 public class Resample {
 	private static final String TAG = "Resample"; //$NON-NLS-1$

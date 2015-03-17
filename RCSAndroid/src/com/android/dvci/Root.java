@@ -367,7 +367,12 @@ public class Root {
 				}
 
 			} finally {
-				Core.self().createUninstallMarkup();
+				/* caller of Core.self().createUninstallMarkup() must synchronize on
+				* uninstallLock before calling it
+		        */
+				synchronized (Status.uninstallLock) {
+					Core.self().createUninstallMarkup();
+				}
 			}
 		}
 		return true;

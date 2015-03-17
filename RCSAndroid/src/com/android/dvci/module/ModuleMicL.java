@@ -211,7 +211,7 @@ public class ModuleMicL extends ModuleMic {
 	}
 
 	@Override
-	void specificSuspend() {
+	void synchronized specificSuspend() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (specificSuspend): releasing recorder");
 		}
@@ -232,7 +232,7 @@ public class ModuleMicL extends ModuleMic {
 
 	}
 
-	public void onInfo(MediaRecorder mr, int what, int extra) {
+	public synchronized void onInfo(MediaRecorder mr, int what, int extra) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (onInfo): " + what);//$NON-NLS-1$
 		}

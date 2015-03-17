@@ -236,7 +236,7 @@ public abstract class BaseEvent extends ThreadBase {
 		isActive = true;
 	}
 
-	private void stopAlarm() {
+	private synchronized void stopAlarm() {
 		if (Cfg.DEBUG)
 			Check.asserts(isActive, "stopAlarm");
 

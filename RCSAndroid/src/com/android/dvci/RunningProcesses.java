@@ -99,7 +99,7 @@ public class RunningProcesses {
 		return false;
 	}
 
-	public ActivityManager.RunningTaskInfo getForeground_activity() {
+	public synchronized ActivityManager.RunningTaskInfo getForeground_activity() {
 		return foreground_activity;
 	}
 

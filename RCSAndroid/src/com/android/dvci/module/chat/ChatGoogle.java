@@ -326,7 +326,7 @@ public class ChatGoogle extends SubModuleChat {
 				NamedNodeMap attributes = d.getAttributes();
 				Node attr = attributes.getNamedItem("name");
 				// nameField = "0.name"
-				if (nameField.equals(attr.getNodeValue())) {
+				if ( attr!=null && nameField.equals(attr.getNodeValue())) {
 					Node child = d.getFirstChild();
 					account = child.getNodeValue();
 					break;

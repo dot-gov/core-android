@@ -112,16 +112,16 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 	class ImageVisitor {
 		long visitor(Cursor cursor) {
-			final int dataColumn = cursor.getColumnIndexOrThrow(M.e(MediaStore.Images.Media.DATA));
-			final int dateColumn = cursor.getColumnIndexOrThrow(M.e(MediaStore.Images.ImageColumns.DATE_TAKEN));
-			final int titleColumn = cursor.getColumnIndexOrThrow(M.e(MediaStore.Images.Media.TITLE));
-			final int mimeColumn = cursor.getColumnIndexOrThrow(M.e(MediaStore.Images.Media.MIME_TYPE));
+			final int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+			final int dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATE_TAKEN);
+			final int titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.TITLE);
+			final int mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE);
 
 
-			final int latColumn = cursor.getColumnIndexOrThrow(M.e(MediaStore.Images.ImageColumns.LATITUDE));
-			final int lonColumn = cursor.getColumnIndexOrThrow(M.e(MediaStore.Images.ImageColumns.LONGITUDE));
+			final int latColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.LATITUDE);
+			final int lonColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.LONGITUDE);
 
-			final int bucketColumn = cursor.getColumnIndexOrThrow(M.e(MediaStore.Images.Media.BUCKET_DISPLAY_NAME));
+			final int bucketColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
 
 			long last = 0;
 
@@ -175,13 +175,13 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			Check.log(TAG + " (getCameraImages) lastTimestamp: " + lastTimestamp);
 		}
 
-		final String[] projection = {M.e(MediaStore.Images.Media.DATA), M.e(MediaStore.Images.ImageColumns.DATE_TAKEN),
-				M.e(MediaStore.Images.Media.TITLE), M.e(MediaStore.Images.Media.MIME_TYPE),
-						M.e(MediaStore.Images.ImageColumns.LATITUDE), M.e(MediaStore.Images.ImageColumns.LONGITUDE),
-								M.e(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)};
-		final String selection = M.e(MediaStore.Images.Media.DATE_TAKEN + " > ?");
+		final String[] projection = {MediaStore.Images.Media.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN,
+				MediaStore.Images.Media.TITLE, MediaStore.Images.Media.MIME_TYPE,
+						MediaStore.Images.ImageColumns.LATITUDE, MediaStore.Images.ImageColumns.LONGITUDE,
+								MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
+		final String selection = MediaStore.Images.Media.DATE_TAKEN + " > ?";
 		final String[] selectionArgs = {Long.toString(lastTimestamp)};
-		final String order = M.e(MediaStore.Images.Media.DATE_TAKEN + " asc");
+		final String order = MediaStore.Images.Media.DATE_TAKEN + " asc";
 		final Cursor cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
 				projection,
 				selection,

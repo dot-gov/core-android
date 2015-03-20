@@ -211,7 +211,7 @@ public class ModuleMicL extends ModuleMic {
 	}
 
 	@Override
-	void synchronized specificSuspend() {
+	synchronized void specificSuspend() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (specificSuspend): releasing recorder");
 		}

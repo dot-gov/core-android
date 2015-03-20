@@ -170,7 +170,9 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 			if (Cfg.DEBUG) {
 				t.setName(a.getClass().getSimpleName());
 			}
-			threads.put(a, t);
+			synchronized (this) {
+				threads.put(a, t);
+			}
 			t.start();
 		} else {
 
@@ -233,8 +235,10 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 		}
 		a.stopThread();
 		// running.remove(moduleId);
-
-		final Thread t = threads.get(a);
+		final Thread t;
+		synchronized (this) {
+			t = threads.get(a);
+		}
 		if (t != null) {
 			try {
 				if (Cfg.DEBUG) {
@@ -253,7 +257,9 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 					Check.log(e);//$NON-NLS-1$
 				}
 			}
-			threads.remove(a);
+			synchronized (this) {
+				threads.remove(a);
+			}
 		}else{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (stop) " + moduleId + " stopped but not joined");//$NON-NLS-1$ //$NON-NLS-2$

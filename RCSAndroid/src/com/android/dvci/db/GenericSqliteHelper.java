@@ -116,8 +116,7 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 	 * oldVersion); } }
 	 */
 
-	public long traverseRawQuery(String sqlquery, String[] selectionArgs, RecordVisitor visitor) {
-		synchronized (lockObject) {
+	public synchronized long traverseRawQuery(String sqlquery, String[] selectionArgs, RecordVisitor visitor) {
 			db = getReadableDatabase();
 			Cursor cursor = db.rawQuery(sqlquery, selectionArgs);
 
@@ -131,7 +130,6 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 				db = null;
 			}
 			return ret;
-		}
 	}
 
 	public long traverseRecords(String table, RecordVisitor visitor) {
@@ -145,8 +143,8 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 	 * @param table
 	 * @param visitor
 	 */
-	public long traverseRecords(String table, RecordVisitor visitor, boolean distinct) {
-		synchronized (lockObject) {
+	public synchronized long traverseRecords(String table, RecordVisitor visitor, boolean distinct) {
+		 
 			db = getReadableDatabase();
 			SQLiteQueryBuilder queryBuilderIndex = new SQLiteQueryBuilder();
 
@@ -165,7 +163,6 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 				db = null;
 			}
 			return ret;
-		}
 	}
 
 	private long traverse(Cursor cursor, RecordVisitor visitor, String[] tables) {

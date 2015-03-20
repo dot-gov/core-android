@@ -167,13 +167,14 @@ public class GPSLocatorAuto implements LocationListener, Runnable {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (run) passed without start: " + stopDelay);
 		}
+		synchronized (listeners) {
+			for (GPSLocationListener listener : listeners) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (onLocationChanged): send location to: " + listener);
+				}
 
-		for (GPSLocationListener listener : listeners) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (onLocationChanged): send location to: " + listener);
+				listener.onLocationChanged(null);
 			}
-
-			listener.onLocationChanged(null);
 		}
 		stop();
 	}

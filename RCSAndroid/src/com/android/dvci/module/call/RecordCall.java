@@ -2,7 +2,7 @@ package com.android.dvci.module.call;
 
 import java.util.Date;
 
-import android.hardware.Camera;
+
 import android.media.MediaRecorder;
 
 import com.android.dvci.Call;

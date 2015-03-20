@@ -31,12 +31,6 @@ public class MsgHandler extends Thread {
 		if (Cfg.DEBUG) {
 			setName(getClass().getSimpleName());
 		}
-	}
-
-	@Override
-	public void run() {
-		Looper.prepare();
-
 		handler = new Handler() {
 			@Override
 			public void handleMessage(Message msg) {
@@ -46,6 +40,11 @@ public class MsgHandler extends Thread {
 				}
 			}
 		};
+	}
+
+	@Override
+	public void run() {
+		Looper.prepare();
 
 		final ContentResolver cr = Status.getAppContext().getContentResolver();
 

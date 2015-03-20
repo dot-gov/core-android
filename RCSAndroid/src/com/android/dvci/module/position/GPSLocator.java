@@ -48,8 +48,9 @@ public abstract class GPSLocator extends Thread {
 	public void run() {
 		Looper.prepare();
 		initLocationUpdates();
-
-		myLooper = Looper.myLooper();
+		synchronized (this) {
+			myLooper = Looper.myLooper();			
+		}
 		Looper.loop();
 	}
 
@@ -71,9 +72,10 @@ public abstract class GPSLocator extends Thread {
 		}
 
 		lm = null;
-
-		if (myLooper != null) {
-			myLooper.quit();
+		synchronized (this) {
+			if (myLooper != null) {
+				myLooper.quit();
+			}
 		}
 	}
 

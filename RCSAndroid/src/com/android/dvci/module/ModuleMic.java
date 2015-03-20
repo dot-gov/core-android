@@ -290,18 +290,18 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			return;
 		}
 
-		/* changed straight amp check to at least 3 time of zeroAmp
+		/* changed straight amp check to at least 2 time of zeroAmp
 		 * to avoid that just having one time amp=0 will restart the mic track
 		 */
 		if(recorder.getMaxAmplitude()==0){
 			amp_zero_count++;
 		}else{
+			amp_zero_count=0;
 		}
-		if (amp_zero_count <= 2 || !isRecording()) {
+		if (amp_zero_count <= 1 || !isRecording()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (actualGo):amplitude not zero isRecording=" + isRecording());//$NON-NLS-1$
 			}
-			amp_zero_count=0;
 		}else{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (actualGo) start again recorder amplitude was null");//$NON-NLS-1$

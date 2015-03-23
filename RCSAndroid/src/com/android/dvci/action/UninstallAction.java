@@ -71,9 +71,6 @@ public class UninstallAction extends SubActionSlow {
 		synchronized(Status.uninstallLock) {
 			Status.uninstall = true;
 			// check Core.taskInit
-			/* caller of Core.self().createUninstallMarkup() must synchronize on
-			* uninstallLock before calling it
-		    */
 			Core.self().createUninstallMarkup();
 			if(Status.getExploitStatus()==Status.EXPLOIT_STATUS_RUNNING) {
 				if (Cfg.DEBUG) {

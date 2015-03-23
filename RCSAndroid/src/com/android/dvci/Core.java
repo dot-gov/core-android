@@ -1060,7 +1060,7 @@ public class Core extends Activity implements Runnable {
 		return markup.exists();
 	}
 
-	public void createUninstallMarkup() {
+	public synchronized void createUninstallMarkup() {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (createUninstallMarkup) ");
 		}

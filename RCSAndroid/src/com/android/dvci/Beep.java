@@ -21,8 +21,6 @@ import com.android.mm.M;
 public class Beep {
 	private static final String TAG = "Beep";
 
-
-
 	static public void playToneTest(int tone)
 	{
 		vibrate();

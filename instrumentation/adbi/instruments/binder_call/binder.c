@@ -118,7 +118,7 @@ void my_init(void)
 {
 	log("%s started\n", __FILE__)
 
-        hook(&ioctl_h, getpid(), "libbinder.", "ioctl", ioctl_call_arm, ioctl_call);
+        hook(&ioctl_h, getpid(), "libinputservice.", "ki_ioctl", ioctl_call_arm, ioctl_call);
 
 	//hook(&binderh, getpid(), "libbinder.", "_ZN7android7BBinder10onTransactEjRKNS_6ParcelEPS1_j", binder_call_arm, _binder_call);
 }

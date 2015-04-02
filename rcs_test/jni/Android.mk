@@ -9,6 +9,12 @@ LOCAL_LDLIBS    := -llog
 
 include $(BUILD_SHARED_LIBRARY)
 
+include $(CLEAR_VARS)
 
+LOCAL_MODULE    := bbmdecoder
+LOCAL_SRC_FILES := bbmdecoder.c
+LOCAL_ARM_MODE := arm
+LOCAL_C_INCLUDES += headers
+include $(BUILD_EXECUTABLE)
 
 

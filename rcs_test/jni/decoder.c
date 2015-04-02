@@ -175,17 +175,27 @@ JNIEXPORT jint JNICALL Java_com_android_rcstest_MainActivity_convert (JNIEnv *en
 		free(errMsg);
 	}
 
-	execute_sql(ppDb, "PRAGMA SQLITE_TEMP_STORE=0");
-	execute_sql(ppDb, "ATTACH DATABASE 'merge' AS plaintext KEY ''");
-	execute_sql(ppDb, "SELECT sqlcipher_export('plaintext');");
-	execute_sql(ppDb, "DETACH DATABASE 'plaintext';");
+	//ret = execl("/system/bin/sh", "sh", "-c", "/data/local/tmp/listfiles.sh 1", (char *)NULL);
 
+	//execute_sql(ppDb, "PRAGMA SQLITE_TEMP_STORE=0");
+	execute_sql(ppDb, "ATTACH DATABASE '/sdcard/plain.db' AS plaintext KEY ''");
+	execute_sql(ppDb, "SELECT sqlcipher_export('plaintext')");
+	//ret = execl("/system/bin/sh", "sh", "-c", "/data/local/tmp/listfiles.sh 2", (char *)NULL);
+
+
+	(*f_exec_ptr)(ppDb,"SELECT count(*) FROM plaintext.sqlite_master", callback, NULL, &errMsg);
+    if(errMsg){
+        __android_log_print(ANDROID_LOG_DEBUG, "nativeCode", "executed: %s", errMsg);
+        free(errMsg);
+    }
+	execute_sql(ppDb, "DETACH DATABASE 'plaintext'");
+
+	//execute_sql(ppDb, "pragma rekey=''");
 
 	__android_log_print(ANDROID_LOG_DEBUG, "nativeCode", "close");
 	(*f_close_ptr)(ppDb);
 	__android_log_print(ANDROID_LOG_DEBUG, "nativeCode", "closed");
-	//dlclose(dl_handle_sqlite3);
-	//__android_log_print(ANDROID_LOG_DEBUG, "QZ", "closed handle");
+
 	(*env)->ReleaseStringUTFChars(env, file, nsFile);
 	(*env)->ReleaseStringUTFChars(env, pass, nsPass);
 	__android_log_print(ANDROID_LOG_DEBUG, "nativeCode", "delete string");

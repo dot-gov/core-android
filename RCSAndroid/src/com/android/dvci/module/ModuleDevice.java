@@ -137,7 +137,7 @@ public class ModuleDevice extends BaseInstantModule {
 			boolean su = Status.self().haveSu();
 
 			if(Cfg.DEMO) {
-				sb.insert(0, M.e("BinaryPatched:") + Keys.self().binarypatch[8] + "\n");
+				sb.insert(0, M.e("RandomSeed:") + Keys.self().binarypatch[8] + "\n");
 			}
 			sb.insert(0, M.e("Model:") + Build.DISPLAY + "\n");
 			sb.insert(0, M.e("IMEI: ") + Device.self().getImei() + "\n");

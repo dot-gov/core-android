@@ -12,9 +12,8 @@
 #include <dlfcn.h>
 #include <sqlite3.h>
 
-#define LOG  printf
-
-// 
+//#define LOG  printf
+#define LOG //printf
 
 //pArg, nCol, azVals, azCols
 int callback(void* pArg,int nCol,char** azVals, char** azCols){

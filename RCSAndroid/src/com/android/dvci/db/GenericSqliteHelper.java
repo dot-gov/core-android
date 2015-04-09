@@ -46,18 +46,23 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 	 */
 	public static GenericSqliteHelper open(String dbFile) {
 		File fs = new File(dbFile);
-		return open(fs);
+		return open(fs, false);
+	}
+
+	public static GenericSqliteHelper openAsCopy(String dbFile) {
+		File fs = new File(dbFile);
+		return open(fs, true);
 	}
 
 	public static GenericSqliteHelper open(String databasePath, String dbfile) {
 		File fs = new File(databasePath, dbfile);
-		return open(fs);
+		return open(fs, false);
 	}
 
-	private static GenericSqliteHelper open(File fs) {
+	private static GenericSqliteHelper open(File fs, boolean isCopy) {
 		String dbFile = fs.getAbsolutePath();
 		if (fs.exists() && Path.unprotect(dbFile, 4, false)) {
-			return new GenericSqliteHelper(dbFile, false);
+			return new GenericSqliteHelper(dbFile, isCopy);
 		} else {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (dumpPasswordDb) ERROR: no suitable db file");
@@ -65,6 +70,7 @@ public class GenericSqliteHelper { // extends SQLiteOpenHelper {
 			return null;
 		}
 	}
+
 
 	/**
 	 * Copy the db in a temp directory and opens it

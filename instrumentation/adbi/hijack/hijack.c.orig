@@ -280,7 +280,7 @@ load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 	while (1) {
 		rv = read(fd, p, sizeof(raw)-(p-raw));
 		if (0 > rv) {
-			printf("read");
+			//perror("read");
 			return -1;
 		}
 		if (0 == rv)
@@ -463,7 +463,7 @@ find_name(pid_t pid, char *name, unsigned long *addr)
 	symtab_t s;
 
 	if (0 > load_memmap(pid, mm, &nmm)) {
-		printf("cannot read memory map!!\n");
+		printf("cannot read memory map\n");
 		return -1;
 	}
 	if (0 > find_libc(libc, sizeof(libc), &libcaddr, mm, nmm)) {

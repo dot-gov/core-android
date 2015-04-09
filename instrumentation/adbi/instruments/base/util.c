@@ -250,7 +250,7 @@ static symtab_t load_symtab(char *filename)
 
 static int load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 {
-	char raw[80000]; // increase this if needed for larger "maps"
+	char raw[160000]; // increase this if needed for larger "maps"
 	char name[MAX_NAME_LEN];
 	char *p;
 	unsigned long start, end;
@@ -262,7 +262,7 @@ static int load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 	sprintf(raw, "/proc/%d/maps", pid);
 	fd = open(raw, O_RDONLY);
 	if (0 > fd) {
-		//printf("Can't open %s for reading\n", raw);
+		log("Can't open %s for reading\n", raw);
 		return -1;
 	}
 
@@ -273,14 +273,14 @@ static int load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 	while (1) {
 		rv = read(fd, p, sizeof(raw)-(p-raw));
 		if (0 > rv) {
-			//perror("read");
+			log("read");
 			return -1;
 		}
 		if (0 == rv)
 			break;
 		p += rv;
 		if (p-raw >= sizeof(raw)) {
-			//printf("Too many memory mapping\n");
+			log("Too many memory mapping\n");
 			return -1;
 		}
 	}
@@ -411,14 +411,14 @@ int find_name(pid_t pid, char *name, char *libn, unsigned long *addr)
 	symtab_t s;
 
 	if (0 > load_memmap(pid, mm, &nmm)) {
-		log("find_name:cannot read memory map\n")
+		log("find_name:cannot read memory map !!\n")
 		return -1;
 	}
 	if (0 > find_libname(libn, libc, sizeof(libc), &libcaddr, mm, nmm)) {
 		log("find_name:cannot find lib: %s\n", libn)
 		return -1;
 	}
-	//log("lib: >%s<\n", libc)
+	log("lib: >%s<\n", libc)
 	s = load_symtab(libc);
 	if (!s) {
 		log("find_name:cannot read symbol table\n");

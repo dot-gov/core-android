@@ -17,5 +17,10 @@ cd smsdispatch/jni
 ndk-build V=1 
 cd ../..
 
+echo "building ex:wechar"
+cd wechat/jni
+ndk-build V=1 
+cd ../..
+
 cd ..
 

@@ -1,125 +1,123 @@
 /*
- *  Collin's Binary Instrumentation Tool/Framework for Android
- *  Collin Mulliner <collin[at]mulliner.org>
- *  http://www.mulliner.org/android/
+ * =====================================================================================
  *
- *  (c) 2012,2013
+ *       Filename:  libme.c
  *
- *  License: LGPL v2.1
+ *    Description:  
  *
+ *        Version:  1.0
+ *        Created:  03/04/2015 15:38:09
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  zad (), wtfrtfmdiy@gmail.com
+ *   Organization:  ht
+ *
+ * =====================================================================================
  */
-
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#ifndef RTLD_NEXT
+#  define _GNU_SOURCE
+#endif
 #include <dlfcn.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <string.h>
-#include <termios.h>
-#include <pthread.h>
-#include <sys/epoll.h>
-#include <stdarg.h>
-#include <jni.h>
+#include <errno.h>
 #include <stdlib.h>
-
-#include "../base/hook.h"
-#include "../base/base.h"
-#include "binder.h"
-
-
-#define DEBUG
-
+#include <strings.h>
+#include <jni.h>
+#include <linux/ioctl.h>
+#include <linux/binder.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <android/log.h>
+char tag[256]; 
+char ioctlBuff[256]; 
 //memset(tag,0,256-1);
 
-#define DEBUG
-#ifdef DEBUG
-#undef log
-/*
- * Android log priority values, in ascending priority order.
- */
-typedef enum android_LogPriority
-{
-   ANDROID_LOG_UNKNOWN = 0, ANDROID_LOG_DEFAULT, /* only for SetMinPriority() */
-   ANDROID_LOG_VERBOSE, ANDROID_LOG_DEBUG, ANDROID_LOG_INFO, ANDROID_LOG_WARN, ANDROID_LOG_ERROR, ANDROID_LOG_FATAL, ANDROID_LOG_SILENT, /* only for SetMinPriority(); must be last */
-} android_LogPriority;
-char tag[256];
 #define log(...) {\
-tag[0]=tag[1]=0;\
-snprintf(tag,256,":%s",__FUNCTION__);\
-__android_log_print(ANDROID_LOG_DEBUG, tag , __VA_ARGS__);}
-#define logf(...) {FILE *f = fopen("/data/local/tmp/log", "a+");\
-        if(f!=NULL){\
-        fprintf(f,"%s: ",__FUNCTION__);\
-        fprintf(f, __VA_ARGS__);\
-        fflush(f); fclose(f); }}
-#else
-#define log(...)
-#endif
-
-// this file is going to be compiled into a thumb mode binary
-
-void __attribute__ ((constructor)) my_init(void);
-
-static struct hook_t eph;
-static struct hook_t binderh;
-static struct hook_t ioctl_h;
-
-// arm version of hook
-extern int binder_call_arm(uint32_t code,void *data,void *reply,uint32_t flags);
-extern int ioctl_call_arm(int fd, int request, ...);
-
-/*
+  tag[0]=tag[1]=0;\
+  snprintf(tag,256,"zad %s:",__FUNCTION__);\
+  __android_log_print(ANDROID_LOG_DEBUG, tag , __VA_ARGS__);}
+char * get_tc(unsigned int tc){
+  switch(tc){
+    case BC_ENTER_LOOPER: return "BC_ENTER_LOOPER";
+    case BC_EXIT_LOOPER: return "BC_EXIT_LOOPER";
+    case BC_FREE_BUFFER : return "BC_FREE_BUFFER";
+    case BC_TRANSACTION: return "BC_TRANSACTION";
+    case BC_REPLY:return "BC_REPLY";
+    case BC_ACQUIRE_RESULT: return "BC_ACQUIRE_RESULT";
+    case BC_INCREFS: return "BC_INCREFS";
+    case BC_ACQUIRE: return "BC_ACQUIRE";
+    case BC_INCREFS_DONE: return "BC_INCREFS_DONE";
+    case BC_ACQUIRE_DONE: return "BC_ACQUIRE_DONE";
+    case BC_RELEASE: return "BC_RELEASE";
+    case BC_DECREFS: return "BC_DECREFS";
+    case BC_ATTEMPT_ACQUIRE: return "BC_ATTEMP_ACQUIRE";
+    case BC_REGISTER_LOOPER: return "BC_REGISTER_LOOPER";
+    case BC_DEAD_BINDER_DONE: return "BC_DEAD_DINDER_DONE";
+    case BC_REQUEST_DEATH_NOTIFICATION: return "BC_REQUEST_DEATH_NOTIFICATION_DONE";
+    case BC_CLEAR_DEATH_NOTIFICATION: return "BC_CLEAR_DEATH_NOTIFICATION_DONE";
+    default: return "UNKNOWN";
+  }
+}
 int ioctl(int fd, int request, ...)
 {
-    va_list ap;
-    void * arg;
+  va_list ap;
+  void * arg;
 
-    va_start(ap, request);
-    arg = va_arg(ap, void *);
-    va_end(ap);
+  va_start(ap, request);
+  arg = va_arg(ap, void *);
+  va_end(ap);
+  if(request == BINDER_WRITE_READ && arg != NULL){
+    struct binder_write_read *bwr = arg;
+    unsigned int transaction_code = ((unsigned int *)bwr->write_buffer)[0]; 
+    //log("ioctl> BINDER_WRITE_READ fd %d req request=%d tc=%d(%s)",fd,request,transaction_code,get_tc(transaction_code));
+    if(transaction_code == BC_TRANSACTION || transaction_code == BC_REPLY){
+    log("ioctl> BC_TRANSACTION fd %d req BINDER_WRITE_READ (%d) tc=%s ",fd,request,get_tc(transaction_code));
+    }
+  }
+  return __ioctl(fd, request, arg);
+}
+static int (*orig_register)(int ,int,int,int) = 0x0;
 
-    //return __ioctl(fd, request, arg);
-}
-*/
-int my_ioctl(int fd, int request, void * data){
-   log("ioctl_call() called request=%d\n",request);
-   return __ioctl(fd, request, data);
-}
-int ioctl_call(int fd, int request, ...)
+int jniRegisterNativeMethods_(int a1, int a2, int a3, int a4)
 {
-   int (*orig_ioctl)(int fd, int request, ...);
-   va_list ap;
-   void * arg;
-   va_start(ap, request);
-   //orig_ioctl = (void*) ioctl_h.orig;
-   //hook_precall(&ioctl_h);
-   //int res = orig_ioctl(fd, request, ap);
-   //hook_postcall(&ioctl_h);
-   arg = va_arg(ap, void *);
-   va_end(ap);
-   return my_ioctl(fd, request, arg);
+  int v4; // r5@1
+  int v5; // r6@1
+  int v6; // r7@1
+  int v7; // r0@1
+  int v9; // [sp+4h] [bp-2Ch]@1
+  char *v10; // [sp+Ch] [bp-24h]@2
+  int v11; // [sp+10h] [bp-20h]@1
+  int v12; // [sp+14h] [bp-1Ch]@1
+
+  v9 = a4;
+  v4 = a1;
+  v5 = a2;
+  v6 = a3;
+  //v7 = (*(int (**)(void))(*(void *)a1 + 24))();
+  v11 = v4;
+  v12 = v7;
+  //if ( !v7 )
+  //{
+   // log( "Native registration unable to find class '%s'", v5);
+    // (*(void (__fastcall **)(int, char *))(*(_DWORD *)v4 + 72))(v4, v10);
+  //}else{
+  //  log( "Native registration  called find class '%s'", v5);
+  //}
+    log( "Native registration called find class '%s'", v5);
+  //  if ( (*(int (__fastcall **)(int, int, int, int))(*(_DWORD *)v4 + 860))(v4, v12, v6, v9) < 0 )
+  //  {
+  //    asprintf(&v10, "RegisterNatives failed for '%s', aborting", v5);
+  //    (*(void (__fastcall **)(int, char *))(*(_DWORD *)v4 + 72))(v4, v10);
+  //  }
+  //  scoped_local_ref<_jclass *>::~scoped_local_ref(&v11);
+  if(orig_register==0x0){
+  *(void **)(&orig_register) = dlsym(RTLD_NEXT, "jniRegisterNativeMethods");
+  if(dlerror()) {
+    log("%s\n","error locating original lib");
+    errno = EACCES;
+    return -1;
+  }
+  }
+  return  (*orig_register)(a1,a2,a3,a4);
 
 }
-
-int _binder_call(uint32_t code,void *data,void *reply,uint32_t flags)
-{
-   void (*orig_binder_call)(uint32_t code,void *data,void *reply,uint32_t flags);
-   orig_binder_call = (void*)binderh.orig;
-   hook_precall(&binderh);
-   orig_binder_call(code,data,reply,flags);
-   log("_binder_call() called code=%d\n",code);
-   hook_postcall(&binderh);
-}
-void my_init(void)
-{
-	log("%s started\n", __FILE__)
-
-        hook(&ioctl_h, getpid(), "libinputservice.", "ki_ioctl", ioctl_call_arm, ioctl_call);
-
-	//hook(&binderh, getpid(), "libbinder.", "_ZN7android7BBinder10onTransactEjRKNS_6ParcelEPS1_j", binder_call_arm, _binder_call);
-}
-

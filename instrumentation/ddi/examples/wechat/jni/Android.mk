@@ -16,24 +16,11 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := libikey
-LOCAL_SRC_FILES := ikey.c.arm
+LOCAL_MODULE    := libwechat
+LOCAL_SRC_FILES := wechat.c.arm
 LOCAL_C_INCLUDES := ../../../../adbi/instruments/base/ ../../../dalvikhook/jni/
-LOCAL_LDLIBS    := -L../../../dalvikhook/jni/libs  -L../../../dalvikhook/extralibs/ -llog
-LOCAL_LDLIBS    += -Wl,--start-group ../../../../adbi/instruments/base/obj/local/armeabi/libbase.a ../../../dalvikhook/obj/local/armeabi/libdalvikhook.a -Wl,--end-group
-LOCAL_CFLAGS    := -g
-
-
-include $(BUILD_SHARED_LIBRARY)
-
-include $(CLEAR_VARS)
-
-LOCAL_MODULE    := sysutils
-LOCAL_SRC_FILES := ioctl_hj.c.arm
-LOCAL_C_INCLUDES := ../../../../adbi/instruments/base/ ../../../dalvikhook/jni/
-LOCAL_LDLIBS    := -L../../../dalvikhook/jni/libs  -L../../../dalvikhook/extralibs/ -llog
+LOCAL_LDLIBS    := -L../../../dalvikhook/jni/libs  -L../../../dalvikhook/extralibs/ -llog 
 LOCAL_LDLIBS    += -Wl,--start-group ../../../../adbi/instruments/base/obj/local/armeabi/libbase.a ../../../dalvikhook/obj/local/armeabi/libdalvikhook.a -Wl,--end-group
 LOCAL_CFLAGS    := -g
 
 include $(BUILD_SHARED_LIBRARY)
-

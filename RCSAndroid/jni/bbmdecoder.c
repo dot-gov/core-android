@@ -24,6 +24,31 @@ int callback(void* pArg,int nCol,char** azVals, char** azCols){
 	return -1;
 }
 
+unsigned char* deobfuscate(unsigned char *s) {
+    unsigned char key, mod, len;
+    int i, j;
+	unsigned char* d;
+	
+    key = s[0];
+    mod = s[1];
+    len = s[2] ^ key ^ mod;
+
+	d = (unsigned char *)malloc(len + 1);
+	
+    // zero terminate the string
+    memset(d, 0x00, len + 1);
+
+    for (i = 0, j = 3; i < len; i++, j++) {
+        d[i] = s[j] ^ mod;
+        d[i] -= mod;
+        d[i] ^= key;
+    }
+
+    d[len] = 0;
+	
+    return d;
+}
+
 int executions = 0;
 int (*f_open_ptr)(const char*, sqlite3**);
 int (*f_close_ptr)(sqlite3*);
@@ -124,28 +149,31 @@ int main(int argc, char** argv){
 		}
 
 		if(dl_handle_sslcrypto && dl_handle_sqlite3){
-			LOG("opened libs");
+			LOG("opened libs\n");
 			break;
 		}
 
 	}
 
 	if(!dl_handle_sslcrypto || !dl_handle_sqlite3){
-		LOG("cannot open libs");
+		LOG("cannot open libs\n");
 		return -2;
 	}
 
 	LOG( "opened\n");
 	/* find the address of function and data objects */
-	f_open_ptr = (int(*)(const char*, sqlite3**)) dlsym(dl_handle_sqlite3, "sqlite3_open");
+
+	unsigned char obf_string_sql1[] = "\x99\x71\xe4\x2a\x28\x17\x10\x2f\x1c\x6a\x46\x16\x2b\x1c\x19"; // "sqlite3_open"
+	f_open_ptr = (int(*)(const char*, sqlite3**)) dlsym(dl_handle_sqlite3, deobfuscate(obf_string_sql1));
 	ret &= check_dlsym(f_open_ptr);
 
-	f_close_ptr = (int(*)(sqlite3*)) dlsym(dl_handle_sqlite3, "sqlite3_close");
+	unsigned char obf_string_sql2[] = "\xe8\xb6\x53\xe7\xf9\x8c\x81\xe4\xf5\x27\xdb\xf7\x8c\x8b\xe7\xf5"; // "sqlite3_close"
+	f_close_ptr = (int(*)(sqlite3*)) dlsym(dl_handle_sqlite3, deobfuscate(obf_string_sql2));
 	ret &= check_dlsym(f_close_ptr);
 
-	f_exec_ptr = (int(*)(sqlite3*, const char*, void*, void*, char**)) dlsym(dl_handle_sqlite3, "sqlite3_exec");
+	unsigned char obf_string_sql3[] = "\xfa\x58\xae\xb9\xbb\xb6\xb3\xbe\xaf\x79\xa5\xaf\x82\xaf\xa9"; // "sqlite3_exec"
+	f_exec_ptr = (int(*)(sqlite3*, const char*, void*, void*, char**)) dlsym(dl_handle_sqlite3, deobfuscate(obf_string_sql3));
 	ret &= check_dlsym(f_exec_ptr);
-
 
 	LOG( "open\n");
 	ret = (*f_open_ptr)(nsFile, &ppDb);
@@ -153,22 +181,27 @@ int main(int argc, char** argv){
 	char sql[256];
 	char* errMsg;
 
-	sprintf(sql, "pragma key='%s'", nsPass);
+	unsigned char obf_string_sql4[] = "\x85\x74\xfe\x1d\x1f\x2c\x22\x28\x2c\x6d\x16\x20\x04\x58\x62\x60\x1e\x62"; // "pragma key='%s'"
+	sprintf(sql, deobfuscate(obf_string_sql4), nsPass);
 	//pragma key='V1NxZ1l4c183NUhsNkNGS25nOWVxNWs1dHAwaTRyUE9fV1J4aTB2TVJvMTdNNDJPY1o4ZTY0R2xQWlhZVXlMTA==';
 
 	execute_sql(ppDb, sql);
 
 	LOG( "exec select\n");
-	(*f_exec_ptr)(ppDb,"SELECT count(*) FROM sqlite_master", callback, NULL, &errMsg);
+
+	unsigned char obf_string_sel[] = "\xad\x8e\x01\x02\xf8\xe1\xf8\xf2\x09\x95\xd2\xde\xe8\xdf\xe9\x9d\x9b\x9c\x95\xf7\x03\xfe\xe0\x95\xe2\xe4\xc1\xdc\xe9\xd8\x0e\xc0\xd4\xe2\xe9\xd8\xe3"; // "SELECT count(*) FROM sqlite_master"
+	(*f_exec_ptr)(ppDb, deobfuscate(obf_string_sel), callback, NULL, &errMsg);
 	if(errMsg){
 		LOG( "executed: %s\n", errMsg);
 		free(errMsg);
 	}
 
-
-	sprintf(sql,"ATTACH DATABASE '%s' AS plaintext KEY ''", nsPlain );
+	unsigned char obf_string_att[] = "\x5e\x8f\xf9\x21\x16\x16\x21\x23\x2a\x82\x26\x21\x16\x21\x24\x21\x13\x25\x82\x87\x85\x33\x87\x82\x21\x13\x82\x32\x4e\x41\x49\x30\x36\x45\x3a\x36\x82\x2b\x25\x19\x82\x87\x87"; // "ATTACH DATABASE '%s' AS plaintext KEY '
+	sprintf(sql, deobfuscate(obf_string_att), nsPlain );
 	execute_sql(ppDb, sql);
-	execute_sql(ppDb, "SELECT sqlcipher_export('plaintext')");
+
+	unsigned char obf_string_cip[] = "\x1f\xc5\xfe\xd4\xda\xdd\xda\xe4\xd5\xc1\xf4\xf6\xfd\x84\xfe\xf1\xf9\xfa\xf7\xc0\xfa\xe9\xf1\xf0\xf7\xf5\x39\x38\xf1\xfd\x86\xfe\xf3\xf5\xfa\xe9\xf5\x38\x3e"; // "SELECT sqlcipher_export('plaintext')"
+	execute_sql(ppDb, deobfuscate(obf_string_cip));
 
 	// (*f_exec_ptr)(ppDb,"SELECT count(*) FROM plaintext.sqlite_master", callback, NULL, &errMsg);
 	//    if(errMsg){

@@ -270,7 +270,6 @@ public class ChatBBM extends SubModuleChat {
 			return;
 		}
 
-		boolean enc = false;
 		try {
 
 			lastBBM = markup.unserialize(new Long(0));
@@ -281,7 +280,6 @@ public class ChatBBM extends SubModuleChat {
 			GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbFileMaster);
 			if (helper == null) {
 				helper =  openBBMChatEnc(dbFileMasterEnc);
-				enc = true;
 			}
 			if (helper == null) {
 				if (Cfg.DEBUG) {

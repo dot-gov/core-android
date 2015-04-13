@@ -15,6 +15,7 @@ public class Cfg {
 	public static final boolean DEBUG_SPECIFIC = @DEBUG@; // @DEBUG@
 	public static final boolean CHECK_ANTI_DEBUG = !@DEBUG@;
 	public static final boolean EXCEPTION = @EXCEPTION@;
+	public static final boolean NOISELESS = false;
 	//public static final boolean DEBUG = true;
 	//public static final boolean EXCEPTION = true;
 	public static boolean BLACKBERRY = false;

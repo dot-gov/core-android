@@ -1,6 +1,7 @@
 package com.android.dvci.util;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,8 +10,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -193,6 +197,17 @@ public class StringUtils {
 		} else {
 			return "";
 		}
+	}
+
+	public static InputStream stringToInputStream(String s) {
+		InputStream stream = null;
+		try {
+			stream = new ByteArrayInputStream(s.getBytes("UTF8"));
+		} catch (UnsupportedEncodingException e) {
+
+		}
+		return stream;
+
 	}
 
 	/**

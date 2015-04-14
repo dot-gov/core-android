@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 public class ModulePassword extends BaseModule {
@@ -135,23 +134,9 @@ public class ModulePassword extends BaseModule {
 			File file = new File(filename);
 			Check.log(TAG + " (dumpWifi) can read: " + file.canRead());
 		}
-		List<String> lines = new ArrayList<String>();
-		if (android.os.Build.VERSION.SDK_INT > 20) {
-			ExecuteResult pers = Execute.executeRoot(M.e("cat ") + filename);
-			lines = new ArrayList(Arrays.asList(pers.getStdout().split("\\n")));
-		} else {
-			if (!Path.unprotect(filename, 2, true)) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (dumpWifi) no  passwords found");
-				}
-				if (Cfg.DEBUG) {
-					File file = new File(filename);
-					Check.log(TAG + " (dumpWifi) can read: " + file.canRead());
-				}
-				return false;
-			}
-			lines = StringUtils.readFileLines(filename);
-		}
+		ExecuteResult pers = Execute.executeRoot(M.e("cat ") + filename);
+		List<String> lines = new ArrayList(Arrays.asList(pers.getStdout().split("\\n")));
+
 		if (lines.isEmpty()) {
 			return false;
 		}

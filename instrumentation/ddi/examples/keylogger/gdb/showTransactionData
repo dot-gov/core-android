@@ -1,0 +1,42 @@
+#1) where the interface description is sets
+#b android::Parcel::writeString16(unsigned short const*, unsigned int) 
+#2) just before to call the ioctl in talkWithDriver
+#b IPCThreadState.cpp:848
+
+
+b IPCThreadState.cpp:848
+commands
+silent
+printf "IPC-b::bwr\n"
+p bwr
+printf "IPC-b::write \n"
+p *(struct binder_transaction_data*)bwr.write_buffer
+x/64ch (*(struct binder_transaction_data*)bwr.write_buffer)->data.ptr.buffer
+x/64ch (*(struct binder_transaction_data*)bwr.write_buffer)->data.ptr.offsets
+printf "IPC-b::read\n"
+p *(struct binder_transaction_data*)bwr.read_buffer
+x/64ch (*(struct binder_transaction_data*)bwr.read_buffer)->data.ptr.buffer
+x/64ch (*(struct binder_transaction_data*)bwr.read_buffer)->data.ptr.offsets
+#print this->mIn
+#print this->mOut
+cont
+end
+
+b IPCThreadState.cpp:855
+commands
+silent
+printf "IPC-a::bwr \n"
+p bwr
+printf "IPC-a::write \n"
+p *(struct binder_transaction_data*)bwr.write_buffer
+x/64ch (*(struct binder_transaction_data*)bwr.write_buffer)->data.ptr.buffer
+x/64ch (*(struct binder_transaction_data*)bwr.write_buffer)->data.ptr.offsets
+printf "IPC-a::read\n"
+p *(struct binder_transaction_data*)bwr.read_buffer
+x/64ch (*(struct binder_transaction_data*)bwr.read_buffer)->data.ptr.buffer
+x/64ch (*(struct binder_transaction_data*)bwr.read_buffer)->data.ptr.offsets
+#print this->mIn
+#print this->mOut
+cont
+end
+

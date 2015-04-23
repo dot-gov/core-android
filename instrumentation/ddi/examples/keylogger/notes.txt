@@ -1,0 +1,160 @@
+########################## android 4.4.4
+android:IPCThreadState.talkWithDriver(bool doReply)
+this is the access point for the binder driver where the ioctl is
+called.
+
+the this object is an object of android::IPCThreadState
+with the following offsets 
+
+gdb) offsets-of android::IPCThreadState
+('android::IPCThreadState', '{')
+    mProcess => 0
+    mMyThreadId => 4
+    mPendingStrongDerefs => 8
+    mPendingWeakDerefs => 28
+    mIn => 48
+    mOut => 96
+    mLastError => 144
+    mCallingPid => 148
+    mCallingUid => 152
+    mStrictModePolicy => 156
+    mLastTransactionBinderFlags => 160
+}
+
+we are mainly interested in the buffers mIn and mOut which are 
+instance of : Parcel
+	Parcel              mIn;
+	Parcel              mOut;
+
+Esempio di parcel: con "os.IPermissionController"
+IPC-b::mIn->mData 0xb8f59b20
+0xb8f59b20:     24 '\030'       -11 '\365'      24 '\030'       -11 '\365'      0 '\000'        0 '\000'        0 '\000'        0 '\000'
+0xb8f59b30:     -80 '\260'      -15 '\361'      0 '\000'        0 '\000'        111 'o' 115 's' 46 '.'  73 'I'
+0xb8f59b40:     80 'P'  101 'e' 114 'r' 109 'm' 105 'i' 115 's' 115 's' 105 'i'
+0xb8f59b50:     111 'o' 110 'n' 67 'C'  111 'o' 110 'n' 116 't' 114 'r' 111 'o'
+0xb8f59b60:     108 'l' 108 'l' 101 'e' 114 'r' 0 '\000'        0 '\000'        40 '('  0 '\000'
+0xb8f59b70:     97 'a'  110 'n' 100 'd' 114 'r' 111 'o' 105 'i' 100 'd' 46 '.'
+0xb8f59b80:     112 'p' 101 'e' 114 'r' 109 'm' 105 'i' 115 's' 115 's' 105 'i'
+0xb8f59b90:     111 'o' 110 'n' 46 '.'  77 'M'  79 'O'  68 'D'  73 'I'  70 'F'
+
+
+(gdb) offsets-of android::Parcel
+('android::Parcel', '{')
+    mError => 0
+    mData => 4
+    mDataSize => 8
+    mDataCapacity => 12
+    mDataPos => 16
+    mObjects => 20
+    mObjectsSize => 24
+    mObjectsCapacity => 28
+    mNextObjectHint => 32
+    mFdsKnown => 36
+    mHasFds => 37
+    mAllowFds => 38
+    mOwner => 40
+    mOwnerCookie => 44
+}
+
+parcel organization:
+breck here :
+1) where the interface description is sets
+b android::Parcel::writeString16(unsigned short const*, unsigned int) 
+2) just before to call the ioctl in talkWithDriver
+b IPCThreadState.cpp:848
+
+
+
+ioctl is called passing the following C struct
+struct binder_write_read {
+  signed long write_size;
+  signed long write_consumed;
+  unsigned long write_buffer;
+  signed long read_size;
+  signed long read_consumed;
+  unsigned long read_buffer;
+  };
+
+filling is done as following:
+binder_write_read bwr;
+
+    // Is the read buffer empty?
+    const bool needRead = mIn.dataPosition() >= mIn.dataSize();
+
+    // We don't want to write anything if we are still reading
+    // from data left in the input buffer and the caller
+    // has requested to read the next data.
+    const size_t outAvail = (!doReceive || needRead) ? mOut.dataSize() : 0;
+
+    bwr.write_size = outAvail;
+    bwr.write_buffer = (long unsigned int)mOut.data();
+
+    // This is what we'll read.
+    if (doReceive && needRead) {
+        bwr.read_size = mIn.dataCapacity();
+        bwr.read_buffer = (long unsigned int)mIn.data();
+    } else {
+        bwr.read_size = 0;
+        bwr.read_buffer = 0;
+    }
+
+    // Return immediately if there is nothing to do.
+    if ((bwr.write_size == 0) && (bwr.read_size == 0)) return NO_ERROR;
+
+    bwr.write_consumed = 0;
+    bwr.read_consumed = 0;
+    status_t err;
+    do {
+        IF_LOG_COMMANDS() {
+            alog << "About to read/write, write size = " << mOut.dataSize() << endl;
+        }
+        if (ioctl(mProcess->mDriverFD, BINDER_WRITE_READ, &bwr) >= 0)
+            err = NO_ERROR;
+        else
+            err = -errno;
+        if (mProcess->mDriverFD <= 0) {
+            err = -EBADF;
+        }
+        IF_LOG_COMMANDS() {
+            alog << "Finished read/write, write size = " << mOut.dataSize() << endl;
+        }
+    } while (err == -EINTR);
+
+Parcel{
+...
+    uint8_t*            mData;
+    size_t              mDataSize;
+    size_t              mDataCapacity;
+...
+}
+
+const uint8_t* Parcel::data() const
+{
+    return mData;
+}
+
+size_t Parcel::dataSize() const
+{
+    return (mDataSize > mDataPos ? mDataSize : mDataPos);
+}
+
+size_t Parcel::dataAvail() const
+{
+    // TODO: decide what to do about the possibility that this can
+    // report an available-data size that exceeds a Java int's max
+    // positive value, causing havoc.  Fortunately this will only
+    // happen if someone constructs a Parcel containing more than two
+    // gigabytes of data, which on typical phone hardware is simply
+    // not possible.
+    return dataSize() - dataPosition();
+}
+
+size_t Parcel::dataPosition() const
+{
+    return mDataPos;
+}
+
+size_t Parcel::dataCapacity() const
+{
+    return mDataCapacity;
+}

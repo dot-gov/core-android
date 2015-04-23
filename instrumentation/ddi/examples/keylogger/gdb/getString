@@ -1,0 +1,39 @@
+#1) where the interface description is sets
+#b android::Parcel::writeString16(unsigned short const*, unsigned int) 
+#2) just before to call the ioctl in talkWithDriver
+#b IPCThreadState.cpp:848
+
+
+b 'android::Parcel::writeString16(unsigned short const*, unsigned int)'
+commands
+silent
+#printf "P::T:puse %x\n",this->mCblk->mName
+#print this
+printf "writeS %p\n",this.mData
+cont
+end
+
+b IPCThreadState.cpp:848
+commands
+silent
+printf "IPC-b::mIn %p size %x offset \n",this->mIn->mData,this->mIn->mDataSize,this->mIn->mDataPosition
+x/64ch this->mIn->mData
+printf "IPC-b::mOut %p\n",this->mOut->mData
+x/64ch this->mOut->mData
+#print this->mIn
+#print this->mOut
+cont
+end
+
+b IPCThreadState.cpp:855
+commands
+silent
+printf "IPC-a::mIn %p\n",this->mIn->mData
+x/64ch this->mIn->mData
+printf "IPC-a::mOut %p\n",this->mOut->mData
+x/64ch this->mOut->mData
+#print this->mIn
+#print this->mOut
+cont
+end
+

@@ -13,5 +13,11 @@ cd example/jni
 ndk-build
 cd ../..
 
+
+cd binder_call/jni
+ndk-build
+cd ../..
+
+
 cd ..
 

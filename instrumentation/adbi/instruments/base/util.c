@@ -250,7 +250,7 @@ static symtab_t load_symtab(char *filename)
 
 static int load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 {
-	char raw[160000]; // increase this if needed for larger "maps"
+	char raw[80000]; // increase this if needed for larger "maps"
 	char name[MAX_NAME_LEN];
 	char *p;
 	unsigned long start, end;
@@ -262,7 +262,7 @@ static int load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 	sprintf(raw, "/proc/%d/maps", pid);
 	fd = open(raw, O_RDONLY);
 	if (0 > fd) {
-		log("Can't open %s for reading\n", raw);
+		//printf("Can't open %s for reading\n", raw);
 		return -1;
 	}
 
@@ -273,14 +273,14 @@ static int load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 	while (1) {
 		rv = read(fd, p, sizeof(raw)-(p-raw));
 		if (0 > rv) {
-			log("read");
+			//perror("read");
 			return -1;
 		}
 		if (0 == rv)
 			break;
 		p += rv;
 		if (p-raw >= sizeof(raw)) {
-			log("Too many memory mapping\n");
+			//printf("Too many memory mapping\n");
 			return -1;
 		}
 	}
@@ -375,7 +375,7 @@ static int lookup2(struct symlist *sl, unsigned char type,
 
 	len = strlen(name);
 	for (i = 0, p = sl->sym; i < sl->num; i++, p++) {
-		//log("name: %s %x against %s\n", sl->str+p->st_name, p->st_value,name)
+		//log("name: %s %x\n", sl->str+p->st_name, p->st_value)
 		if (!strncmp(sl->str+p->st_name, name, len) && *(sl->str+p->st_name+len) == 0
 		    && ELF32_ST_TYPE(p->st_info) == type) {
 			//if (p->st_value != 0) {
@@ -411,21 +411,21 @@ int find_name(pid_t pid, char *name, char *libn, unsigned long *addr)
 	symtab_t s;
 
 	if (0 > load_memmap(pid, mm, &nmm)) {
-		log("find_name:cannot read memory map !!\n")
+		log("cannot read memory map\n")
 		return -1;
 	}
 	if (0 > find_libname(libn, libc, sizeof(libc), &libcaddr, mm, nmm)) {
-		log("find_name:cannot find lib: %s\n", libn)
+		log("cannot find lib: %s\n", libn)
 		return -1;
 	}
-	log("lib: >%s<\n", libc)
+	//log("lib: >%s<\n", libc)
 	s = load_symtab(libc);
 	if (!s) {
-		log("find_name:cannot read symbol table\n");
+		log("cannot read symbol table\n");
 		return -1;
 	}
 	if (0 > lookup_func_sym(s, name, addr)) {
-		log("find_name:cannot find function: %s\n", name);
+		log("cannot find function: %s\n", name);
 		return -1;
 	}
 	*addr += libcaddr;

@@ -36,7 +36,7 @@ public class ChatWeChat extends SubModuleChat {
 	// private String myPhoneNumber = "local";
 	String myId;
 	String myName;
-	String myPhone = DEFAULT_LOCAL_NUMBER;
+	static String myPhone = DEFAULT_LOCAL_NUMBER;
 
 	Semaphore readChatSemaphore = new Semaphore(1, true);
 
@@ -50,6 +50,10 @@ public class ChatWeChat extends SubModuleChat {
 	@Override
 	String getObservingProgram() {
 		return pObserving;
+	}
+
+	public static String getMyPhone() {
+		return myPhone;
 	}
 
 	@Override

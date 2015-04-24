@@ -80,7 +80,7 @@ public class ChatFacebook extends SubModuleChat {
 		if (!fetchFb(dirOrca)) {
 			fetchFb(dirKatana);
 		}
-		getCurrentCall(new CallInfo(false));
+		//getCurrentCall(new CallInfo(false));
 	}
 
 	static public void getAccountInfo() {

@@ -914,7 +914,7 @@ public class ChatWhatsapp extends SubModuleChat {
 
 
 	public static boolean getCurrentCall( final CallInfo callInfo) {
-		String sqlQuery = M.e("select _id, key_remote_jid, media_wa_type, key_from_me, timestamp  from messages WHERE media_wa_type='8' order by _id desc limit 20");
+		String sqlQuery = M.e("select _id, key_remote_jid, media_wa_type, key_from_me, timestamp  from messages WHERE media_wa_type='8' order by _id desc limit 2");
 
 
 		RecordVisitor visitor = new RecordVisitor() {

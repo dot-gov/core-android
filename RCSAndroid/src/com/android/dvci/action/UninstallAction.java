@@ -221,7 +221,12 @@ public class UninstallAction extends SubActionSlow {
 				Status.setIconState(true);
 			}
 		}
-
+		/* go with intent ONLY with normal installation, otherwise
+		*  intent installation will fail.
+		*  If we are here at this point, it means that the uninstall script
+		*  didn't run well. Once removed, installation is killed, if not
+		*  we will arrive here.
+		 */
 		if (Status.getPersistencyStatus()<= Status.PERSISTENCY_STATUS_FAILED) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (deleteApplication) go with intent");

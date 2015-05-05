@@ -149,6 +149,7 @@ public class CallInfo {
 				}
 			}
 			boolean ret = false;
+			// todo: togliere l'helper, includerlo in ChatSkype.getAccount
 			GenericSqliteHelper helper = ChatSkype.openSkypeDBHelper(account);
 
 			if (helper != null) {
@@ -211,8 +212,7 @@ public class CallInfo {
 
 			// open DB
 			if (end) {
-				//todo:fix this:
-				/*
+
 				String account = ChatLine.getAccount();
 				if(account.equals("") ){
 					if (Cfg.DEBUG) {
@@ -220,8 +220,7 @@ public class CallInfo {
 					}
 				}
 				this.account = account;
-				*/
-				this.account = "my account";
+
 				ret = ChatLine.getCurrentCall(this);
 
 				if (Cfg.DEBUG) {

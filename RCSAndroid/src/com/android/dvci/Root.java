@@ -415,7 +415,8 @@ public class Root {
 				 */
 
 			// the
-			script += String.format(M.e("for i in `ls %s 2>/dev/null`; do rm  $i 2>/dev/null; done"),Status.persistencyApk) + "\n";
+
+			script += String.format(M.e(" [ -e %s ] && rm %s 2>/dev/null"), Status.persistencyApk, Status.persistencyApk) + "\n";
 			if(!Status.isPersistent()){
 				script += M.e("sleep 5\n");
 			}

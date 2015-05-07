@@ -178,7 +178,21 @@ public class ASG extends Activity {
 			}
 		}
 
+		/*Object future = Status.getStpe().schedule(new Runnable() {
+			public void run() {
+				startService();
+			}
+		}, 100, TimeUnit.MILLISECONDS);*/
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualCreate): starting Service");
+		}
 		startService();
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualCreate): started Service");
+		}
+
 	}
 
 	private void startExtService() {

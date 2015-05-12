@@ -380,7 +380,7 @@ public class ChatSkype extends SubModuleChat {
 
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (readAccount) Error: " + e);
+				Check.log(TAG + " (readAccountsXml) Error: " + e);
 			}
 		}
 		return account;

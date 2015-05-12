@@ -191,6 +191,26 @@ public class PackageUtils {
 		public String toString() {
 			return appname + "\t" + pname + "\t" + versionName + "\t" + versionCode; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		}
+
+		public String getAppname() {
+			return appname;
+		}
+
+		public String getPname() {
+			return pname;
+		}
+
+		public String getVersionName() {
+			return versionName;
+		}
+
+		public String getApkPath() {
+			return apkPath;
+		}
+
+		public int getVersionCode() {
+			return versionCode;
+		}
 	}
 
 

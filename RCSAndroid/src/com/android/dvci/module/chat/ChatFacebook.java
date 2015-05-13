@@ -268,8 +268,8 @@ public class ChatFacebook extends SubModuleChat {
 			return false;
 		}
 
-		String sqlQuery = M.e("select m.msg_type, m.timestamp_ms, t.participants from messages as m join threads as t on t.thread_key=m.thread_key" +
-				" where (m.msg_type = 100 or m.msg_type = 102 ) and m.timestamp_ms > 0 order by m.timestamp_ms desc limit 1  ");
+		String sqlQuery = M.e("select m.msg_type, m.timestamp_ms, t.participants from messages as m join threads as t on t.thread_key=m.thread_key") +
+				M.e(" where (m.msg_type = 100 or m.msg_type = 102 ) and m.timestamp_ms > 0 order by m.timestamp_ms desc limit 1  ");
 		helper.traverseRawQuery(sqlQuery, new String[]{}, visitor);
 		helper.disposeDb();
 		return callInfo.valid;

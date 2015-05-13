@@ -92,7 +92,7 @@ public class ModuleMicBB extends ModuleMicL {
 			recorder_started = true;
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (specificStart) another apps may be blocking recording: " + e);//$NON-NLS-1$
+				Check.log(TAG + " (specificStart) bb10 cannot reuse a recorder: " + e);//$NON-NLS-1$
 			}
 			if (recorder != null) {
 				recorder.reset();  // You can reuse the object by going back to setAudioSource() step
@@ -107,20 +107,11 @@ public class ModuleMicBB extends ModuleMicL {
 
 	@Override
 	void specificSuspend() {
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (specificSuspend): releasing recorder");
-		}
-		stopRecorder();
-		deleteSockets();
-		if(recorder !=null) {
-			recorder.release();
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (specificSuspend): released");
-			}
-		}
-		recorder_started = false;
-		recorder=null;
+		super.specificSuspend();
 
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (specificSuspend): fId=0");
+		}
 		fId = 0;
 	}
 

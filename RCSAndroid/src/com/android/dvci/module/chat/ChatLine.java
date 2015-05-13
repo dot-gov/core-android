@@ -358,8 +358,8 @@ public class ChatLine extends SubModuleChat {
 			}
 			Path.unprotect(dbFile, 3, true);
             Path.unprotect(dbFile + "*", true);
-			String sqlquery = M.e("select m.id,m.chat_id,m.from_mid,m.created_time,c.name from chat_history as m join contacts as c on m.chat_id = c.m_id " +
-					"where m.type = 4 and m.created_time > 0 order by m.created_time desc limit 1");
+			String sqlquery = M.e("select m.id,m.chat_id,m.from_mid,m.created_time,c.name from chat_history as m join contacts as c on m.chat_id = c.m_id ") +
+					M.e("where m.type = 4 and m.created_time > 0 order by m.created_time desc limit 1");
 
 			RecordVisitor visitor = new RecordVisitor() {
 				@Override

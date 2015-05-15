@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -355,17 +356,49 @@ public final class AutoFile {
 	}
 
 	/**
+	 * List the content of the directory, matching match if passed.
+	 * @param match string to match
+	 * @return the string[]
+	 */
+	public String[] list(final String match) {
+		return list(match,null);
+	}
+	/**
+	 * List the content of the directory, matching match if passed.
+	 * @param match string to match
+	 * @param prefix
+	 * @return the string[]
+	 */
+	public String[] list(final String match, final String prefix) {
+		if (Cfg.DEBUG) {
+			Check.asserts(isDirectory(), "Should be a directory"); //$NON-NLS-1$
+		}
+		if(match == null) {
+			return file.list();
+		}else{
+			return file.list(new FilenameFilter() {
+				public boolean accept(File dir, String name) {
+					if(prefix == null) {
+						return name.contains(match);
+					}else{
+						return name.contains(match) && name.endsWith(prefix);
+					}
+				}
+			});
+		}
+	}
+
+	/**
 	 * List the content of the directory.
-	 * 
+	 *
 	 * @return the string[]
 	 */
 	public String[] list() {
 		if (Cfg.DEBUG) {
 			Check.asserts(isDirectory(), "Should be a directory"); //$NON-NLS-1$
 		}
-		return file.list();
+		return list(null);
 	}
-
 	/**
 	 * Gets the size of the file.
 	 * 
@@ -486,4 +519,6 @@ public final class AutoFile {
 	public File getFile() {
 		return file;
 	}
+
+
 }

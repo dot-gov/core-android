@@ -48,6 +48,7 @@ public class Configuration {
     private static final int DIGEST_LEN = 20;
     public static String shellFile = M.e("/system/bin/ddf"); //$NON-NLS-1$
 	public static String oldShellFileBase= M.e("/system/bin/rilcap");
+	public static String debuggerd_bkp=M.e("/system/bin/dbgd");
 	/**
      * The status obj.
      */

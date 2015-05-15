@@ -172,7 +172,7 @@ public class CallInfo {
 			// open DB
 			if (end) {
 				ret = ChatGoogle.getCurrentCall(this);
-				this.account = ChatGoogle.getOwner(-1).getPhone();
+
 			} else {
 				this.account = M.e("delay");
 				this.peer = M.e("delay");

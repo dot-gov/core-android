@@ -334,7 +334,7 @@ public class ChatGoogle extends SubModuleChat {
 			}
 		};
 
-		String sqlquery = M.e("select  p.gaia_id, full_name, fallback_name, cp.conversation_id from conversation_participants as cp join participants as p on  cp.participant_row_id=p._id where conversation_id=?");
+		String sqlquery = M.e("select  p.chat_id, full_name, fallback_name, cp.conversation_id from conversation_participants as cp join participants as p on  cp.participant_row_id=p._id where conversation_id=?");
 		helper.traverseRawQuery(sqlquery, new String[]{thread_id}, visitor);
 	}
 

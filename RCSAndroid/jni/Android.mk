@@ -10,6 +10,17 @@ include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 
+LOCAL_MODULE    := bbmdecoder5
+LOCAL_SRC_FILES := bbmdecoder.c
+LOCAL_ARM_MODE := arm
+LOCAL_CFLAGS := -fPIE
+LOCAL_LDFLAGS += -fPIE -pie
+LOCAL_C_INCLUDES += headers
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+
+
 LOCAL_MODULE    := runner
 LOCAL_SRC_FILES := runner.c
 LOCAL_LDLIBS    := -llog

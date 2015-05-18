@@ -14,6 +14,7 @@ messges.type:
 13: un utente ha cambiato stato ed e' andato, esempio, away (ma non sono sicurissimo)
 14: messaggio di stato dell'utente
 
+
 contacts.type:
 0: contatto gmail
 2: group chat
@@ -113,3 +114,43 @@ order by date
     
 select m.nickname, co.username, co.nickname, ac.name, body, m.date, m.type from messages as m join  contacts as co on m.thread_id = co._id join accounts as ac on co.account = ac._id where m.consolidation_key is null and m.type<=1 and m.date>?
 order by date
+
+
+## update al 29/04/2015
+/data/data/com.google.android.talk/shared_prefs/accounts.xml indica quali account sono configurati in gtalk
+<int name="active" value="n" /> indica quale account e' attivo in quel momento
+entry utiliy relative all'account:
+<string name="3.full_jid">samsungs3minitest1@gmail.com/ANDROIDad90b4c3</string>
+<string name="3.gaia_id">114047815869941685187</string>
+<string name="3.display_name">samsung s3mini</string>
+<string name="3.account_name">samsungs3minitest1@gmail.com</string>
+#estrarre il phone number di un account in accounts.xml
+se <n>account si e' verificato con un numero o + si hanno i seguenti dati:
+SE:
+<boolean name="<n>.phone_verification_prompt_shown" value="true" />
+ALLORA:
+<set name="n.phone_verification">
+<string>+393349115140,false,true,1,false</string>
+<string>+393346405249,false,true,1,false</string>
+</set>
+
+SE:
+<boolean name="<n>.phone_verification_prompt_shown" value="false" />
+ALLORA:
+<null name="3.phone_verification" />
+
+Cio' indica che esiste sicuramente un database in /data/data/com.google.android.talk/databases/ chiamato babel<n>.db
+Il babel0.db e' riservato agli SMS nel momento in cui hangsout viene usato come app per l'invio degli sms , da verificare !:
+in accounts si ha che <string name="2.account_name">SMS</string>
+In ogni babel<n>.db nella tabella participants all'id 1 si trova il nome dell'owner del db cio' puo' essere confermato incrociando il gaia_id
+trovato in <string name="<n>.gaia_id">114047815869941685187</string> con quello dell'entry in participants all'Id 1
+
+
+# estrarre le chiamate da un db:
+select m.call_media_type, m.participant_keys, m.type,m.timestamp from messages as m where m.type = 8 and m.timestamp not null order by m.timestamp;
+m.call_media_type (int) puo' avere valore 1 o 2 == outgoing o incoming
+m.participant_keys (text) e' un elenco di _id pipe separated (|) contiene i partecipanti della chiamata.
+un solo valore indica che non c'e stata risposta. se appare anche l'id 1 (owner) allora la chiamata e' stata effettuata.
+
+
+

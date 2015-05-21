@@ -18,11 +18,11 @@ public class Cfg {
 	public static final boolean NOISELESS = false;
 	//public static final boolean DEBUG = true;
 	//public static final boolean EXCEPTION = true;
-	public static final boolean BB10 = true;
+	public static final boolean BB10 = false;
 	public static final boolean GUI = @GUI@;
 
 	public static boolean PERSISTENCE = false;
-	public static final boolean FORCE_NO_PERSISTENCE = false;
+	public static final boolean FORCE_NO_PERSISTENCE = true;
 
 	public static boolean DEMO = @DEMO@; // @DEMO@
 	public static boolean DEMO_SILENT = false;

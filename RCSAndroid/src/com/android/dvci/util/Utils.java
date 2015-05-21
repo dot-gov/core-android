@@ -276,7 +276,7 @@ public static String pidOf(String lookFor) {
 				Matcher matcher = pattern.matcher(line);
 				if (matcher.find()) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (pidOf): find=" + lookFor + "in:\n" + line);
+						Check.log(TAG + " (pidOf): find=" + lookFor + " in:\n" + line);
 					}
 						//esempio u0_a72    24334 1     5900   5280  ffffffff 00000000 R /data/data/com.android.dvci/files/vs
 						String[] splited = line.split("\\s+");
@@ -298,7 +298,9 @@ public static String pidOf(String lookFor) {
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (pidOf): exception parsing:",e);
+			}
 		}
 	}
 	return pid;

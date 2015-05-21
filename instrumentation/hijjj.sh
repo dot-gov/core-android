@@ -38,6 +38,7 @@ for i in 1 2; do
       else
         echo "kill process before re-hijack"
         adb shell su -c "kill $PID"
+        adb shell ddf qzx "kill $PID"
         adb shell "kill $PID"
         sleep 3
       fi
@@ -45,6 +46,7 @@ for i in 1 2; do
       echo running /data/local/tmp/hijack -p $PID -l /data/local/tmp/$lib_name -f -d
       sleep 1
       adb shell su -c "/data/local/tmp/hijack -p $PID -l /data/local/tmp/$lib_name -d "
+      adb shell ddf qzx "/data/local/tmp/hijack -p $PID -l /data/local/tmp/$lib_name -d "
       adb shell  "/data/local/tmp/hijack -p $PID -l /data/local/tmp/$lib_name -d "
     fi
   fi

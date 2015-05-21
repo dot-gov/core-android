@@ -112,7 +112,7 @@ int my_ioctl_hook(int fd, int request, ...)
   /*  */
   if(request == BINDER_WRITE_READ && decode_binder_wr((struct binder_write_read *)data,"before")){
    log("bwr->write_size = %x[outAvail]",((struct binder_write_read *)data)->write_size);
-   // get_btd((struct binder_write_read *)data,1,"before");
+    get_btd((struct binder_write_read *)data,1,"before");
   }
  
    int res = __ioctl(fd, request,data);

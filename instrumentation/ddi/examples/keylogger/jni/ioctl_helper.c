@@ -430,7 +430,7 @@ struct binder_transaction_data* get_btd(struct binder_write_read *bwr,char write
   if( info == NULL ){
     info = "";
   }
-  //log("%s [%s]: called reading %s\n",__FUNCTION__,info,write?"write_buffer":"read_buffer");
+  log("%s [%s]: called reading %s\n",__FUNCTION__,info,write?"write_buffer":"read_buffer");
   if (write  && bwr->write_buffer) {
     transaction_code = ((unsigned int *) bwr->write_buffer)[0];
     btd = (struct binder_transaction_data *) &((unsigned int *) bwr->write_buffer)[1];
@@ -448,7 +448,7 @@ struct binder_transaction_data* get_btd(struct binder_write_read *bwr,char write
       }
 #endif
       char *interface=get_intf_desc(btd,transaction_code,info);
-      //log("%s [%s] write: desc=%s",__FUNCTION__,info,interface);
+      log("%s [%s] write: desc=%s",__FUNCTION__,info,interface);
       check_key_pressed(info,interface,btd);
     }
     //,get_intf_desc(btd->data.ptr.buffer));
@@ -469,7 +469,7 @@ struct binder_transaction_data* get_btd(struct binder_write_read *bwr,char write
       }
 #endif
       char *interface=get_intf_desc(btd,transaction_code,info);
-      //log("%s [%s] read: desc=%s",__FUNCTION__,info,interface);
+      log("%s [%s] read: desc=%s",__FUNCTION__,info,interface);
       check_key_pressed(info,interface,btd);
     }
     //,get_intf_desc(btd->data.ptr.buffer));

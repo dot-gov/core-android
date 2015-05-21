@@ -131,7 +131,7 @@ int dexstuff_loaddex(struct dexstuff_t *d, char *path)
    jvalue pResult;
    jint result;
 
-   log("dexstuff_loaddex, path_s = %s\n", path)
+   //log("dexstuff_loaddex, path_s = %s\n", path)
    /* dvmStringFromCStr_fnPtr is StringObject* dvmCreateStringFromCstrAndLength(char* , size_t size)
     * which create a java.lang.String object, the string is used in the next Call
     */
@@ -140,7 +140,7 @@ int dexstuff_loaddex(struct dexstuff_t *d, char *path)
 
    d->dvm_dalvik_system_DexFile[0].fnPtr(args, &pResult);
    result = (jint) pResult.l;
-   log("cookie = 0x%x\n", pResult.l)
+   //log("cookie = 0x%x\n", pResult.l)
 
    return result;
 }
@@ -150,12 +150,12 @@ void* dexstuff_defineclass(struct dexstuff_t *d, char *name, int cookie)
    u4 *nameObj = (u4*) name;
    jvalue pResult;
 
-   log("dexstuff_defineclass: %s using %x\n", name, cookie)
+   //log("dexstuff_defineclass: %s using %x\n", name, cookie)
 
    void* cl = d->dvmGetSystemClassLoader_fnPtr();
    Method *m = d->dvmGetCurrentJNIMethod_fnPtr();
-   log("sys classloader = 0x%x\n", cl)
-   log("cur m classloader = 0x%x\n", m->clazz->classLoader)
+   //log("sys classloader = 0x%x\n", cl)
+   //log("cur m classloader = 0x%x\n", m->clazz->classLoader)
 
    void *jname = d->dvmStringFromCStr_fnPtr(name, strlen(name), ALLOC_DEFAULT);
    //log("called string...\n")
@@ -164,7 +164,7 @@ void* dexstuff_defineclass(struct dexstuff_t *d, char *name, int cookie)
    d->dvm_dalvik_system_DexFile[3].fnPtr(args, &pResult);
 
    jobject *ret = pResult.l;
-   log("class = 0x%x\n", ret)
+   //log("class = 0x%x\n", ret)
    return ret;
 }
 

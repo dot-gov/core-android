@@ -17,10 +17,15 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := libsmsdispatch
+ifdef DESTLIB
+LOCAL_MODULE	:= $(DESTLIB)
+endif
 LOCAL_SRC_FILES := smsdispatch.c.arm
 LOCAL_C_INCLUDES := ../../../../adbi/instruments/base/ ../../../dalvikhook/jni/
 LOCAL_LDLIBS    := -L../../../dalvikhook/jni/libs  -L../../../dalvikhook/extralibs/ -llog 
 LOCAL_LDLIBS    += -Wl,--start-group ../../../../adbi/instruments/base/obj/local/armeabi/libbase.a ../../../dalvikhook/obj/local/armeabi/libdalvikhook.a -Wl,--end-group
 LOCAL_CFLAGS    := -g
-
+ifeq ($(DEBUG),1)
+LOCAL_CFLAGS	+= -DDEBUG 
+endif
 include $(BUILD_SHARED_LIBRARY)

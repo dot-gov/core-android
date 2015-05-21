@@ -19,16 +19,37 @@
 
 # -d specify where to place the compiled class
 # --classpath path to externa jar and class
-output="ddiclasses"
+
+output="perfAcc"
+debug=""
+lib=""
+while getopts ":do:l:" opt; do
+  case $opt in
+    d) debug="DEBUG=1"
+      echo "debug is on"
+      ;;
+    l) lib="DESTLIB=$OPTARG"
+      echo "overwriting outputso to $OPTARG"
+      ;;
+    o) output="$OPTARG"
+      echo "overwriting output jar to $output"
+      ;;
+    \?) echo "Invalid option -$OPTARG" >&2
+      ;;
+  esac
+done
+
 cdir=$(pwd)
 
 echo cleaning..
 rm -r ./obj/* ./libs/*
 echo Building lib
-cd jni && ndk-build && cd -
+ndk_cmd="ndk-build V=1 $debug $lib"
+cd jni && $ndk_cmd
+cd ${cdir}
 cd src/
 javas=""
-classpath="/AOSPs/androidSources4.2_r1/prebuilts/sdk/9/android.jar:./${cdir}/obj"
+classpath="$cdir/../../extrajar/android-api9.jar:$cdir}/obj"
 for i in  `find . -name "*.java"`;
 do
   javas+="$i "

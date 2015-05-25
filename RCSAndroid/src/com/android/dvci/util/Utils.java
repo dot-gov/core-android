@@ -88,7 +88,9 @@ public final class Utils {
 	public static long getRandom() {
 		return rand.nextLong();
 	}
-
+	public static long getRandom(int max) {
+		return rand.nextInt(max);
+	}
 	public static int[] getRandomIntArray(int size) {
 		int[] r = new int[size];
 		for (int i = 0; i < size; i++) {

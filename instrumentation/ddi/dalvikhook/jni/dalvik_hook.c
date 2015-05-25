@@ -46,8 +46,11 @@ int dalvik_hook_setup(struct dalvik_hook_t *h, char *cls, char *meth, char *sig,
 	
 	h->resolvm = 0; // don't resolve method on-the-fly, change by hand if needed
 
+#ifdef DEBUG
+	h->debug_me = 1;
+#else
 	h->debug_me = 0;
-
+#endif
 	return 1;
 }
 

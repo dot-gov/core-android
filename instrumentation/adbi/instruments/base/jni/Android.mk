@@ -19,5 +19,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := base
 LOCAL_SRC_FILES := ../util.c ../hook.c ../log.c ../base.c
 LOCAL_ARM_MODE := arm
+ifeq ($(DEBUG),1)
+LOCAL_CFLAGS	+= -DDEBUG 
+endif
+
 
 include $(BUILD_STATIC_LIBRARY)

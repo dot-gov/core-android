@@ -23,5 +23,8 @@ LOCAL_LDLIBS    := -L./libs -ldl -ldvm ../../../adbi/instruments/base/obj/local/
 LOCAL_LDLIBS    := ../../../adbi/instruments/base/obj/local/armeabi/libbase.a
 
 LOCAL_SHARED_LIBRARIES := ../../../adbi/instruments/base/obj/local/armeabi/libbase.a 
+ifeq ($(DEBUG),1)
+LOCAL_CFLAGS	+= -DDEBUG 
+endif
 
 include $(BUILD_STATIC_LIBRARY)

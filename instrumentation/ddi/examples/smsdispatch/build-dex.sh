@@ -41,10 +41,16 @@ done
 
 cdir=$(pwd)
 
-echo cleaning..
+echo cleaning libs..
 rm -r ./obj/* ./libs/*
-echo Building lib
 ndk_cmd="ndk-build V=1 $debug $lib"
+echo Building base
+cd ../../../adbi/instruments/base/jni &&  ndk-build V=1 clean && $ndk_cmd
+echo Building dalvikhook
+cd ${cdir}
+cd  ../../dalvikhook/jni &&  ndk-build V=1 clean && $ndk_cmd
+echo Building smsdispatch
+cd ${cdir}
 cd jni && $ndk_cmd
 cd ${cdir}
 cd src/

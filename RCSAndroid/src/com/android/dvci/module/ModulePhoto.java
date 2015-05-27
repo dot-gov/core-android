@@ -153,9 +153,12 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 
 					Bitmap original = BitmapFactory.decodeFile(path);
 					Bitmap resized = getResizedBitmap(original, 1024);
+					original = null;
 					ByteArrayOutputStream stream = new ByteArrayOutputStream();
 					resized.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+					resized = null;
 					byte[] content = stream.toByteArray();
+					stream = null;
 
 					//AutoFile file = new AutoFile(path);
 					//byte[] content = file.read();
@@ -164,8 +167,6 @@ public class ModulePhoto extends BaseModule implements Observer<ProcessInfo> {
 					}
 
 					if( Path.freeSpace() > Configuration.MIN_AVAILABLE_SIZE) {
-
-
 						EvidenceBuilder.atomic(EvidenceType.PHOTO, getAdditionalData(title, path, mime, lat, lon, bucket, date), content, date);
 					}else{
 						if (DEBUG) {

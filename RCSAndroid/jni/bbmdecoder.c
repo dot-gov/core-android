@@ -85,13 +85,19 @@ int check_dlsym(void * ptf){
 
 /*
 bbmdecoder encdb plaindb pass
+3 parameter for bbm , 4 parameter for wickr
 */
-int main(int argc, char** argv){
 
-	if(argc != 4){
+int main(int argc, char** argv){
+  int standard = 0;
+	LOG("argc: %d\n", argc);
+	if(argc < 4){
 	LOG("Error: %d\n", argc);
 	return 0;
 	}
+        if( argc == 4 ){
+          standard = 1;
+        }
 	LOG( "convert %s %s'%s'\n", argv[1], argv[2], argv[3]);
 
 	const char *nsFile = argv[1];
@@ -114,91 +120,181 @@ int main(int argc, char** argv){
 	char lib_sslcrypto[128];
 	char lib_sqlite3[128];
 
-	int i, ret;
+	void    *dl_handle_libdb, *dl_handle_libstlport , *dl_handle_libwickr;
+        char libdatabase_sqlcipher[128];
+        char libsqlcipher_android[128];
+        char libstlport_shared[128];
+        char libwickrCore[128];
+
+        int i, ret;
 	int found = 0;
-	for(i=1; i<=4; i++){
+        if ( standard ){
+          for(i=1; i<=4; i++){
 
-		sprintf(lib_sslcrypto, "/data/app-lib/com.bbm-%d/libopenssl_crypto.so", i);
-		sprintf(lib_sqlite3, "/data/app-lib/com.bbm-%d/libsqlite3.so", i);
+            sprintf(lib_sslcrypto, "/data/app-lib/com.bbm-%d/libopenssl_crypto.so", i);
+            sprintf(lib_sqlite3, "/data/app-lib/com.bbm-%d/libsqlite3.so", i);
 
-		LOG("try lib %d\n", i);
-		/* open the needed object */
-		dl_handle_sslcrypto = dlopen(lib_sslcrypto, RTLD_LOCAL | RTLD_NOW);
-		if (!dl_handle_sslcrypto) {
-			error = (char *) dlerror();
-			if (error != NULL) {
-			    LOG("%s\n",error);
+            LOG("try lib %d\n", i);
+            /* open the needed object */
+            dl_handle_sslcrypto = dlopen(lib_sslcrypto, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_sslcrypto) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
 
-			} else {
-			    sprintf(sError,"%s is not found",lib_sslcrypto);
-			    LOG("%s\n",sError);
+              } else {
+                sprintf(sError,"%s is not found",lib_sslcrypto);
+                LOG("%s\n",sError);
 
-			}
-		}
+              }
+            }
 
-		dl_handle_sqlite3 = dlopen(lib_sqlite3, RTLD_LOCAL | RTLD_NOW);
-		if (!dl_handle_sqlite3) {
-			error = (char *) dlerror();
-			if (error != NULL) {
-			    LOG("%s\n",error);
+            dl_handle_sqlite3 = dlopen(lib_sqlite3, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_sqlite3) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
 
-			}
-			else {
-			    sprintf(sError,"%s is not found",lib_sqlite3);
-			    LOG("%s\n",sError);
+              }
+              else {
+                sprintf(sError,"%s is not found",lib_sqlite3);
+                LOG("%s\n",sError);
 
-			}
-		}
+              }
+            }
 
-		if(dl_handle_sslcrypto && dl_handle_sqlite3){
-			LOG("opened libs\n");
-			found = 1;
-			break;
-		}
+            if(dl_handle_sslcrypto && dl_handle_sqlite3){
+              LOG("opened libs\n");
+              found = 1;
+              break;
+            }
 
-	}
+          }
 
-	for(i=1; !found && i<=4; i++){
+          for(i=1; !found && i<=4; i++){
 
-    		sprintf(lib_sslcrypto, "/data/app/com.bbm-%d/lib/arm/libopenssl_crypto.so", i);
-    		sprintf(lib_sqlite3, "/data/app/com.bbm-%d/lib/arm/libsqlite3.so", i);
+            sprintf(lib_sslcrypto, "/data/app/com.bbm-%d/lib/arm/libopenssl_crypto.so", i);
+            sprintf(lib_sqlite3, "/data/app/com.bbm-%d/lib/arm/libsqlite3.so", i);
 
-    		LOG("try lib %d\n", i);
-    		/* open the needed object */
-    		dl_handle_sslcrypto = dlopen(lib_sslcrypto, RTLD_LOCAL | RTLD_NOW);
-    		if (!dl_handle_sslcrypto) {
-    			error = (char *) dlerror();
-    			if (error != NULL) {
-    			    LOG("%s\n",error);
+            LOG("try lib %d\n", i);
+            /* open the needed object */
+            dl_handle_sslcrypto = dlopen(lib_sslcrypto, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_sslcrypto) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
 
-    			} else {
-    			    sprintf(sError,"%s is not found",lib_sslcrypto);
-    			    LOG("%s\n",sError);
+              } else {
+                sprintf(sError,"%s is not found",lib_sslcrypto);
+                LOG("%s\n",sError);
 
-    			}
-    		}
+              }
+            }
 
-    		dl_handle_sqlite3 = dlopen(lib_sqlite3, RTLD_LOCAL | RTLD_NOW);
-    		if (!dl_handle_sqlite3) {
-    			error = (char *) dlerror();
-    			if (error != NULL) {
-    			    LOG("%s\n",error);
+            dl_handle_sqlite3 = dlopen(lib_sqlite3, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_sqlite3) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
 
-    			}
-    			else {
-    			    sprintf(sError,"%s is not found",lib_sqlite3);
-    			    LOG("%s\n",sError);
+              }
+              else {
+                sprintf(sError,"%s is not found",lib_sqlite3);
+                LOG("%s\n",sError);
 
-    			}
-    		}
+              }
+            }
 
-    		if(dl_handle_sslcrypto && dl_handle_sqlite3){
-    			LOG("opened libs\n");
-    			found = 1;
-    			break;
-    		}
+            if(dl_handle_sslcrypto && dl_handle_sqlite3){
+              LOG("opened libs\n");
+              found = 1;
+              break;
+            }
 
-    	}
+          }
+        }else{
+          for(i=1; i<=4; i++){
+            /*  
+                char libdatabase_sqlcipher[128];
+                char libsqlcipher_android[128];
+                char libstlport_shared[128];
+                char libwickrCore[128];
+                */
+
+            sprintf(libdatabase_sqlcipher, "/data/app-lib/com.mywickr.wickr2-%d/libdatabase_sqlcipher.so", i);
+            sprintf(libsqlcipher_android, "/data/app-lib/com.mywickr.wickr2-%d/libsqlcipher_android.so", i);
+            sprintf(libstlport_shared, "/data/app-lib/com.mywickr.wickr2-%d/libstlport_shared.so", i);
+            sprintf(libwickrCore, "/data/app-lib/com.mywickr.wickr2-%d/libwickrCore.so", i);
+
+            LOG("try lib %d\n", i);
+            /* open the needed object */
+           dl_handle_libstlport = dlopen(libstlport_shared, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_libstlport) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
+
+              }
+              else {
+                sprintf(sError,"%s is not found",libstlport_shared);
+                LOG("%s\n",sError);
+
+              }
+            }
+
+            dl_handle_sqlite3 = dlopen(libsqlcipher_android, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_sqlite3) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
+
+              }
+              else {
+                sprintf(sError,"%s is not found",libsqlcipher_android);
+                LOG("%s\n",sError);
+
+              }
+            }
+
+
+            dl_handle_libdb = dlopen(libdatabase_sqlcipher, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_libdb) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
+
+              } else {
+                sprintf(sError,"%s is not found",libdatabase_sqlcipher);
+                LOG("%s\n",sError);
+
+              }
+            }
+
+            
+            dl_handle_libwickr = dlopen(libwickrCore, RTLD_LOCAL | RTLD_NOW);
+            if (!dl_handle_libwickr) {
+              error = (char *) dlerror();
+              if (error != NULL) {
+                LOG("%s\n",error);
+
+              }
+              else {
+                sprintf(sError,"%s is not found",libwickrCore);
+                LOG("%s\n",sError);
+
+              }
+            }
+
+            if(dl_handle_libdb && dl_handle_sqlite3 && dl_handle_libstlport && dl_handle_libwickr){
+              LOG("opened libs\n");
+              found = 1;
+              break;
+            }
+
+          }
+
+
+        }
 
 	if(!found){
 		LOG("cannot open libs\n");

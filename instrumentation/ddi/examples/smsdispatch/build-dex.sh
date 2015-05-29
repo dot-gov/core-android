@@ -53,6 +53,8 @@ echo Building smsdispatch
 cd ${cdir}
 cd jni && $ndk_cmd
 cd ${cdir}
+echo "skipping java part"
+exit 0
 cd src/
 javas=""
 classpath="$cdir/../../extrajar/android-api9.jar:$cdir}/obj"

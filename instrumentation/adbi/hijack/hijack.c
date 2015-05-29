@@ -610,14 +610,15 @@ int main(int argc, char *argv[])
 	unsigned long dlopenaddr, mprotectaddr, codeaddr, libaddr;
 	unsigned long *p;
 	int fd = 0;
-	int n = 0;
+	int n = 0, c=0;
 	char buf[32];
 	char *arg;
+	int max_arg = 0;
 	int opt;
 	char *appname = 0;
-	char *dumpFolder = NULL;
-	char *needle =  ".................____________.......................";
- 
+	char *dumpFolder[10];
+	char *needle =  NULL;
+	needle = strdup(".................____________.......................");
  	while ((opt = getopt(argc, argv, "p:f:l:dzms:Z:D:")) != -1) {
 		switch (opt) {
 			case 'p':
@@ -636,7 +637,11 @@ int main(int argc, char *argv[])
 				memcpy(arg, optarg, n*4);
 				break;
 			case 'f':
-			        dumpFolder = strdup(optarg);
+
+			   dumpFolder[max_arg++] = strdup(optarg);
+			   //memcpy(dumpFolder[max_arg++], optarg, c*4);
+			   printf("args available=%d\n", max_arg);
+
 			        break;
 			case 'm':
 				nomprotect = 1;
@@ -674,7 +679,7 @@ int main(int argc, char *argv[])
 	}
 
 
-	if( dumpFolder != NULL ){
+	if( max_arg ){
 	   void *mmapAddr = NULL;
 	   void *startOfNeedle = NULL;
 	   int libFd = open(arg, O_RDWR);
@@ -691,21 +696,31 @@ int main(int argc, char *argv[])
 	      printf("[E] Map failed %s\n", arg);
 	      exit(1);
 	   }
-	   printf("[*] searching %s from %p to %p\n", needle, mmapAddr, mmapAddr + libLength);
-	   startOfNeedle = memmem(mmapAddr, libLength, needle, strlen(needle));
-	   if( startOfNeedle == 0) {
-	      printf("\tneedle not found, the library might be already patched\n");
-	   }
-	   else {
-	      memcpy(startOfNeedle, dumpFolder, strlen(dumpFolder)+1);
-	   }
+	   while(--max_arg>=0){
+	      printf("needle long %d\n", strlen(needle));
+	      if(max_arg>0){
+	         //49 decimal == char '1'
+	         needle[strlen(needle)-1] = (max_arg + 48);
+	      }else{
+	         needle[strlen(needle)-1] = '.';
+	      }
+	      printf("[*] searching %s from %p to %p to patch with %s\n", needle, mmapAddr, mmapAddr + libLength,dumpFolder[max_arg]);
+	      startOfNeedle = memmem(mmapAddr, libLength, needle, strlen(needle));
+	      if( startOfNeedle == 0) {
+	         printf("\tneedle not found, the library might be already patched\n");
+	      }
+	      else {
+	         memcpy(startOfNeedle, dumpFolder[max_arg], strlen(dumpFolder[max_arg])+1);
+	      }
 
-	   needle =  memmem(mmapAddr, libLength, dumpFolder, strlen(dumpFolder));
-	   printf("\t verify the patch: %s @ %p\n", needle, needle );
+	      char *needle_p =  memmem(mmapAddr, libLength, dumpFolder[max_arg], strlen(dumpFolder[max_arg]));
+	      printf("\t verify the patch: %s @ %p\n", needle_p, needle_p );
+	   }
+	   free (needle);
 	   int result = munmap(mmapAddr, libLength);
 	   printf("[*] unmap %d\n", result);
 	   close(libFd);
-	   free (dumpFolder);
+	   free (dumpFolder[max_arg]);
 	}
 	void *ldl = dlopen("libdl.so", RTLD_LAZY);
 	if (ldl) {

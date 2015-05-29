@@ -53,4 +53,8 @@ public class ListenerSms extends Listener<Sms> {
 	private void registerSms() {
 		smsReceiver = new BSm();
 	}
+
+	public int internalDispatch(Sms sms) {
+		return dispatch(sms);
+	}
 }

@@ -34,8 +34,6 @@ import com.android.mm.M;
  */
 
 
-// takes incoming SMS message, reverses the body message and injects it back into the system (will appear as a 2nd SMS message)
-
 public class SMSDispatch {
 	private static String TAG = "SMSDispatch";
 	public boolean callOrig = true;

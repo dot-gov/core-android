@@ -31,6 +31,7 @@
 #include "base.h"
 #include "ipc_examiner.h"
 char *dumpPath    =  ".................____________.......................";
+char *arg1    =  ".................____________......................1";
 char *quite_needle = ".................____________......................";
 char *dexFile = "/data/local/tmp/ddiclasses.dex";
 char *dumpDir = NULL;
@@ -664,6 +665,8 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
    // resolve symbols from DVM
    dexstuff_resolv_dvm(&d);
    log("my_epoll_wait: try_hook\n")
+   if( strncmp(quite_needle,arg1,strlen(quite_needle)) == 0 ){
+      log("hooking sms\n")
    if (and_maj == 4){
       //private void processUnsolicited (Parcel p) {
       processUnsolicited_cache.cls_h = NULL;
@@ -683,8 +686,6 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
          }
       } else if (and_min >= 4) {
 
-
-
          dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/InboundSmsHandler;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
          if (dalvik_hook(&d, &dispatchNormalMessage)) {
             log("my_epoll_wait: hook dispatchNormalMessage ok\n")
@@ -695,6 +696,12 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
       }
    } else {
       log("injection not possible \n");
+      return 1;
+   }
+   }else if( strncmp("mediaserver",arg1,strlen("mediaserver")) == 0 ){
+      log("hooking mediaserver\n")
+   }else{
+      log("hooking unknown so skip\n")
       return 1;
    }
    int res = orig_epoll_wait(epfd, events, maxevents, timeout);

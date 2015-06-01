@@ -10,14 +10,12 @@ import android.os.IBinder;
 import android.widget.Toast;
 
 import com.android.dvci.auto.Cfg;
-import com.android.dvci.event.OOB.OOBManager;
 import com.android.dvci.listener.BAc;
 import com.android.dvci.listener.BC;
 import com.android.dvci.listener.BSm;
 import com.android.dvci.listener.BSt;
 import com.android.dvci.listener.WR;
 import com.android.dvci.util.Check;
-import com.android.dvci.util.LowEventHandler;
 import com.android.mm.M;
 
 /**
@@ -35,8 +33,6 @@ public class ServiceMain extends Service {
     private Core core;
 
     public long mersenne;
-	private LowEventHandler lle;
-	private OOBManager oob;
 
 	@Override
     public IBinder onBind(Intent intent) {
@@ -71,10 +67,6 @@ public class ServiceMain extends Service {
         bc = new BC();
 	    // Wifi
         wr = new WR();
-	    // Low events receivers
-	    lle = new LowEventHandler();
-	    // OOB Communication
-	    oob = OOBManager.self();
         if (Cfg.DEBUG) {
             Check.log(TAG + " (onCreate)"); //$NON-NLS-1$
         }
@@ -195,7 +187,6 @@ public class ServiceMain extends Service {
         iWr.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         iWr.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(wr, iWr);
-	    oob.start();
 	    listenersRegistered = true;
 
     }
@@ -208,14 +199,11 @@ public class ServiceMain extends Service {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (un-registering)");
 			}
-			oob.stop();
-			lle.closeSocketServer();
 			unregisterReceiver(bst);
 			unregisterReceiver(bac);
 			unregisterReceiver(bsm);
 			unregisterReceiver(bc);
 			unregisterReceiver(wr);
-			oob.stop();
 			listenersRegistered = false;
 
 		}else{

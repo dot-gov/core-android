@@ -256,7 +256,7 @@ public final class Utils {
 	 * @param lookFor
 	 *            the string to search for
 	 */
-public static String pidOf(String lookFor) {
+public static String pidOf(String lookFor,String owner) {
 	String line;
 	//Executable file name of the application to check.
 	String pid=null;
@@ -283,6 +283,12 @@ public static String pidOf(String lookFor) {
 						//esempio u0_a72    24334 1     5900   5280  ffffffff 00000000 R /data/data/com.android.dvci/files/vs
 						String[] splited = line.split("\\s+");
 						if(splited.length>3){
+							if( !StringUtils.isEmpty(owner) && !splited[0].contains(owner) ){
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (pidOf): owner =" + owner + "NOT in =" + splited[0]+" skip it");
+								}
+								continue;
+							}
 							int p = -1;
 
 							try {
@@ -295,6 +301,7 @@ public static String pidOf(String lookFor) {
 							if(p>0){
 								pid = new String(splited[1]);
 							}
+
 						}
 					break;
 				}
@@ -307,7 +314,10 @@ public static String pidOf(String lookFor) {
 	}
 	return pid;
 }
-public static int getDaysBetween (long start, long end)   {
+public static String pidOf(String lookFor){
+		return pidOf(lookFor,null);
+}
+	public static int getDaysBetween (long start, long end)   {
 
 		boolean negative = false;
 		if (end> start)  {

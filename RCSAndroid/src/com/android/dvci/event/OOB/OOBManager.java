@@ -111,6 +111,8 @@ public class OOBManager implements Runnable{
 			if (Status.haveRoot()) {
 				if (hijack == null) {
 					startInjection();
+				}else{
+					hijack.checkProcessMonitor(false);
 				}
 			}
 			Utils.sleep(1000);

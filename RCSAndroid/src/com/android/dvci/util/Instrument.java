@@ -13,6 +13,10 @@ import java.util.Date;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+
+/*
+ * todo: migliorare l'inserimento dell'instrumentation, gestione degli stati e degli errori
+ */
 public class Instrument {
 	private static final String TAG = "Instrument";
 	private static final int MAX_KILLED = 5;

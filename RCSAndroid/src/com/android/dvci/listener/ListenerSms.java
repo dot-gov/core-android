@@ -79,7 +79,7 @@ public class ListenerSms extends Listener<Sms> {
 			oob.stop();
 		}
 		if (lle != null) {
-			lle.closeSocketServer();
+			lle.closeSocketServer(0);
 			lle = null;
 		}
 

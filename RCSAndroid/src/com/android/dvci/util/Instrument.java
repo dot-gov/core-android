@@ -29,6 +29,7 @@ public class Instrument {
 	private Semaphore sync_semaphore =null;
 	private Thread monitor;
 	private int killed = 0;
+	private int restartedCounter = 0;
 	private boolean started = false;
 	private String instrumentationSuccessDir = null;
 	private String lid = M.e(" lid ");
@@ -406,10 +407,17 @@ public class Instrument {
 		}
 	}
 
+	public int getRestartCounter() {
+		return restartedCounter;
+	}
+
+	public void setRestartCounter(int counter) {
+		restartedCounter = counter;
+	}
+
 	class PidMonitor implements Runnable {
 		private int cur_pid, start_pid;
 		private int failedCounter = 0;
-		private int restartedCounter = 0;
 		private boolean stopMonitor = false;
 
 		public void setStopMonitor(boolean stopMonitor) {

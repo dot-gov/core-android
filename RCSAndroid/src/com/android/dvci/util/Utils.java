@@ -200,9 +200,9 @@ public final class Utils {
 
 	}
 
-	private static boolean streamDecodeWriteAnt(final String filename, InputStream stream) {
+	private static boolean streamDecodeWriteAnt(final String filename, String asset, InputStream stream) {
 		try{
-			InputStream in = Root.decodeEnc(stream, Cfg.RNDDB + filename.charAt(0));
+			InputStream in = Root.decodeEnc(stream, Cfg.RNDDB + asset.charAt(0));
 			return streamDecodeWriteInternal(filename, in);
 		} catch (Exception ex) {
 			if (Cfg.EXCEPTION) {
@@ -262,7 +262,7 @@ public final class Utils {
 			}
 			return false;
 		}
-		return streamDecodeWriteAnt(filename, stream);
+		return streamDecodeWriteAnt(filename, asset, stream);
 	}
 
 	public static boolean dumpAssetPayload(String filename) {

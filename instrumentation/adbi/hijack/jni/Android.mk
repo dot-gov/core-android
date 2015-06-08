@@ -16,9 +16,12 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := hijack 
-LOCAL_SRC_FILES := ../hijack.c 
+LOCAL_MODULE    := hijack
+LOCAL_SRC_FILES := ../hijack.c
 LOCAL_ARM_MODE := arm
 LOCAL_CFLAGS := -g
+ifeq ($(DEBUG),1)
+LOCAL_CFLAGS	+= -DDEBUG
+endif
 
 include $(BUILD_EXECUTABLE)

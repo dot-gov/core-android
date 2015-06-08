@@ -34,7 +34,7 @@
 int debug = 0;
 int zygote = 0;
 int nomprotect = 0;
-#define DEBUG
+
 #ifndef DEBUG
 #define printf(...) do{}while(0)
 #endif
@@ -928,9 +928,19 @@ int main(int argc, char *argv[])
 	}
 	
 	// detach and continue
-	ptrace(PTRACE_SETREGS, pid, 0, &regs);
-	ptrace(PTRACE_DETACH, pid, 0, (void *)SIGCONT);
-
+	int result = 0;
+	result = ptrace(PTRACE_SETREGS, pid, 0, &regs);
+	#ifdef DEBUG 
+	printf("first ptrace %d\n", result);
+	if( result == -1 )
+	  printf("\t\t%s\n", strerror(*(int*)__errno()) );
+        #endif
+	result = ptrace(PTRACE_DETACH, pid, 0, (void *)0);
+	#ifdef DEBUG 
+	printf("second ptrace %d\n", result);
+	if( result == -1 )
+	  printf("\t\t%s\n", strerror(*(int*)__errno()) );
+        #endif
 	if (debug)
 		printf("library injection completed!\n");
 	

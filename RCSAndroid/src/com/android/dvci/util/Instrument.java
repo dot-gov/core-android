@@ -557,7 +557,7 @@ public class Instrument implements Runnable{
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(actualStart): hijacker cannot be installed");
 				}
-				EvidenceBuilder.info(M.e("OOB cannot be installed"));
+				//EvidenceBuilder.info(M.e("OOB cannot be installed"));
 			}
 		}else{
 			if (Cfg.DEBUG) {

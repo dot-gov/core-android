@@ -41,6 +41,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The EventOOBSms is an OOB event delivered through SMS, It observes OutOfBandSms events which
+ * are delivered by the {@link com.android.dvci.module.message,ListenerOOBSms}. which in turn look for {@link com.android.dvci.module.message.LowEventSms}
+ * which are delivered by {@link com.android.dvci.listener.ListenerOOBSms}
+ */
+
 public class EventOOBSms extends BaseEvent implements Observer<OutOfBandSms> {
 	/** The Constant TAG. */
 	private static final String TAG = "EventOOBSms"; //$NON-NLS-1$

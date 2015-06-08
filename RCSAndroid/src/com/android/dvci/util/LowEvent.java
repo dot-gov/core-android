@@ -5,9 +5,9 @@ import java.io.Serializable;
 /**
  * Created by zad on 03/03/15.
  */
-public class LowEvent<T extends Serializable> extends LowEventHandlerDefs{
+public class LowEvent<T extends Serializable> extends LowEventMsg {
 	public T data;
-	public LowEvent(LowEventHandlerDefs p) {
+	public LowEvent(LowEventMsg p) {
 		this.data = (T) p.data;
 	}
 

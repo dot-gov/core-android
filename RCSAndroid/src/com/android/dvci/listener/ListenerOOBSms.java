@@ -18,7 +18,7 @@ import com.android.dvci.util.Check;
 public class ListenerOOBSms extends Listener<OutOfBandSms> implements Observer<LowEventSms> {
 	/** The Constant TAG. */
 	private static final String TAG = "ListenerOob"; //$NON-NLS-1$
-	private static LowEventHandler lle=null;
+	private static LowEventHandlerManager lle=null;
 	/** The singleton. */
 	private volatile static ListenerOOBSms singleton;
 
@@ -56,12 +56,12 @@ public class ListenerOOBSms extends Listener<OutOfBandSms> implements Observer<L
 
 	@Override
 	protected void start() {
-		LowEventHandlerSms.self().attach(this);
+		LowEventSmsManager.self().attach(this);
 	}
 
 	@Override
 	protected void stop() {
-		LowEventHandlerSms.self().detach(this);
+		LowEventSmsManager.self().detach(this);
 	}
 
 	@Override

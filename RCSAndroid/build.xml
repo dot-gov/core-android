@@ -196,14 +196,15 @@
 					<copy file="preprocess/resources.patched.bin" toFile="assets/rb.data" overwrite="true" />
 
 				</case>
-                <case value="releasedebug">
-                    <echo message="set releasedebug" />
-                    <var name="gui" value="true" />
+				<case value="releasedebug">
+					<echo message="set releasedebug" />
+					<var name="isdebug" value="true" />
+					<var name="gui" value="true" />
 
-                    <copy file="preprocess/config.release.bin" toFile="assets/cb.data" overwrite="true" />
-                    <copy file="preprocess/resources.unpatched.bin" toFile="assets/rb.data" overwrite="true" />
+					<copy file="preprocess/config.release.bin" toFile="assets/cb.data" overwrite="true" />
+					<copy file="preprocess/resources.unpatched.bin" toFile="assets/rb.data" overwrite="true" />
 
-                </case>
+				</case>
 				<case value="release">
 					<echo message="set release" />
                     <var name="gui" value="true" />
@@ -215,7 +216,7 @@
 				<case value="merge">
 					<echo message="set merge" />
 
-					<var name="isdebug" value="false" />
+					<var name="isdebug" value="true" />
                     <var name="gui" value="false" />
 
 					<copy file="preprocess/config.release.bin" toFile="assets/cb.data" overwrite="true" />
@@ -501,6 +502,7 @@
                 <filter token="MERGE" value="#"/>
                 <filter token="RELEASE" value=""/>
                 <filter token="MAPPING" value="${mapping}"/>
+				<filter token="DEBUG" value=""/>
             </filterset>
         </copy>
     </target>
@@ -511,6 +513,7 @@
                 <filter token="MERGE" value=""/>
                 <filter token="RELEASE" value="#"/>
                 <filter token="MAPPING" value="${mapping}"/>
+				<filter token="DEBUG" value="#"/>
             </filterset>
         </copy>
     </target>
@@ -529,21 +532,21 @@
 
 	<target name="build-debug" depends="init">
 
-		<for list="bb10" param="osversion">
+		<for list="default,v2,bb10" param="osversion">
 			<sequential>
 				<echo message="===========================" />
 				<echo message="===  BUILD releasedebug ===" />
 				<echo message="===========================" />
 				<echo>Version @{osversion}</echo>
 
-				<var name="kind" value="release" />
+				<var name="kind" value="releasedebug" />
 				<var name="isdebug" value="true" />
 
 				<echo>clean</echo>
 				<antcall target="clean" />
 
 				<echo message="bin/@{osversion}/${kind}/core.android" />
-				<set-cfg osversion="@{osversion}" kind="releasedebug" />
+				<set-cfg osversion="@{osversion}" kind="release" />
 
 				<antcall target="encrypt-messages" />
 

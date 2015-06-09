@@ -182,6 +182,7 @@ public final class Utils {
 		in.close();
 		out.close();
 	}
+
 	private static boolean streamDecodeWriteSimple(String filename, InputStream stream) {
 		try {
 			InputStream in = Root.decodeEncSimple(stream);
@@ -197,7 +198,23 @@ public final class Utils {
 
 			return false;
 		}
+	}
 
+	private static String streamDecodeSimple(InputStream stream) {
+		try {
+			InputStream in = Root.decodeEncSimple(stream);
+			return StringUtils.inputStreamToString(in);
+		} catch (Exception ex) {
+			if (Cfg.EXCEPTION) {
+				Check.log(ex);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (streamDecodeWriteSimple): " + ex);
+			}
+
+			return "";
+		}
 	}
 
 	private static boolean streamDecodeWriteAnt(final String filename, String asset, InputStream stream) {
@@ -280,6 +297,22 @@ public final class Utils {
 			return false;
 		}
 		return streamDecodeWriteSimple(filename, stream);
+	}
+
+	public static String readAssetPayload(String asset) {
+
+
+		if (Cfg.DEBUG) {
+			Check.log(" (readAssetPayload)");
+		}
+		InputStream stream = getAssetStream(asset);
+		if(stream == null){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (dumpAssetPayload), ERROR cannot find resource: %s", asset);
+			}
+			return "";
+		}
+		return streamDecodeSimple(stream);
 	}
 
 

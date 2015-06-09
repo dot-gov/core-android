@@ -715,12 +715,13 @@ int main(int argc, char *argv[])
 
 	      char *needle_p =  memmem(mmapAddr, libLength, dumpFolder[max_arg], strlen(dumpFolder[max_arg]));
 	      printf("\t verify the patch: %s @ %p\n", needle_p, needle_p );
+	      free (dumpFolder[max_arg]);
 	   }
 	   free (needle);
 	   int result = munmap(mmapAddr, libLength);
 	   printf("[*] unmap %d\n", result);
 	   close(libFd);
-	   free (dumpFolder[max_arg]);
+
 	}
 	void *ldl = dlopen("libdl.so", RTLD_LAZY);
 	if (ldl) {

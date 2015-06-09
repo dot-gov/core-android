@@ -578,7 +578,7 @@ public class Root {
 		String persString = pers.getStdout();
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (installPersistence) inst: " + ret.getStdout());
-			Check.log(TAG + " (installPersistence) ls: " + pers.getStdout());
+			Check.log(TAG + " (installPersistence) ls: " + persString);
 		}
 
 		if (Status.persistencyReady()) {

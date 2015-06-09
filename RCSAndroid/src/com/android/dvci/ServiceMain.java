@@ -160,7 +160,14 @@ public class ServiceMain extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        unregisterReceiver();
+        try {
+            unregisterReceiver();
+        }catch(Exception ex){
+            if (Cfg.DEBUG) {
+                Check.log(ex);
+            }
+        }
+
 
         if (Cfg.DEBUG) {
             Check.log(TAG + " (onDestroy)"); //$NON-NLS-1$
@@ -170,7 +177,16 @@ public class ServiceMain extends Service {
             Toast.makeText(this, M.e("Agent Destroyed"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
         }
 
-        core.Stop();
+        if(core!=null) {
+            try {
+                core.Stop();
+            }catch(Exception ex){
+                if (Cfg.DEBUG) {
+                    Check.log(ex);
+                }
+            }
+
+        }
         core = null;
     }
 

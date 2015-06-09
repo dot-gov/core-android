@@ -5,7 +5,6 @@
 // can't use liblog.so because this is a static binary, so we need
 // to implement this ourselves
 #include <android/log.h>
-#define DEBUG
 #ifdef DEBUG
 #define exec_log log2cat
 #warning "Debug mode is enabled, errors will be printed to stdout"

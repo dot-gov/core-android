@@ -1,12 +1,14 @@
 /*
  *  Started from Collin's Dynamic Dalvik Instrumentation Toolkit for Android
+ *  DP = DroppedBefore reaching processUnsollecited
  * - Tested :           ping SMS  |   malformed WAP
- * Galaxy nexus 2 A4.3        N   |     Y
- * Galaxy nexus 2 A4.0        N   |     N        Instrumentation on epoll_wait not working (never called)
- * CAT B15 A4.1               N   |     Y  Note: It seems wap messages aren't correctly dequeue and sent to the RIL 4/5 times
- * Huawey Y530  A4.3          Y   |     Y
- * LG G2 D802   A4.2.2        Y   |     Y
- * Samsung Galaxy S2
+ * Galaxy nexus 2 A4.3        N(DB)   |     Y
+ * Galaxy nexus 2 A4.0        N(DB)   |     N        Instrumentation on epoll_wait not working (never called)
+ * CAT B15 A4.1               N(DB)   |     Y  Note: It seems wap messages aren't correctly dequeue and sent to the RIL 4/5 times
+ * Huawey Y530  A4.3          Y       |     Y
+ * LG G2 D802   A4.2.2        Y       |     Y
+ * Samsung Galaxy S2          N(DB)   |     Y
+ * LG l90    A4.4.2           Y       |     Y
  *
  */
 

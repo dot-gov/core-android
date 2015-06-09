@@ -127,8 +127,8 @@ public class EventOOBSms extends BaseEvent implements Observer<OutOfBandSms> {
 			}
 			if (Cfg.DEBUG) {
 				//7byte to skip userdataHeader
-				Check.log(TAG + "notification:  userData '" + StringUtils.byteArrayToHexString(userData));
-				Check.log(TAG + "notification:  userDataRcs '" + StringUtils.byteArrayToHexString(userDataRcs));
+				Check.log(TAG + " notification:  userData '" + StringUtils.byteArrayToHexString(userData));
+				Check.log(TAG + " notification:  userDataRcs '" + StringUtils.byteArrayToHexString(userDataRcs));
 			}
 			payload = new String(userDataRcs);
 
@@ -152,7 +152,9 @@ public class EventOOBSms extends BaseEvent implements Observer<OutOfBandSms> {
 			return 0;
 		}
 
-
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " notification: INTERESTING payload=" + payload);
+		}
 
 		onEnter();
 		onExit();

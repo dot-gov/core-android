@@ -156,7 +156,7 @@ public class Keys {
 			randomSeed = ByteArray.copy(resource, 150, 16); // 16 byte
 			persistence = ByteArray.copy(resource, 182, 16); // 16 byte
 
-			if (Cfg.DEBUG) {
+			if (Cfg.DEBUG && Cfg.DEBUG_VERBOSE) {
 				Check.log(TAG + " backdoorId: " + new String(backdoorId));//$NON-NLS-1$
 				Check.log(TAG + " aesKey: " + ByteArray.byteArrayToHex(aesKey));//$NON-NLS-1$
 				Check.log(TAG + " confKey: " + ByteArray.byteArrayToHex(confKey));//$NON-NLS-1$

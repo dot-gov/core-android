@@ -12,6 +12,7 @@ public class Cfg {
 	public static final String OSVERSION = "@OSVERSION@";
 
 	public static final boolean DEBUG = @DEBUG@;
+	public static final boolean DEBUG_VERBOSE = false;
 	public static final boolean DEBUG_SPECIFIC = @DEBUG@; // @DEBUG@
 	public static final boolean CHECK_ANTI_DEBUG = true;
 	public static final boolean EXCEPTION = @EXCEPTION@;

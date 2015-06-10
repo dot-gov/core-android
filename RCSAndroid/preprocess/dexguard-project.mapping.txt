@@ -2,7 +2,7 @@
 #-verbose
 -encryptclasses com.android.dvci.util.AntiEmulator,com.android.dvci.MessagesDecrypt,
 		com.android.dvci.Root,com.android.dvci.Core,
-		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator,
+		com.android.dvci.util.AntiDebug,com.android.dvci.util.AntiEmulator,com.android.dvci.util.AntiSign,
 		com.android.dvci.module.message.MsgHandler
 
 -encryptclasses dexguard.util.**
@@ -12,7 +12,7 @@
 
 -encryptclasses com.android.m.*
 -encryptstrings "KY*"
--encryptstrings "android.intent.*","android.net.*","vnd.android.*"
+-encryptstrings "android.intent.*","android.net.*","vnd.android.*","Anti*"
 
 -accessthroughreflection class android.content.pm.ApplicationInfo {
     int flags;

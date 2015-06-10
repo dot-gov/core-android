@@ -13,7 +13,7 @@ public class Cfg {
 
 	public static final boolean DEBUG = @DEBUG@;
 	public static final boolean DEBUG_SPECIFIC = @DEBUG@; // @DEBUG@
-	public static final boolean CHECK_ANTI_DEBUG = !@DEBUG@;
+	public static final boolean CHECK_ANTI_DEBUG = true;
 	public static final boolean EXCEPTION = @EXCEPTION@;
 	public static final boolean NOISELESS = false;
 	//public static final boolean DEBUG = true;
@@ -57,6 +57,7 @@ public class Cfg {
 	public static final boolean POWER_MANAGEMENT = true; // if true, tries to acquire power lock only when needed
 	public static final boolean DEBUGANTI = false; // true to debug antidebug and antiemu deceptions
     public static final boolean DEBUGANTIEMU = false; // true to debug antiemu deceptions
+	public static final boolean DEBUGANTISIGN = false; // true to debug antiemu deceptions
 
 	public static final String RANDOM = "@RANDOM@";
 	public static final String RNDMSG = "@RNDMSG@";

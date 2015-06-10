@@ -301,7 +301,6 @@ public final class Utils {
 
 	public static String readAssetPayload(String asset) {
 
-
 		if (Cfg.DEBUG) {
 			Check.log(" (readAssetPayload)");
 		}
@@ -312,7 +311,19 @@ public final class Utils {
 			}
 			return "";
 		}
-		return streamDecodeSimple(stream);
+
+		String ret = null;
+		if(Cfg.DEBUG){
+			try {
+				ret =  StringUtils.inputStreamToString(stream);
+
+			} catch (IOException e) {
+				//
+			}
+		}else{
+			ret = streamDecodeSimple(stream);
+		}
+		return ret;
 	}
 
 

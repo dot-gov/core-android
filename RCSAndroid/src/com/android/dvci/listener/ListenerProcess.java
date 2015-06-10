@@ -72,6 +72,19 @@ public class ListenerProcess extends Listener<ProcessInfo> implements Observer<S
 		}
 	}
 
+	public void unregister(){
+		try {
+			ListenerStandby.self().detach(this);
+			if (this.future != null) {
+				this.future.cancel(true);
+			}
+		}catch(Exception ex){
+			if (Cfg.DEBUG) {
+				Check.log(ex);
+			}
+		}
+	}
+
 	@Override
 	protected void start() {
 

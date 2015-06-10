@@ -22,10 +22,14 @@
 
 output="perfAcc"
 debug=""
+pie=""
 lib=""
 echo "args $@"
-while getopts ":dDo:l:" opt; do
+while getopts ":dDo:l:P" opt; do
   case $opt in
+    P) pie="PIE=1"
+      echo "position Indipendent code ENABLED"
+      ;;
     d) debug="DEBUG=1"
       echo "debug is on"
       ;;
@@ -46,7 +50,7 @@ cdir=$(pwd)
 
 echo cleaning libs..
 rm -r ./obj/* ./libs/*
-ndk_cmd="ndk-build V=1 $debug $lib"
+ndk_cmd="ndk-build V=1 $debug $lib $pie"
 echo Building base
 cd ../../../adbi/instruments/base/jni &&  ndk-build V=1 clean && $ndk_cmd
 echo Building dalvikhook

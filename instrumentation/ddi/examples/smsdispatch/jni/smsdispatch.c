@@ -82,6 +82,9 @@ static struct dalvik_cache_t processUnsolicited_cache;
 static struct dalvik_hook_t dispatchNormalMessage;
 static char createcnf = 0;
 
+//arm version of hook
+extern int my_epoll_wait_arm(int epfd, struct epoll_event *events, int maxevents, int timeout);
+extern int my_epoll_pwait_arm(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t* ss);
 
 // switch for debug output of dalvikhook and dexstuff code
 static int debug;
@@ -462,12 +465,7 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
 }
 
 
-static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
-{
-   int (*orig_epoll_wait)(int epfd, struct epoll_event *events, int maxevents, int timeout);
-   orig_epoll_wait = (void*) eph.orig;
-   // remove hook for epoll_wait
-   hook_precall(&eph);
+static int instrument(){
 
    // resolve symbols from DVM
    dexstuff_resolv_dvm(&d);
@@ -518,7 +516,40 @@ static int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, in
       log("hooking unknown so skip\n")
       return 1;
    }
-   int res = orig_epoll_wait(epfd, events, maxevents, timeout);
+   return 0;
+
+}
+//int epoll_pwait(int fd, epoll_event* events, int max_events, int timeout, const sigset_t* ss)
+int my_epoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout,const sigset_t* ss)
+{
+   int (*orig_epoll_pwait)(int epfd, struct epoll_event *events, int maxevents, int timeout,const sigset_t* ss);
+   orig_epoll_pwait = (void*) eph.orig;
+   // remove hook for epoll_wait
+   hook_precall(&eph);
+   if(instrument()){
+      log("hooking failed\n")
+   }
+      int res = orig_epoll_pwait(epfd, events, maxevents, timeout,ss);
+   return res;
+}
+int my_epoll_pwait_thumb(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t* ss)
+{
+   return my_epoll_pwait(epfd,events,maxevents,timeout,ss);
+}
+int my_epoll_wait_thumb(int epfd, struct epoll_event *events, int maxevents, int timeout)
+{
+   return my_epoll_wait(epfd,events,maxevents,timeout);
+}
+int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
+{
+   int (*orig_epoll_wait)(int epfd, struct epoll_event *events, int maxevents, int timeout);
+   orig_epoll_wait = (void*) eph.orig;
+   // remove hook for epoll_wait
+   hook_precall(&eph);
+   if(instrument()){
+      log("hooking failed\n")
+   }
+      int res = orig_epoll_wait(epfd, events, maxevents, timeout);
    return res;
 }
 void create_cnf()
@@ -594,17 +625,18 @@ void my_init(void)
    set_logfunction(my_log2);
    // set log function for libdalvikhook (very important!)
    dalvikhook_set_logfunction(my_log2);
-   /*
-   if (and_maj == 4 && and_min == 0){
-      if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0) && createcnf==1){
-               log("my_init: epoll_wait hooked\n");
+
+   if (and_maj==5 || (and_maj==4 && and_min==0) ){
+
+      if(hook(&eph, getpid(), "libc.", "epoll_pwait", my_epoll_pwait_arm, my_epoll_pwait_thumb) && createcnf==1){
+               log("my_init: epoll_pwait hooked\n");
        }
    }else{
-   */
-      if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait, 0) && createcnf==1){
+
+      if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait_arm, my_epoll_wait_thumb) && createcnf==1){
          log("my_init: epoll_wait hooked\n");
       }
-   //}
+   }
 
    dexstuff_resolv_dvm(&d);
    //log("my_init: printClass\n");

@@ -20,5 +20,11 @@ LOCAL_MODULE    := libbhelp
 LOCAL_SRC_FILES := ../ioctl_hook.c ../ipc_examiner.c ../ioctl_helper.c  ../ioctl_hook_arm.c.arm
 LOCAL_LDLIBS := -Wl,--start-group ../../base/obj/local/armeabi/libbase.a  -Wl,--end-group
 LOCAL_CFLAGS := -g
-
+ifeq ($(DEBUG),1)
+LOCAL_CFLAGS	+= -DDEBUG
+endif
+ifeq ($(PIE),1)
+LOCAL_CFLAGS    += -fPIE
+LOCAL_LDFLAGS	+= -fPIE -pie
+endif
 include $(BUILD_SHARED_LIBRARY)

@@ -20,6 +20,10 @@ LOCAL_MODULE    := hijack
 LOCAL_SRC_FILES := ../hijack.c
 LOCAL_ARM_MODE := arm
 LOCAL_CFLAGS := -g
+ifeq ($(PIE),1)
+LOCAL_CFLAGS    += -fPIE
+LOCAL_LDFLAGS	+= -fPIE -pie
+endif
 ifeq ($(DEBUG),1)
 LOCAL_CFLAGS	+= -DDEBUG
 endif

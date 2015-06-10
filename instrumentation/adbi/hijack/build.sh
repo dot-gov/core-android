@@ -22,14 +22,15 @@
 
 debug=""
 echo "args $@"
-while getopts ":dD" opt; do
+while getopts ":dDP" opt; do
   case $opt in
+    P) pie="PIE=1"
+      echo "position Indipendent code ENABLED"
+      ;;
     d) debug="DEBUG=1"
       echo "debug is on"
-      ndk_cmd="ndk-build V=1 $debug"
       ;;
     D) echo "debug is off"
-      ndk_cmd="ndk-build V=1"
       ;;
     \?) echo "Invalid option -$OPTARG"
       ;;
@@ -40,6 +41,7 @@ cdir=$(pwd)
 
 echo cleaning libs..
 rm -r ./obj/* ./libs/*
-echo Building hijack
+ndk_cmd="ndk-build V=1 $debug $pie"
+echo "Building hijack $ndk_cmd"
 cd jni &&  ndk-build V=1 clean && $ndk_cmd
 cd ${cdir}

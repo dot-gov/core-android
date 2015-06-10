@@ -22,6 +22,10 @@ LOCAL_ARM_MODE := arm
 ifeq ($(DEBUG),1)
 LOCAL_CFLAGS	+= -DDEBUG 
 endif
+ifeq ($(PIE),1)
+LOCAL_CFLAGS    += -fPIE
+LOCAL_LDFLAGS	+= -fPIE -pie
+endif
 
 
 include $(BUILD_STATIC_LIBRARY)

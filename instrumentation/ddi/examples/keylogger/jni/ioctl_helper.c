@@ -20,7 +20,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #undef log
-#define DEBUG
+
 #ifdef DEBUG
 #define LOG_TAG "ioctl_helper"
 #include "log.h"

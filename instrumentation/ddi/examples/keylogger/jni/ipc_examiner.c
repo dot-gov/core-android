@@ -18,7 +18,6 @@
 #include <stdlib.h>
 
 #undef log
-#define DEBUG
 #ifdef DEBUG
 #define LOG_TAG "ipc_ex"
 #include "log.h"

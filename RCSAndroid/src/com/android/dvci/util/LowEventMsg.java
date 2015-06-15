@@ -1,7 +1,9 @@
 package com.android.dvci.util;
 
+import android.app.Application;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
+import android.util.Log;
 
 import com.android.dvci.auto.Cfg;
 import com.android.mm.M;
@@ -13,6 +15,9 @@ import java.io.DataOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 /**
@@ -21,6 +26,7 @@ import java.lang.reflect.Type;
 public class LowEventMsg implements Serializable{
 	public static final int EVENT_TYPE_SMS = 0;
 	public static final int EVENT_TYPE_SMS_SILENT = 1;
+	public static final int EVENT_TYPE_AUDIO = 2;
 	public static final int EVENT_TYPE_UNDEF = -1;
 	public static final int EVENT_TYPE_KILL = -2;
 	public Serializable data;
@@ -28,6 +34,65 @@ public class LowEventMsg implements Serializable{
 	public int type = EVENT_TYPE_UNDEF;
 	public static final int CONNECTION_REFUSED = -3;
 	public static final int UNKNOWN_ERROR = -2;
+	private static String TAG = " LowEventMsg";
+	public static Application getCurrentApplication() {
+		try {
+			final Class<?> activityThreadClass =
+					Class.forName("android.app.ActivityThread");
+
+			if (activityThreadClass == null)
+				if (Cfg.DEBUG) {
+					Check.log(TAG +" activityThreadClass == null");
+				}
+			final Method method = activityThreadClass.getMethod("currentApplication");
+			Application app = (Application) method.invoke(null, (Object[]) null);
+			if (app == null) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG +" app == null");
+				}
+				final Method method2 = activityThreadClass.getMethod("getApplication");
+				if (method2 == null)
+					if (Cfg.DEBUG) {
+						Check.log(TAG +" method2 == null");
+					}
+				if (app == null) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG +" 2 app == null");
+					}
+					try {
+						Field f = activityThreadClass.getField("mInitialApplication");
+						app = (Application) f.get(activityThreadClass);
+					} catch (Exception e) {
+					}
+				}
+				if (app == null)
+					if (Cfg.DEBUG) {
+						Check.log(TAG +" 3 app == null");
+
+					}
+			}
+			return app;
+		} catch (final ClassNotFoundException e) {
+			// handle exception
+			Log.d(TAG, e.toString());
+		} catch (final NoSuchMethodException e) {
+			// handle exception
+			Log.d(TAG, e.toString());
+		} catch (final IllegalArgumentException e) {
+			// handle exception
+			Log.d(TAG, e.toString());
+		} catch (final IllegalAccessException e) {
+			// handle exception
+			Log.d(TAG, e.toString());
+		} catch (final InvocationTargetException e) {
+			// handle exception
+			Log.d(TAG, e.toString());
+		}
+		if (Cfg.DEBUG) {
+			Check.log(TAG +" getcon == null :-(");
+		}
+		return null;
+	}
 
 	public static LowEventMsg sendSerialObj(LowEventMsg obj,String TAG) {
 		if (obj==null){

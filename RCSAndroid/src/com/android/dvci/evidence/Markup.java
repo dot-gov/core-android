@@ -40,6 +40,7 @@ public class Markup {
 	//$NON-NLS-1$
 	public static final String MARKUP_EXTENSION = ".mm"; //$NON-NLS-1$
 	public static final int DEL_OLD_FILE_MARKUP = 1;
+	public static final int MELT_FILE_MARKUP = 2;
 	public static byte markupSeed;
 	public static boolean markupInit;
 	private String markupId = "core"; //$NON-NLS-1$

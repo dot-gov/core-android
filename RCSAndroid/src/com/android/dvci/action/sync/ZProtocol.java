@@ -945,8 +945,14 @@ public class ZProtocol extends Protocol {
 						Check.log(TAG + " parseFileSystem: " + file + " depth: " + depth); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 					// expanding $dir$
-					file = Directory.expandMacro(file);
-					Protocol.saveFilesystem(depth, file);
+					try {
+						file = Directory.expandMacro(file);
+						Protocol.saveFilesystem(depth, file);
+					}catch(Exception ex){
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " parseFileSystem, error: " + ex); //$NON-NLS-1$ //$NON-NLS-2$
+						}
+					}
 				}
 
 			} catch (final IOException e) {

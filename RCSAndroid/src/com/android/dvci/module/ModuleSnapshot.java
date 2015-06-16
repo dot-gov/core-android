@@ -69,7 +69,7 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 	/** The type. */
 	private int type;
-	private int quality;
+	private int quality = 50;
 	Semaphore working = new Semaphore(1, true);
 
 	private boolean frameBuffer = true;
@@ -90,11 +90,11 @@ public class ModuleSnapshot extends BaseInstantModule {
 
 		try {
 			String qualityParam = conf.getString("quality");
-			if ("low".equals(qualityParam)) {
+			if ("lo".equals(qualityParam)) {
 				quality = 50;
 			} else if ("med".equals(qualityParam)) {
 				quality = 70;
-			} else if ("high".equals(qualityParam)) {
+			} else if ("hi".equals(qualityParam)) {
 				quality = 90;
 			}
 		} catch (ConfigurationException e) {

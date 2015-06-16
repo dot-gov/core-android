@@ -2,28 +2,22 @@ package com.android.dvci.module;
 
 import com.android.dvci.ProcessInfo;
 import com.android.dvci.event.BaseEvent;
+import com.android.dvci.interfaces.IProcessObserver;
 import com.android.dvci.interfaces.Observer;
 
 public class ProcessObserver implements Observer<ProcessInfo> {
 
-	private BaseModule module = null;
-	private BaseEvent event = null;
+	private IProcessObserver observer = null;
 
-	public ProcessObserver(BaseModule module) {
-		this.module = module;
-	}
 
-	public ProcessObserver(BaseEvent event) {
-		this.event = event;
+	public ProcessObserver(IProcessObserver observer) {
+		this.observer = observer;
 	}
 
 	@Override
 	public int notification(ProcessInfo b) {
-		if(module != null){
-			module.notifyProcess(b);
-		}
-		if(event != null){
-			event.notifyProcess(b);
+		if(observer != null){
+			observer.notifyProcess(b);
 		}
 		return 0;
 	}

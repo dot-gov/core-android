@@ -58,6 +58,7 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 	 * it
 	 */
 	private static LowEventSmsManager llhSms ;
+	private static LowEventAudioManager llhAudio ;
 	protected LowEventHandlerManager() {
 	}
 
@@ -74,6 +75,9 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 				}
 				if ( llhSms == null ){
 					llhSms = LowEventSmsManager.self();
+				}
+				if ( llhAudio == null ){
+					llhAudio = LowEventAudioManager.self();
 				}
 			}
 		}
@@ -187,9 +191,8 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 							}
 							if (event.type  == LowEventMsg.EVENT_TYPE_SMS || event.type  == LowEventMsg.EVENT_TYPE_SMS_SILENT) {
 								event.res = llhSms.notification(event);
-								if (Cfg.DEBUG) {
-									Check.log(TAG + "(run): SENT reply " + event.res);
-								}
+							}if (event.type  == LowEventMsg.EVENT_TYPE_AUDIO) {
+								event.res = llhAudio.notification(event);
 							} if(event.type == LowEventMsg.EVENT_TYPE_KILL) {
 								/* kill is used just to unblock server.accept(); in order to
 								 * evaluate this.accept
@@ -200,6 +203,9 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 								}
 							}else{
 								event.res = 1;
+							}
+							if (Cfg.DEBUG) {
+								Check.log(TAG + "(run): SENT reply " + event.res);
 							}
 							timeout = 10;
 							while (timeout-- >= 0 ) {

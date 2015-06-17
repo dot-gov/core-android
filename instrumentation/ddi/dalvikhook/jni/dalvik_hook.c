@@ -56,9 +56,20 @@ int dalvik_hook_setup(struct dalvik_hook_t *h, char *cls, char *meth, char *sig,
 
 void* dalvik_hook(struct dexstuff_t *dex, struct dalvik_hook_t *h)
 {
-	if (h->debug_me)
-		log("dalvik_hook: class %s\n", h->clname)
-	
+   if(h == 0x0){
+      if (h->debug_me)
+         log("dalvik_hook invalid dalvik_hook_t passed\n")
+         return (void*)0;
+   }
+   if(dex->dvmFindLoadedClass_fnPtr==0x0 || h == 0x0){
+      if (h->debug_me)
+         log("dalvik_hook invalid dvmFindLoadedClass_fnPtr\n")
+         return (void*)0;
+   }
+
+
+   if (h->debug_me)
+        log("dalvik_hook: class %s\n", h->clname)
 	void *target_cls = dex->dvmFindLoadedClass_fnPtr(h->clname);
 	if (h->debug_me)
 		log("class = 0x%x\n", target_cls)

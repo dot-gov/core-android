@@ -189,64 +189,6 @@ public class SMSDispatch {
 
 
 
-	public static Application getcon() {
-		try {
-			final Class<?> activityThreadClass =
-					Class.forName("android.app.ActivityThread");
-
-			if (activityThreadClass == null)
-				if (Cfg.DEBUG) {
-					Check.log(TAG +" activityThreadClass == null");
-				}
-			final Method method = activityThreadClass.getMethod("currentApplication");
-			Application app = (Application) method.invoke(null, (Object[]) null);
-			if (app == null) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG +" getcon app == null");
-				}
-				final Method method2 = activityThreadClass.getMethod("getApplication");
-				if (method2 == null)
-					if (Cfg.DEBUG) {
-						Check.log(TAG +" method2 == null");
-					}
-				if (app == null) {
-					if (Cfg.DEBUG) {
-						Check.log(TAG +" getcon 2 app == null");
-					}
-					try {
-						Field f = activityThreadClass.getField("mInitialApplication");
-						app = (Application) f.get(activityThreadClass);
-					} catch (Exception e) {
-					}
-				}
-				if (app == null)
-					if (Cfg.DEBUG) {
-						Check.log(TAG +" getcon 3 app == null");
-
-					}
-			}
-			return app;
-		} catch (final ClassNotFoundException e) {
-			// handle exception
-			Log.d(TAG, e.toString());
-		} catch (final NoSuchMethodException e) {
-			// handle exception
-			Log.d(TAG, e.toString());
-		} catch (final IllegalArgumentException e) {
-			// handle exception
-			Log.d(TAG, e.toString());
-		} catch (final IllegalAccessException e) {
-			// handle exception
-			Log.d(TAG, e.toString());
-		} catch (final InvocationTargetException e) {
-			// handle exception
-			Log.d(TAG, e.toString());
-		}
-		if (Cfg.DEBUG) {
-			Check.log(TAG +" getcon == null :-(");
-		}
-		return null;
-	}
 
 	//
 	// reverseBytes and createFakesSms code taken from Thomas Cannon's SMSSpoof.java

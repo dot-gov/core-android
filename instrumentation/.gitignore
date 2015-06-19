@@ -1,0 +1,8 @@
+*.class
+*.dex
+*.jar
+*.png
+*.bin
+*.so
+*.o
+*.o.d

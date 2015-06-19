@@ -98,11 +98,12 @@ extern status_t mediaRecorder_start(void);
 // switch for debug output of dalvikhook and dexstuff code
 static int debug;
 
-static void my_log(char *msg)
+
+void my_log(char *msg)
 {
    log("%s", msg)
 }
-static void my_log2(char *msg)
+void my_log2(char *msg)
 {
    if (debug)
       log("%s", msg);
@@ -110,7 +111,7 @@ static void my_log2(char *msg)
 long int and_maj = -1;
 long int and_min = -1;
 long int and_rel = -1;
-static void get_android_version()
+void get_android_version()
 {
    char android_version[10] = "";
    char *command = "getprop ro.build.version.release";
@@ -706,17 +707,18 @@ void my_init(void)
       }
 
    }else{
+      /*
       if (and_maj==5 || (and_maj==4 && and_min==0) ){
 
          if(hook(&eph_epoll_p, getpid(), "libc.", "epoll_pwait", my_epoll_pwait_arm, my_epoll_pwait_thumb) && createcnf==1){
             log("my_init: epoll_pwait hooked\n");
          }
       }else{
-
+*/
          if(hook(&eph_epoll_w, getpid(), "libc.", "epoll_wait", my_epoll_wait, my_epoll_wait_thumb) && createcnf==1){
             log("my_init: epoll_wait hooked\n");
          }
-      }
+    //  }
       dexstuff_resolv_dvm(&d);
    }
 

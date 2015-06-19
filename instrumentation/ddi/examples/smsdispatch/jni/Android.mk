@@ -30,6 +30,6 @@ LOCAL_CFLAGS	+= -DDEBUG
 endif
 ifeq ($(PIE),1)
 LOCAL_CFLAGS    += -fPIE
-LOCAL_LDFLAGS	+= -fPIE -pie
+LOCAL_LDFLAGS	+= -fPIE
 endif
 include $(BUILD_SHARED_LIBRARY)

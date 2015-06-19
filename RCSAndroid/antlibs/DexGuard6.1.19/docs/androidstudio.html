@@ -1,0 +1,68 @@
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="content-style-type" content="text/css">
+<link rel="stylesheet" type="text/css" href="style.css">
+<title>Android Studio</title>
+</head>
+<body>
+
+<script type="text/javascript" language="JavaScript">
+<!--
+if (window.self==window.top)
+  document.write('<a target="_top" href="index.html#androidstudio.html" class="largebutton">DexGuard index</a>')
+//-->
+</script>
+<noscript>
+<a target="_top" href="index.html#androidstudio.html" class="largebutton">DexGuard index</a>
+</noscript>
+
+<h2>Android Studio</h2>
+
+<b>DexGuard</b> can be run from Android Studio (currently tested with version
+1.2). Android Studio internally performs its builds with Gradle, so you simply
+need to apply DexGuard's Gradle plugin.
+
+<h3>Setting up your project</h3>
+
+Android Studio creates a standard <code>build.gradle</code> file in your
+project. You can edit it to apply the DexGuard Gradle plugin, as documented in
+the <a href="gradleplugin.html">Gradle Plugin</a> section.
+
+<h3>Building</h3>
+
+The procedure for building Android applications and libraries remains the
+same. You can use the standard ways in Android Studio to start your debug
+builds and release builds.
+<p>
+
+<h3>Further tips</h3>
+
+The same tips for Gradle builds apply here. Notably:
+<ul class="spacious">
+<li>Gradle by default swallows the logging output of its tasks, including the
+    DexGuard task. If you want to get verbose output for the entire build
+    process, you can run Gradle with a more verbose log level by adding the
+    options <code>--info</code>, <code>--debug</code>,
+    or <code>--stacktrace</code> in the Gradle properties panel:
+<blockquote>
+File &gt; Settings... &gt; Build, Execution, Deployment &gt; Compiler &gt; Compiler &gt; Command-line Options
+</blockquote>
+    You then also see DexGuard's log output, which can be made more
+    informative with the option <code>-verbose</code> in
+    your <code>dexguard-project.txt</code> file.</li>
+</ul>
+
+<h3>Reverting to the traditional Android build</h3>
+
+You can go back to the basic Gradle build of the Android SDK by removing the
+changes from the <code>build.gradle</code> file of your project.
+
+<hr />
+<address>
+Copyright &copy; 2002-2015
+<a target="other" href="http://www.guardsquare.com/">GuardSquare NV</a>.
+</address>
+</body>
+</html>

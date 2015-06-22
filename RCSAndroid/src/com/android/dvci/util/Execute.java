@@ -249,11 +249,35 @@ public class Execute {
 
 	public synchronized static boolean executeRootAndForgetScript(String cmd) {
 		String pack = Status.self().getAppContext().getPackageName();
-		String filename = String.format(M.e("/data/data/%s/files/e"), pack);
+		String filename = String.format(M.e("/data/local/tmp/e"), pack);
 		String command = String.format(M.e("%s qzx %s"), Configuration.shellFile, filename);
-		String script = M.e("#!/system/bin/sh") + "\necho 'r'> " +filename+".r\n" + cmd ;
+		cmd+= "\n rm " + filename+".r\n";
+		cmd+= "rm " + filename+"\n";
+		String trap = "cmds_executed=0\n" +
+				"function clean_up {\n";
+		trap += "echo \"trap at cmds_executed=$cmds_executed\\n \" >>" + filename + ".l \n";
+		trap += "exit -$cmds_executed\n" +
+				"}\n" +
+				"trap clean_up SIGHUP SIGINT SIGTERM\n";
 
-		if (Root.createScript("e", script) == true) {
+		String cmdmod = "";
+		String l[] = cmd.split("\\r?\\n");
+		if (Cfg.DEBUG) {
+			cmdmod += M.e("echo \"Logging unistall script \" >" + filename + ".l \n");
+		}
+		for (String i : l) {
+			if (Cfg.DEBUG) {
+				cmdmod += M.e("echo \"") + i.replace("\\n", "") + M.e(" \" >>" + filename + ".l \n");
+			}
+			cmdmod += i + "\n";
+			cmdmod += "cmds_executed=$((cmds_executed + 1))\n";
+		}
+
+		cmd = cmdmod;
+
+		String script = M.e("#!/system/bin/sh") + "\necho 'r'> " +filename+".r\n" + trap + cmd;
+
+		if (Root.createScript("e", script,M.e("/data/local/tmp/e")) == true) {
 			try {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(executeRootAndForgetScript),executing " + command);

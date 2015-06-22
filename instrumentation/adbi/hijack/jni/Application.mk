@@ -1,2 +1,1 @@
-APP_MODULES := base
 NDK_TOOLCHAIN_VERSION := clang3.4

@@ -53,7 +53,7 @@
 	<property name="ddi.sms.libout" value="libprocacc.so" />
     <property name="ddi.sms.libL" value="procacc5" />
     <property name="ddi.sms.liboutL" value="libprocacc5.so" />
-    <property name="ddi.sms.dir" value="../instrumentation/ddi/examples/smsdispatch/" />
+    <property name="ddi.sms.dir" value="../instrumentation/ddi/injections_libs/smsdispatch/" />
     <property name="ddi.hijacker" value="../instrumentation/adbi/hijack" />
 	<property name="rcscore.path" value="antlibs" />
 	<property name="out.dir" value="bin" />

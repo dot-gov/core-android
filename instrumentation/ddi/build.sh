@@ -5,19 +5,19 @@ cd dalvikhook/jni
 ndk-build
 cd ../..
 
-echo "building examples"
-cd examples
-echo "building ex:keylogger"
+echo "building injections_lib"
+cd injections_libs
+echo "building ij:keylogger"
 cd keylogger/jni
 ndk-build
 cd ../..
 
-echo "building ex:smsdispatch"
+echo "building ij:smsdispatch"
 cd smsdispatch/jni
 ndk-build V=1 
 cd ../..
 
-echo "building ex:wechar"
+echo "building ij:wechar"
 cd wechat/jni
 ndk-build V=1 
 cd ../..

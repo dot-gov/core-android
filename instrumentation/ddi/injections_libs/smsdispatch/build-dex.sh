@@ -24,8 +24,10 @@ output="perfAcc"
 debug=""
 pie=""
 lib=""
+deflib="libsmsdispatch"
+CLEAN=0
 echo "args $@"
-while getopts ":dDo:l:P" opt; do
+while getopts ":dDo:l:Pc" opt; do
   case $opt in
     P) pie="PIE=1"
       echo "position Indipendent code ENABLED"
@@ -35,7 +37,11 @@ while getopts ":dDo:l:P" opt; do
       ;;
     D) echo "debug is off"
       ;;
+    c) CLEAN=1
+      echo "force clean is on"
+      ;;
     l) lib="DESTLIB=$OPTARG"
+      deflib="lib$OPTARG"
       echo "overwriting outputso to $OPTARG"
       ;;
     o) output="$OPTARG"
@@ -45,17 +51,37 @@ while getopts ":dDo:l:P" opt; do
       ;;
   esac
 done
-
+if [ $CLEAN -eq 0 ]
+then
+  echo "checking $(pwd)/libs/*/$deflib.so "
+  if [ -e $(pwd)/libs/*/$deflib.so ]
+  then
+    echo "nothing to do ... $deflib.so already present"
+    exit 0
+  fi
+fi
 cdir=$(pwd)
-
-echo cleaning libs..
-rm -r ./obj/* ./libs/*
+if [ $CLEAN -eq 1 ]
+then
+  echo cleaning libs..
+  rm -r ./obj/* ./libs/*
+fi
 ndk_cmd="ndk-build V=1 $debug $lib $pie"
 echo Building base
-cd ../../../adbi/instruments/base/jni &&  ndk-build V=1 clean && $ndk_cmd
+cd ../../../adbi/instruments/base/jni
+if [ $CLEAN -eq 1 ]
+then
+  ndk-build V=1 clean
+fi
+$ndk_cmd
 echo Building dalvikhook
 cd ${cdir}
-cd  ../../dalvikhook/jni &&  ndk-build V=1 clean && $ndk_cmd
+cd  ../../dalvikhook/jni
+if [ $CLEAN -eq 1 ]
+then
+  ndk-build V=1 clean
+fi
+$ndk_cmd
 echo Building smsdispatch
 cd ${cdir}
 cd jni && $ndk_cmd

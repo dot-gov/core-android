@@ -154,13 +154,19 @@
 
 
 
-        <target name="build-instrumentation-clean">
-          <echo> cleaning dir ${ddi.sms.dir} </echo>
-          <delete>
-            <!-- recursive **/ -->
-            <fileset dir="${ddi.sms.dir}" includes="**/*.so"/>
-          </delete>
-        </target>
+    <target name="build-instrumentation-clean">
+        <echo> cleaning dir ${ddi.sms.dir} </echo>
+        <delete>
+          <!-- recursive **/ -->
+          <fileset dir="${ddi.sms.dir}" includes="**/*.so"/>
+        </delete>
+        <exec executable="ndk-build" dir="${ddi.hijacker}" failonerror="true">
+            <arg value="clean" />
+        </exec>
+        <exec executable="ndk-build" dir="${ddi.sms.dir}" failonerror="true">
+            <arg value="clean" />
+        </exec>
+    </target>
 
 
 <macrodef name="build-instr">
@@ -194,23 +200,23 @@
   </sequential>
 </macrodef>
 
-<target name="build-instrumentation-debug-L" depends="build-instrumentation-clean">
+<target name="build-instrumentation-debug-L" >
     <build-hijack debug="-d -P"  buildDir="${ddi.hijacker}" out="hijackL"/>
     <build-instr debug="-d -P" libout="${ddi.sms.liboutL}"  lib="-l${ddi.sms.libL}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>
 
-<target name="build-instrumentation-L" depends="build-instrumentation-clean">
+<target name="build-instrumentation-L" >
    <build-hijack debug="-D -P"  buildDir="${ddi.hijacker}" out="hijackL"/>
    <build-instr debug="-P"   libout="${ddi.sms.liboutL}" lib="-l${ddi.sms.libL}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>
 
 
-<target name="build-instrumentation-debug" depends="build-instrumentation-clean">
+<target name="build-instrumentation-debug" >
   <build-hijack debug="-d"  buildDir="${ddi.hijacker}" out="hijack"/>
   <build-instr debug="-d"  libout="${ddi.sms.libout}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>
 
-<target name="build-instrumentation" depends="build-instrumentation-clean">
+<target name="build-instrumentation" >
   <build-hijack debug="-D"  buildDir="${ddi.hijacker}" out="hijack"/>
   <build-instr debug=""   libout="${ddi.sms.libout}" lib="-l${ddi.sms.lib}" buildDir="${ddi.sms.dir}" buildScript="./build-dex.sh"  />
 </target>

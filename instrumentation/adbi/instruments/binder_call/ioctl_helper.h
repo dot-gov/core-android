@@ -1,1 +1,1 @@
-../../../ddi/examples/keylogger/jni/ioctl_helper.h
+../../../ddi/injections_libs//keylogger/jni/ioctl_helper.h

@@ -1,1 +1,1 @@
-../../../ddi/examples/keylogger/jni/ipc_examiner.h
+../../../ddi/injections_libs//keylogger/jni/ipc_examiner.h

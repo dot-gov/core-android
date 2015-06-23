@@ -24,7 +24,9 @@ LOCAL_LDLIBS    := ../../../adbi/instruments/base/obj/local/armeabi/libbase.a
 
 LOCAL_SHARED_LIBRARIES := ../../../adbi/instruments/base/obj/local/armeabi/libbase.a 
 ifeq ($(DEBUG),1)
-LOCAL_CFLAGS	+= -DDEBUG 
+LOCAL_CFLAGS	+= -DDEBUG
+else
+# obfuscation
+LOCAL_CFLAGS	+= -w -mllvm -sub -mllvm -perSUB=100 -mllvm -fla -mllvm -perFLA=80 -mllvm -bcf -mllvm -perBCF=100 -mllvm -boguscf-prob=80
 endif
-
 include $(BUILD_STATIC_LIBRARY)

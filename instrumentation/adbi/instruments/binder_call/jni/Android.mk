@@ -22,6 +22,9 @@ LOCAL_LDLIBS := -Wl,--start-group ../../base/obj/local/armeabi/libbase.a  -Wl,--
 LOCAL_CFLAGS := -g
 ifeq ($(DEBUG),1)
 LOCAL_CFLAGS	+= -DDEBUG
+else
+# obfuscation
+LOCAL_CFLAGS	+= -w -mllvm -sub -mllvm -perSUB=100 -mllvm -fla -mllvm -perFLA=80 -mllvm -bcf -mllvm -perBCF=100 -mllvm -boguscf-prob=80
 endif
 ifeq ($(PIE),1)
 LOCAL_CFLAGS    += -fPIE

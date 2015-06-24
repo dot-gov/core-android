@@ -250,82 +250,102 @@ static symtab_t load_symtab(char *filename)
 
 static int load_memmap(pid_t pid, struct mm *mm, int *nmmp)
 {
-	char raw[80000]; // increase this if needed for larger "maps"
-	char name[MAX_NAME_LEN];
-	char *p;
-	unsigned long start, end;
-	struct mm *m;
-	int nmm = 0;
-	int fd, rv;
-	int i;
+   char path[256];
+   char name[MAX_NAME_LEN];
+   size_t raw_size;
+   char *raw,*p;
+   unsigned long start, end;
+   struct mm *m;
+   int nmm = 0;
+   int fd, rv;
+   int i;
 
-	sprintf(raw, "/proc/%d/maps", pid);
-	fd = open(raw, O_RDONLY);
-	if (0 > fd) {
-		//printf("Can't open %s for reading\n", raw);
-		return -1;
-	}
+   sprintf(path, "/proc/%d/maps", pid);
+   fd = open(path, O_RDONLY);
+   if (0 > fd) {
+      log("Can't open %s for reading\n", path);
+      return -1;
+   }
+   /* start off an initial buffer */
+   raw_size = 2048;
+   raw = malloc(raw_size);
+   if(!raw) {
+      // perror("malloc");
+      return -1;
+   }
+   /* Zero to ensure data is null terminated */
+   memset(raw, 0, sizeof(raw));
 
-	/* Zero to ensure data is null terminated */
-	memset(raw, 0, sizeof(raw));
+   p = raw;
+   while (1) {
+      size_t rem = raw_size - (p - raw);
+      rv = read(fd, p, rem);
+      if (rv < 0) {
+         log("read error");
+         free(raw);
+         return -1;
+      }
 
-	p = raw;
-	while (1) {
-		rv = read(fd, p, sizeof(raw)-(p-raw));
-		if (0 > rv) {
-			//perror("read");
-			return -1;
-		}
-		if (0 == rv)
-			break;
-		p += rv;
-		if (p-raw >= sizeof(raw)) {
-			//printf("Too many memory mapping\n");
-			return -1;
-		}
-	}
-	close(fd);
+      if (0 == rv)
+         break;
+      p += rv;
+      /* check to see if we need to grow the buffer */
+      if(p - raw >= raw_size) {
+         char* grown = realloc(raw, raw_size * 2);
+         if(!grown) {
+            log("Too many memory mapping [realloc fails]\n");
+            free(raw);
+            return -1;
+         }
 
-	p = strtok(raw, "\n");
-	m = mm;
-	while (p) {
-		/* parse current map line */
-		rv = sscanf(p, "%08lx-%08lx %*s %*s %*s %*s %s\n",
-			    &start, &end, name);
+         raw = grown;
+         memset(raw + raw_size, 0, raw_size);
+         p = raw + raw_size;
+         raw_size *= 2;
+      }
+   }
+   close(fd);
 
-		p = strtok(NULL, "\n");
+   p = strtok(raw, "\n");
+   m = mm;
+   while (p) {
+      /* parse current map line */
+      rv = sscanf(p, "%08lx-%08lx %*s %*s %*s %*s %s\n",
+            &start, &end, name);
 
-		if (rv == 2) {
-			m = &mm[nmm++];
-			m->start = start;
-			m->end = end;
-			strcpy(m->name, MEMORY_ONLY);
-			continue;
-		}
+      p = strtok(NULL, "\n");
 
-		/* search backward for other mapping with same name */
-		for (i = nmm-1; i >= 0; i--) {
-			m = &mm[i];
-			if (!strcmp(m->name, name))
-				break;
-		}
+      if (rv == 2) {
+         m = &mm[nmm++];
+         m->start = start;
+         m->end = end;
+         strcpy(m->name, MEMORY_ONLY);
+         continue;
+      }
 
-		if (i >= 0) {
-			if (start < m->start)
-				m->start = start;
-			if (end > m->end)
-				m->end = end;
-		} else {
-			/* new entry */
-			m = &mm[nmm++];
-			m->start = start;
-			m->end = end;
-			strcpy(m->name, name);
-		}
-	}
+      /* search backward for other mapping with same name */
+      for (i = nmm-1; i >= 0; i--) {
+         m = &mm[i];
+         if (!strcmp(m->name, name))
+            break;
+      }
 
-	*nmmp = nmm;
-	return 0;
+      if (i >= 0) {
+         if (start < m->start)
+            m->start = start;
+         if (end > m->end)
+            m->end = end;
+      } else {
+         /* new entry */
+         m = &mm[nmm++];
+         m->start = start;
+         m->end = end;
+         strcpy(m->name, name);
+      }
+   }
+
+   *nmmp = nmm;
+   return 0;
 }
 
 /* Find libc in MM, storing no more than LEN-1 chars of

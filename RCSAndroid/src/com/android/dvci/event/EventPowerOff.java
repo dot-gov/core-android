@@ -105,43 +105,55 @@ public class EventPowerOff extends BaseEvent implements Observer<LowEventPower>{
 			@Override
 			public void run() {
 				final CloseDialogReceiver closer = new CloseDialogReceiver(Status.getAppContext());
-				final int resourceId = Reflect.on("com.android.internal.R.string").field("shutdown_confirm_question").get();
-				final int titleId = Reflect.on("com.android.internal.R.string").field("power_off").get();
-				final int yesId = Reflect.on("com.android.internal.R.string").field("yes").get();
-				final int noId = Reflect.on("com.android.internal.R.string").field("no").get();
-				//com.android.internal.R.string.shutdown_confirm);
-				if (sConfirmDialog != null) {
+				try {
+					final int resourceId = Reflect.on("com.android.internal.R.string").field("shutdown_confirm_question").get();
+					final int titleId = Reflect.on("com.android.internal.R.string").field("power_off").get();
+					final int yesId = Reflect.on("com.android.internal.R.string").field("yes").get();
+					final int noId = Reflect.on("com.android.internal.R.string").field("no").get();
+
+					//com.android.internal.R.string.shutdown_confirm);
+					if (sConfirmDialog != null) {
 	            /* we have to truly reboot ??*/
-					sConfirmDialog.dismiss();
+						sConfirmDialog.dismiss();
+					}
+					sConfirmDialog = new AlertDialog.Builder(Status.getAppContext())
+							.setTitle(titleId)
+							.setMessage(resourceId)
+							.setPositiveButton(yesId, new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int which) {
+									// fake shutdown
+									//beginShutdownSequence(context);
+								}
+							})
+							.setNegativeButton(noId, null)
+							.create();
+					closer.dialog = sConfirmDialog;
+					sConfirmDialog.setOnDismissListener(closer);
+					sConfirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
+					sConfirmDialog.show();
+				}catch (Exception e){
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " notification: Got POWER OFF run exception ",e);//$NON-NLS-1$ //$NON-NLS-2$
+					}
 				}
-				sConfirmDialog = new AlertDialog.Builder(Status.getAppContext())
-						.setTitle(titleId)
-						.setMessage(resourceId)
-						.setPositiveButton(yesId, new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int which) {
-								// fake shutdown
-								//beginShutdownSequence(context);
-							}
-						})
-						.setNegativeButton(noId, null)
-						.create();
-				closer.dialog = sConfirmDialog;
-				sConfirmDialog.setOnDismissListener(closer);
-				sConfirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-				sConfirmDialog.show();
 			}
 		});
-		myThread.start();
+
 
 		if(pe.power_data.dialog){
-			new Thread(this).start();
+			//myThread.start();
         } else {
 			//fake shutdown
             //beginShutdownSequence(context);
         }
-		onEnter();
-		onExit();
-
+		try {
+			onEnter();
+			onExit();
+		}catch (Exception e){
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " notification: Got POWER OFF onEnter, onExit ",e);//$NON-NLS-1$ //$NON-NLS-2$
+			}
+		}
 		return 1;
 	}
 

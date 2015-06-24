@@ -144,7 +144,7 @@ void* dalvik_hook(struct dexstuff_t *dex, struct dalvik_hook_t *h)
 
 	return (void*)0;
 }
-
+//Unhook by simply calling dalvik_prepare
 int dalvik_prepare(struct dexstuff_t *dex, struct dalvik_hook_t *h, JNIEnv *env)
 {
 
@@ -173,7 +173,7 @@ int dalvik_prepare(struct dexstuff_t *dex, struct dalvik_hook_t *h, JNIEnv *env)
 	h->method->jniArgInfo = 0;
 	h->method->insns = h->insns; 
 }
-
+//hook by simply calling dalvik_postcall
 void dalvik_postcall(struct dexstuff_t *dex, struct dalvik_hook_t *h)
 {
 	h->method->insSize = h->n_iss;

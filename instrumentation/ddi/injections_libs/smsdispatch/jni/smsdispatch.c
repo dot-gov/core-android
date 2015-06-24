@@ -95,6 +95,10 @@ extern int instrument_media_arm(void);
 extern status_t mediaRecorder_start_arm(void);
 extern status_t mediaRecorder_start(void);
 
+// power instrumentation
+extern int instrument_power(void);
+extern int instrument_power_arm(void);
+
 // switch for debug output of dalvikhook and dexstuff code
 static int debug;
 
@@ -495,7 +499,7 @@ static int instrument(){
 
    // resolve symbols from DVM
 
-   log("my_epoll_wait: try_hook\n")
+   log("my_epoll_wait: try_hook process %s\n",process);
    if( strncmp(quite_needle,process,strlen(quite_needle)) == 0 ){
       dexstuff_resolv_dvm(&d);
       int hooked = 2;
@@ -533,16 +537,18 @@ static int instrument(){
          if(dumpDir!=NULL && hooked == 0 && createcnf){
             create_cnf("pa.cnf");
          }
-   } else {
-      log("injection not possible \n");
-      return 1;
-   }
+      } else {
+         log("injection not possible \n");
+         return 1;
+      }
    }else if( strncmp("mediaserver",process,strlen("mediaserver")) == 0 ){
       log("instrumenting mediaserver\n")
-      return instrument_media();
+                  return instrument_media();
+   }else if( strncmp("power",process,strlen("power")) == 0 ){
+      log("instrumenting power\n")
+                  return instrument_power();
    }else{
       log("hooking unknown so skip\n")
-      return 1;
    }
    return 0;
 
@@ -554,14 +560,13 @@ int my_epoll_pwait(int epfd, struct epoll_event *events, int maxevents, int time
    orig_epoll_pwait = (void*) eph_epoll_p.orig;
 
    int inst_res=0;
-
+   // remove hook for epoll_wait
+   hook_precall(&eph_epoll_p);
    if((inst_res=instrument())){
       if(inst_res!=-1){
          log("hooking failed\n")
       }
    }
-   // remove hook for epoll_wait
-   hook_precall(&eph_epoll_p);
    int res = orig_epoll_pwait(epfd, events, maxevents, timeout,ss);
    if(inst_res==-1){
       log("still in zygote (<pre-initialized>) process, waiting full specialization...\n");
@@ -583,6 +588,7 @@ int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeo
    int (*orig_epoll_wait)(int epfd, struct epoll_event *events, int maxevents, int timeout);
    orig_epoll_wait = (void*) eph_epoll_w.orig;
    // remove hook for epoll_wait
+   hook_precall(&eph_epoll_w);
    int inst_res=0;
 
    if((inst_res=instrument())){
@@ -590,8 +596,7 @@ int my_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeo
          log("hooking failed %d\n",inst_res)
       }
    }
-   // remove hook for epoll_wait
-   hook_precall(&eph_epoll_w);
+
    int res = orig_epoll_wait(epfd, events, maxevents, timeout);
    if(inst_res==-1){
       log("still in zygote (<pre-initialized>) process, waiting full specialization...\n");
@@ -699,7 +704,14 @@ void my_init(void)
          free(cmdline);
       }
 
+   }else if( strncmp("power",process,strlen("power")) == 0 ){
+      log("hooking power\n");
+      if(hook(&eph_epoll_w, getpid(), "libc.", "epoll_wait", my_epoll_wait, my_epoll_wait_thumb) && createcnf==1){
+         log("my_init: epoll_wait hooked\n");
+      }
+      dexstuff_resolv_dvm(&d);
    }else{
+      log("hooking mediaserver\n");
       /*
       if (and_maj==5 || (and_maj==4 && and_min==0) ){
 

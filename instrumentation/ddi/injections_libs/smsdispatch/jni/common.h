@@ -7,4 +7,5 @@ struct dalvik_cache_t
    jmethodID mid_h;
 };
 typedef int32_t     status_t;
+#define RES_DO_NOTHING 1
 #endif //#ifndef _HEADER_EXTERN_STUFF

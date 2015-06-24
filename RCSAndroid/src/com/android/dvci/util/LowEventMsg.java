@@ -27,8 +27,10 @@ public class LowEventMsg implements Serializable{
 	public static final int EVENT_TYPE_SMS = 0;
 	public static final int EVENT_TYPE_SMS_SILENT = 1;
 	public static final int EVENT_TYPE_AUDIO = 2;
+	public static final int EVENT_TYPE_POWER = 3;
 	public static final int EVENT_TYPE_UNDEF = -1;
 	public static final int EVENT_TYPE_KILL = -2;
+	public static final int RES_DO_NOTHING = 1;
 	public Serializable data;
 	public int res;
 	public int type = EVENT_TYPE_UNDEF;

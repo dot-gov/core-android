@@ -32,6 +32,9 @@ public abstract class Listener<U> {
 		observers = new ArrayList<WeakReference<Observer<U>>>();
 	}
 
+	public synchronized boolean hasObservers(){
+		return !observers.isEmpty();
+	}
 	public synchronized boolean attach(Observer<U> o) {
 		// Object already in the stack
 
@@ -139,6 +142,8 @@ public abstract class Listener<U> {
 		}
 	}
 
+
+
 	protected void setSuspended(boolean value) {
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (setSuspended): " + value);
@@ -147,6 +152,7 @@ public abstract class Listener<U> {
 			suspended = value;
 		}
 	}
+
 
 	protected abstract void start();
 

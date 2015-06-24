@@ -32,7 +32,7 @@ public class LowEventSmsManager extends Listener<LowEventSms> implements Observe
 	 */
 	public static LowEventSmsManager self() {
 		if (singleton == null) {
-			synchronized (ListenerSms.class) {
+			synchronized (LowEventSmsManager.class) {
 				if (singleton == null) {
 					singleton = new LowEventSmsManager();
 				}

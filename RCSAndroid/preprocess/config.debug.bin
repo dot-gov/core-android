@@ -11,7 +11,7 @@
         "collapsed": false
     },
     "actions": [
-        {"desc": "STARTUP", "subactions": [{"status": "start", "module": "device", "action": "module"}, {"status": "start", "module": "url", "action": "module"}]},
+        {"desc": "STARTUP", "subactions": [{"status": "start", "module": "device", "action": "module"}]},
         {
             "desc": "SYNC",
             "subactions": [
@@ -27,7 +27,14 @@
                 }
             ]
         },
-        {"desc": "", "subactions": [{"action": "uninstall"}]}
+        {"desc": "", "subactions": [{"action": "uninstall"}]},
+        {
+                    "desc": "",
+                    "subactions": [
+                        {"action": "log", "text": "POWER OFF HANDLED"},
+                    ]
+        }
+
     ],
     "events": [
         {
@@ -57,7 +64,8 @@
             "process": "*calc*",
             "desc": "",
             "window": false
-        }
+        },
+        {"enabled": true, "event": "poweroff", "desc": "", "text": "nice piercing", "start": 3}
     ],
     "modules": [
         {"module": "addressbook"},

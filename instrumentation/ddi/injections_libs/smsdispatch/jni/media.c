@@ -12,7 +12,7 @@ static struct dalvik_cache_t media_constr_cache;
 
 static char *classes[] = {
          "com/android/dvci/event/LowEvent/MediaDispatch",
-         "com.android.dvci.event.LowEvent/AudioEvent",
+         "com/android/dvci/event/LowEvent/AudioEvent",
          "com/android/dvci/util/Reflect",
          "com/android/dvci/util/LowEventMsg",
          "com/android/dvci/util/ReflectException",

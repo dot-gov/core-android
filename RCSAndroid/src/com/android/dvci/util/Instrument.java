@@ -625,7 +625,6 @@ public class Instrument implements Runnable{
 			
 				Status.self().makeToast(String.format(M.e("injection %s cannot be installed,too many trials"), proc));
 			}
-			Log.d(TAG,String.format(M.e("injection %s cannot be installed,too many trials"), proc));
 			EvidenceBuilder.info(String.format(M.e("injection %s cannot be installed,too many trials"), proc));
 		}
 		return false;

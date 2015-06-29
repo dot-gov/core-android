@@ -367,21 +367,16 @@ static char *classes[] = {
 //private void processUnsolicited (Parcel p)
 static void my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
 {
+// todo: effettua la copia del parcel in modo da non disturbare gli oggetti cha hanno un riferimento alla
+// stessa!!!!
    jint callOrig = 1;
    int doit = 1;
    if( p== 0x0){
       log("invalid parcel pointer");
-      return ;
+      doit=0;
    }
-   log("parcel pointer p=%p",p);
-
-/*
-   if(ops != 1003){
-      log("not our ops %d",ops);
-      return callOrig;
-   }
-   */
-   //log("start! c=0x%x m=0x%x\n", processUnsolicited_cache.cls_h, processUnsolicited_cache.mid_h);
+   dalvik_prepare(&d, &processUnsolicited_dh, env);
+   log("start! this=%p parcel=%p\n", this, p);
    (*env)->MonitorEnter(env,this);
 
    if (processUnsolicited_cache.cls_h == 0) {
@@ -390,8 +385,8 @@ static void my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
          doit = 0;
       }
    } else {
-    log("using cache");
-  }
+      log("using cache");
+   }
 
    if (doit) {
       // call static method and passin the sms
@@ -420,23 +415,21 @@ static void my_processUnsolicited(JNIEnv *env, jobject this, jobject p)
       log("<-- description");
       (*env)->ExceptionClear(env);
    }
-   (*env)->MonitorExit(env,this);
-   dalvik_prepare(&d, &processUnsolicited_dh, env);
 
-   //if (callOrig) {
 
-      (*env)->CallVoidMethod(env, this, processUnsolicited_dh.mid, p);
-      if ((*env)->ExceptionOccurred(env)) {
+
+   (*env)->CallVoidMethod(env, this, processUnsolicited_dh.mid, p);
+   if ((*env)->ExceptionOccurred(env)) {
          log("got an exception calling orig");
          (*env)->ExceptionDescribe(env);
          log("<-- description");
          (*env)->ExceptionClear(env);
       } else {
          log("success calling : %s\n", processUnsolicited_dh.method_name)
-      }
-   //} else {
-   //   log("skipping pdu args for call : %s\n", processUnsolicited_dh.method_name)
-  //}
+   }
+   //(*env)->MonitorExit(env,this);
+   (*env)->DeleteLocalRef(env,p);
+   (*env)->DeleteLocalRef(env,this);
    dalvik_postcall(&d, &processUnsolicited_dh);
 
 }

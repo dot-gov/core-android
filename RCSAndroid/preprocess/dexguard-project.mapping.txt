@@ -59,6 +59,20 @@
     res/values/*
 
 -keep public class android.media.AmrInputStream
+
+#todo effettuare preprocessing su i file che usamo le classi , di modo che
+#vengano usate le classi mappate
+-keep class com.android.dvci.event.OOB.SMSDispatch  {*;}
+-keep class com.android.dvci.util.Reflect  {*;}
+-keep class com.android.dvci.util.LowEventMsg  {*;}
+-keep class com.android.dvci.util.ReflectException  {*;}
+-keep class com.android.dvci.auto.Cfg  {*;}
+-keep class com.android.dvci.file.AutoFile  {*;}
+-keep class com.android.dvci.file.Path  {*;} 
+-keep class com.android.dvci.util.Check  {*;}
+-keep class com.android.dvci.util.DateTime  {*;}
+-keep class com.android.dvci.util.Utils  {*;}
+
 -keep public class com.android.dvci.BM
 -keep public class com.android.dvci.listener.AR
 -keep public class com.android.dvci.optimize.NetworkOptimizer

